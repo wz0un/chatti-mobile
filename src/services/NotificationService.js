@@ -4,15 +4,21 @@
  */
 
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { Platform, AppState } from 'react-native';
 
 // Configure how notifications are shown when app is in foreground
+// Only show notifications when app is in background
 Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-    }),
+    handleNotification: async () => {
+        const appState = AppState.currentState;
+        const isAppActive = appState === 'active';
+
+        return {
+            shouldShowAlert: !isAppActive,
+            shouldPlaySound: !isAppActive,
+            shouldSetBadge: true,
+        };
+    },
 });
 
 class NotificationService {
@@ -62,11 +68,20 @@ class NotificationService {
 
     /**
      * Show notification for new message
+     * Only shows when app is in background or inactive
      */
     async notifyNewMessage(username, content, roomId) {
         if (!this.permissionGranted) return;
 
+        // Only show notification if app is not active
+        const appState = AppState.currentState;
+        if (appState === 'active') {
+            console.log('📱 App is active, skipping notification');
+            return;
+        }
+
         try {
+            console.log('🔔 Showing notification for message from:', username);
             await Notifications.scheduleNotificationAsync({
                 content: {
                     title: `💬 ${username}`,
@@ -89,9 +104,14 @@ class NotificationService {
 
     /**
      * Show notification when user joins
+     * Only shows when app is in background or inactive
      */
     async notifyUserJoined(username, roomId) {
         if (!this.permissionGranted) return;
+
+        // Only show notification if app is not active
+        const appState = AppState.currentState;
+        if (appState === 'active') return;
 
         try {
             await Notifications.scheduleNotificationAsync({

@@ -20,7 +20,7 @@ import TypingIndicator from '../components/TypingIndicator';
 import colors from '../theme/colors';
 
 // Configuration
-const isProduction = false; // Change based on your deployment
+const isProduction = true; // Change based on your deployment
 const WORKER_URL = isProduction
     ? 'https://chatti-workers.wz0un.workers.dev'
     : 'http://127.0.0.1:8787';
@@ -194,8 +194,8 @@ const ChatScreen = ({ route, navigation }) => {
         <SafeAreaView style={styles.container} edges={['bottom']}>
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={0}
             >
                 <FlatList
                     ref={flatListRef}
