@@ -96,6 +96,7 @@ const RoomListScreen = ({ navigation, route }) => {
             navigation.navigate('Chat', {
                 username,
                 roomId: room.id,
+                roomName: room.name,
             });
         } catch (error) {
             console.error('Error creating room:', error);
@@ -105,17 +106,18 @@ const RoomListScreen = ({ navigation, route }) => {
         }
     };
 
-    const handleJoinRoom = (roomId) => {
+    const handleJoinRoom = (room) => {
         navigation.navigate('Chat', {
             username,
-            roomId,
+            roomId: room.id,
+            roomName: room.name,
         });
     };
 
     const renderRoom = ({ item }) => (
         <TouchableOpacity
             style={styles.roomCard}
-            onPress={() => handleJoinRoom(item.id)}
+            onPress={() => handleJoinRoom(item)}
             activeOpacity={0.7}
         >
             <View style={styles.roomHeader}>

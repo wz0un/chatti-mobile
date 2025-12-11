@@ -29,7 +29,7 @@ const WORKER_URL = isProduction
     : 'http://127.0.0.1:8787';
 
 const ChatScreen = ({ route, navigation }) => {
-    const { username, roomId } = route.params;
+    const { username, roomId, roomName } = route.params;
 
     // Estado para el offset
     const [androidOffset, setAndroidOffset] = useState(30);
@@ -68,7 +68,7 @@ const ChatScreen = ({ route, navigation }) => {
     useEffect(() => {
         // Set navigation header
         navigation.setOptions({
-            title: `Sala: ${roomId}`,
+            title: roomName || `Sala: ${roomId}`,
             headerRight: () => (
                 <View style={styles.headerRight}>
                     <View style={[
@@ -81,7 +81,7 @@ const ChatScreen = ({ route, navigation }) => {
                 </View>
             ),
         });
-    }, [navigation, roomId, isConnected, usersOnline]);
+    }, [navigation, roomId, roomName, isConnected, usersOnline]);
 
     useEffect(() => {
         // Create chat service instance
