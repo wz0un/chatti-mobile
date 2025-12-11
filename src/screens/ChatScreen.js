@@ -11,8 +11,11 @@ import {
     Platform,
     Text,
     TouchableOpacity,
+    Keyboard,
+    Dimensions,
+    StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import ChatService from '../services/ChatService';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
@@ -28,14 +31,39 @@ const WORKER_URL = isProduction
 const ChatScreen = ({ route, navigation }) => {
     const { username, roomId } = route.params;
 
+    // Estado para el offset
+    const [androidOffset, setAndroidOffset] = useState(30);
+
     const [messageList, setMessageList] = useState([]);
     const [isConnected, setIsConnected] = useState(false);
     const [usersOnline, setUsersOnline] = useState(0);
     const [isTyping, setIsTyping] = useState(new Set());
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
 
     const chatServiceRef = useRef(null);
     const messageListRef = useRef([]);
     const flatListRef = useRef(null);
+
+    // Detectar tipo de navegación (Botones vs Gestos) al montar
+    useEffect(() => {
+        if (Platform.OS === 'android') {
+            const screenHeight = Dimensions.get('screen').height;
+            const windowHeight = Dimensions.get('window').height;
+            const statusBarHeight = StatusBar.currentHeight || 0;
+
+            // Calculamos la altura real de la barra de navegación
+            const navbarHeight = screenHeight - windowHeight - statusBarHeight;
+
+            // Si hay una barra de navegación física/virtual (> 15px), usamos el offset de 45
+            if (navbarHeight > 15) {
+                setAndroidOffset(45);
+            } else {
+                // Para gestos, probamos con 0 para eliminar el hueco flotante
+                // Si esto queda muy pegado o tapado, lo subiremos a 30
+                setAndroidOffset(100);
+            }
+        }
+    }, []);
 
     useEffect(() => {
         // Set navigation header
@@ -191,11 +219,11 @@ const ChatScreen = ({ route, navigation }) => {
     );
 
     return (
-        <SafeAreaView style={styles.container} edges={['bottom']}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={0}
+                behavior="padding"
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : androidOffset}
             >
                 <FlatList
                     ref={flatListRef}
