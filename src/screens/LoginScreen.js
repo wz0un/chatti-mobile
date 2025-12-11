@@ -18,7 +18,6 @@ import colors from '../theme/colors';
 
 const LoginScreen = ({ navigation }) => {
     const [username, setUsername] = useState('');
-    const [roomId, setRoomId] = useState('general');
 
     useEffect(() => {
         // Load saved username
@@ -38,15 +37,9 @@ const LoginScreen = ({ navigation }) => {
 
     const handleJoinChat = async () => {
         const trimmedUsername = username.trim();
-        const trimmedRoomId = roomId.trim();
 
         if (!trimmedUsername) {
             Alert.alert('Error', 'Por favor ingresa tu nombre de usuario');
-            return;
-        }
-
-        if (!trimmedRoomId) {
-            Alert.alert('Error', 'Por favor ingresa el nombre de la sala');
             return;
         }
 
@@ -54,10 +47,9 @@ const LoginScreen = ({ navigation }) => {
             // Save username for next time
             await AsyncStorage.setItem('username', trimmedUsername);
 
-            // Navigate to chat
-            navigation.navigate('Chat', {
+            // Navigate to room list
+            navigation.navigate('RoomList', {
                 username: trimmedUsername,
-                roomId: trimmedRoomId,
             });
         } catch (error) {
             console.error('Error saving username:', error);
@@ -89,27 +81,15 @@ const LoginScreen = ({ navigation }) => {
                         maxLength={20}
                     />
 
-                    <Text style={styles.label}>Sala</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Nombre de la sala"
-                        placeholderTextColor={colors.placeholder}
-                        value={roomId}
-                        onChangeText={setRoomId}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        maxLength={30}
-                    />
-
                     <TouchableOpacity
                         style={[
                             styles.button,
-                            (!username.trim() || !roomId.trim()) && styles.buttonDisabled
+                            !username.trim() && styles.buttonDisabled
                         ]}
                         onPress={handleJoinChat}
-                        disabled={!username.trim() || !roomId.trim()}
+                        disabled={!username.trim()}
                     >
-                        <Text style={styles.buttonText}>Unirse al Chat</Text>
+                        <Text style={styles.buttonText}>Continuar</Text>
                     </TouchableOpacity>
                 </View>
 
