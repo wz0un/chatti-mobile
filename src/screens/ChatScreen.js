@@ -11,8 +11,9 @@ import {
     Platform,
     Text,
     TouchableOpacity,
+    Keyboard,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import ChatService from '../services/ChatService';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
@@ -27,11 +28,13 @@ const WORKER_URL = isProduction
 
 const ChatScreen = ({ route, navigation }) => {
     const { username, roomId } = route.params;
+    const insets = useSafeAreaInsets();
 
     const [messageList, setMessageList] = useState([]);
     const [isConnected, setIsConnected] = useState(false);
     const [usersOnline, setUsersOnline] = useState(0);
     const [isTyping, setIsTyping] = useState(new Set());
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
 
     const chatServiceRef = useRef(null);
     const messageListRef = useRef([]);
@@ -168,6 +171,29 @@ const ChatScreen = ({ route, navigation }) => {
         }
     }, [messageList]);
 
+    // Keyboard listener for Android
+    useEffect(() => {
+        if (Platform.OS === 'android') {
+            const keyboardDidShowListener = Keyboard.addListener(
+                'keyboardDidShow',
+                (e) => {
+                    setKeyboardHeight(e.endCoordinates.height);
+                }
+            );
+            const keyboardDidHideListener = Keyboard.addListener(
+                'keyboardDidHide',
+                () => {
+                    setKeyboardHeight(0);
+                }
+            );
+
+            return () => {
+                keyboardDidShowListener.remove();
+                keyboardDidHideListener.remove();
+            };
+        }
+    }, []);
+
     const handleSendMessage = (message) => {
         if (chatServiceRef.current) {
             chatServiceRef.current.sendMessage(message);
@@ -190,33 +216,61 @@ const ChatScreen = ({ route, navigation }) => {
         />
     );
 
+
     return (
-        <SafeAreaView style={styles.container} edges={['bottom']}>
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={0}
-            >
-                <FlatList
-                    ref={flatListRef}
-                    data={messageList}
-                    renderItem={renderMessage}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.messageList}
-                    onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
-                />
+        <View style={[styles.container, { paddingTop: insets.top }]}>
+            {Platform.OS === 'ios' ? (
+                <KeyboardAvoidingView
+                    style={styles.container}
+                    behavior='padding'
+                    keyboardVerticalOffset={0}
+                >
+                    <FlatList
+                        ref={flatListRef}
+                        data={messageList}
+                        renderItem={renderMessage}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={[styles.messageList, { paddingBottom: 80 }]}
+                        onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+                    />
 
-                {isTyping.size > 0 && (
-                    <TypingIndicator usernames={Array.from(isTyping)} />
-                )}
+                    {isTyping.size > 0 && (
+                        <TypingIndicator usernames={Array.from(isTyping)} />
+                    )}
 
-                <ChatInput
-                    onSendMessage={handleSendMessage}
-                    onTyping={handleTyping}
-                    disabled={!isConnected}
-                />
-            </KeyboardAvoidingView>
-        </SafeAreaView>
+                    <ChatInput
+                        onSendMessage={handleSendMessage}
+                        onTyping={handleTyping}
+                        disabled={!isConnected}
+                    />
+                </KeyboardAvoidingView>
+            ) : (
+                <>
+                    <FlatList
+                        ref={flatListRef}
+                        data={messageList}
+                        renderItem={renderMessage}
+                        keyExtractor={(item) => item.id}
+                        contentContainerStyle={[styles.messageList, { paddingBottom: 80 }]}
+                        onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+                    />
+
+                    {isTyping.size > 0 && (
+                        <View style={[styles.typingContainer, { bottom: keyboardHeight + 70 }]}>
+                            <TypingIndicator usernames={Array.from(isTyping)} />
+                        </View>
+                    )}
+
+                    <View style={[styles.inputContainer, { bottom: keyboardHeight }]}>
+                        <ChatInput
+                            onSendMessage={handleSendMessage}
+                            onTyping={handleTyping}
+                            disabled={!isConnected}
+                        />
+                    </View>
+                </>
+            )}
+        </View>
     );
 };
 
@@ -242,6 +296,19 @@ const styles = StyleSheet.create({
     headerText: {
         fontSize: 12,
         color: colors.textLight,
+    },
+    inputContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: colors.background,
+    },
+    typingContainer: {
+        position: 'absolute',
+        bottom: 70,
+        left: 0,
+        right: 0,
     },
 });
 
