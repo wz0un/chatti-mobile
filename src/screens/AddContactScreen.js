@@ -77,19 +77,30 @@ const AddContactScreen = ({ navigation }) => {
             <View style={styles.content}>
                 <Text style={styles.title}>Agregar Contacto</Text>
                 <Text style={styles.description}>
-                    Pega el Device ID del usuario que deseas agregar como contacto
+                    Para agregar un contacto, necesitas su ID único de dispositivo
                 </Text>
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Pega aquí el Device ID..."
-                    placeholderTextColor={colors.textLight}
-                    value={deviceId}
-                    onChangeText={setDeviceId}
-                    multiline
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                />
+                <View style={styles.stepBox}>
+                    <Text style={styles.stepTitle}>📋 Paso 1: Obtén el ID</Text>
+                    <Text style={styles.stepText}>
+                        La otra persona debe ir a su Perfil (👤) y copiar su Device ID
+                    </Text>
+                </View>
+
+                <View style={styles.stepBox}>
+                    <Text style={styles.stepTitle}>✏️ Paso 2: Pega el ID aquí</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Ejemplo: device_1234567890_abc123..."
+                        placeholderTextColor={colors.textLight}
+                        value={deviceId}
+                        onChangeText={setDeviceId}
+                        multiline
+                        numberOfLines={3}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                    />
+                </View>
 
                 <TouchableOpacity
                     style={[styles.sendButton, loading && styles.sendButtonDisabled]}
@@ -100,17 +111,17 @@ const AddContactScreen = ({ navigation }) => {
                     {loading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={styles.sendButtonText}>Enviar Solicitud</Text>
+                        <Text style={styles.sendButtonText}>✉️ Enviar Solicitud</Text>
                     )}
                 </TouchableOpacity>
 
                 <View style={styles.infoBox}>
-                    <Text style={styles.infoTitle}>💡 Cómo funciona</Text>
+                    <Text style={styles.infoTitle}>💡 ¿Cómo funciona?</Text>
                     <Text style={styles.infoText}>
-                        1. El otro usuario debe compartir su Device ID contigo{'\n'}
-                        2. Pega su ID aquí y envía la solicitud{'\n'}
-                        3. Espera a que acepte tu solicitud{'\n'}
-                        4. Una vez aceptada, podrán chatear de forma cifrada
+                        • Tu contacto recibirá una solicitud{'\n'}
+                        • Debe aceptarla en "📬 Solicitudes"{'\n'}
+                        • Una vez aceptada, podrán chatear cifrado 🔒{'\n'}
+                        • Solo los contactos aceptados pueden chatear
                     </Text>
                 </View>
             </View>
@@ -135,7 +146,26 @@ const styles = StyleSheet.create({
     description: {
         fontSize: 14,
         color: colors.textLight,
-        marginBottom: 24,
+        marginBottom: 20,
+    },
+    stepBox: {
+        backgroundColor: colors.surface,
+        borderRadius: 8,
+        padding: 16,
+        marginBottom: 16,
+        borderLeftWidth: 3,
+        borderLeftColor: colors.primary,
+    },
+    stepTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: colors.text,
+        marginBottom: 8,
+    },
+    stepText: {
+        fontSize: 14,
+        color: colors.textLight,
+        lineHeight: 20,
     },
     input: {
         backgroundColor: colors.surface,

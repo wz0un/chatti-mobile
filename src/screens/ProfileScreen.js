@@ -10,6 +10,7 @@ import {
     TouchableOpacity,
     Alert,
     ScrollView,
+    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
@@ -18,19 +19,52 @@ import colors from '../theme/colors';
 
 const ProfileScreen = ({ navigation }) => {
     const [user, setUser] = useState(null);
+    const [deviceId, setDeviceId] = useState('');
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         loadUserProfile();
     }, []);
 
     const loadUserProfile = async () => {
-        const currentUser = await AuthService.getCurrentUser();
-        setUser(currentUser);
+        try {
+            setLoading(true);
+            const currentUser = await AuthService.getCurrentUser();
+            const currentDeviceId = await AuthService.getDeviceId();
+
+            console.log('Profile - User:', currentUser);
+            console.log('Profile - DeviceId:', currentDeviceId);
+
+            // Si no hay usuario, redirigir a login
+            if (!currentUser) {
+                Alert.alert(
+                    'Sesión no encontrada',
+                    'Necesitas iniciar sesión primero',
+                    [{
+                        text: 'OK',
+                        onPress: () => {
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: 'Login' }],
+                            });
+                        }
+                    }]
+                );
+                return;
+            }
+
+            setUser(currentUser);
+            setDeviceId(currentDeviceId);
+        } catch (error) {
+            console.error('Error loading profile:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const copyDeviceId = async () => {
-        if (user?.deviceId) {
-            await Clipboard.setStringAsync(user.deviceId);
+        if (deviceId) {
+            await Clipboard.setStringAsync(deviceId);
             Alert.alert('Copiado', 'ID de dispositivo copiado al portapapeles');
         }
     };
@@ -59,14 +93,20 @@ const ProfileScreen = ({ navigation }) => {
         );
     };
 
-    if (!user) {
+    if (loading) {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.centerContainer}>
+                    <ActivityIndicator size="large" color={colors.primary} />
                     <Text style={styles.loadingText}>Cargando perfil...</Text>
                 </View>
             </SafeAreaView>
         );
+    }
+
+    if (!user) {
+        // Este caso ya no debería llegar aquí porque redirigimos arriba
+        return null;
     }
 
     return (
@@ -94,7 +134,7 @@ const ProfileScreen = ({ navigation }) => {
 
                     <View style={styles.deviceIdContainer}>
                         <Text style={styles.deviceIdText} selectable>
-                            {user.deviceId}
+                            {deviceId || 'Cargando...'}
                         </Text>
                     </View>
 
@@ -102,6 +142,7 @@ const ProfileScreen = ({ navigation }) => {
                         style={styles.copyButton}
                         onPress={copyDeviceId}
                         activeOpacity={0.7}
+                        disabled={!deviceId}
                     >
                         <Text style={styles.copyButtonText}>📋 Copiar ID</Text>
                     </TouchableOpacity>
@@ -146,6 +187,23 @@ const styles = StyleSheet.create({
     loadingText: {
         fontSize: 16,
         color: colors.textLight,
+        marginTop: 12,
+    },
+    errorText: {
+        fontSize: 16,
+        color: '#FF3B30',
+        marginBottom: 16,
+    },
+    retryButton: {
+        backgroundColor: colors.primary,
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 8,
+    },
+    retryButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
     },
     content: {
         padding: 20,

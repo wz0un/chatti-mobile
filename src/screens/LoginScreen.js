@@ -1,8 +1,8 @@
 /**
- * Login Screen - Username entry
+ * Login Screen - Username entry with backend registration
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
     View,
     Text,
@@ -12,28 +12,14 @@ import {
     KeyboardAvoidingView,
     Platform,
     Alert,
+    ActivityIndicator,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
 
 const LoginScreen = ({ navigation }) => {
     const [username, setUsername] = useState('');
-
-    useEffect(() => {
-        // Load saved username
-        loadSavedUsername();
-    }, []);
-
-    const loadSavedUsername = async () => {
-        try {
-            const savedUsername = await AsyncStorage.getItem('username');
-            if (savedUsername) {
-                setUsername(savedUsername);
-            }
-        } catch (error) {
-            console.error('Error loading username:', error);
-        }
-    };
+    const [loading, setLoading] = useState(false);
 
     const handleJoinChat = async () => {
         const trimmedUsername = username.trim();
@@ -44,16 +30,26 @@ const LoginScreen = ({ navigation }) => {
         }
 
         try {
-            // Save username for next time
-            await AsyncStorage.setItem('username', trimmedUsername);
+            setLoading(true);
 
-            // Navigate to room list
+            // Register user with backend (creates or retrieves user with discriminator)
+            console.log('Registering user:', trimmedUsername);
+            const user = await AuthService.registerUser(trimmedUsername);
+            console.log('User registered:', user);
+
+            if (!user) {
+                throw new Error('No se recibió información del usuario');
+            }
+
+            // Navigate to room list with the full username
             navigation.navigate('RoomList', {
-                username: trimmedUsername,
+                username: user.fullUsername,
             });
         } catch (error) {
-            console.error('Error saving username:', error);
-            Alert.alert('Error', 'No se pudo guardar el nombre de usuario');
+            console.error('Error during registration:', error);
+            Alert.alert('Error', 'No se pudo conectar con el servidor. Verifica tu conexión.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -79,17 +75,22 @@ const LoginScreen = ({ navigation }) => {
                         autoCapitalize="none"
                         autoCorrect={false}
                         maxLength={20}
+                        editable={!loading}
                     />
 
                     <TouchableOpacity
                         style={[
                             styles.button,
-                            !username.trim() && styles.buttonDisabled
+                            (!username.trim() || loading) && styles.buttonDisabled
                         ]}
                         onPress={handleJoinChat}
-                        disabled={!username.trim()}
+                        disabled={!username.trim() || loading}
                     >
-                        <Text style={styles.buttonText}>Continuar</Text>
+                        {loading ? (
+                            <ActivityIndicator color={colors.textInverse} />
+                        ) : (
+                            <Text style={styles.buttonText}>Continuar</Text>
+                        )}
                     </TouchableOpacity>
                 </View>
 
@@ -157,6 +158,7 @@ const styles = StyleSheet.create({
     },
     buttonDisabled: {
         backgroundColor: colors.inputBackground,
+        opacity: 0.6,
     },
     buttonText: {
         fontSize: 16,
