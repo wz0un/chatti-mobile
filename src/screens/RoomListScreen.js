@@ -17,10 +17,21 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ApiService from '../services/ApiService';
+import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
 
 const RoomListScreen = ({ navigation, route }) => {
-    const { username } = route.params;
+    const [username, setUsername] = useState(route.params?.username || null);
+
+    useEffect(() => {
+        if (!username) {
+            AuthService.getCurrentUser().then(user => {
+                if (user) {
+                    setUsername(user.fullUsername);
+                }
+            });
+        }
+    }, []);
 
     const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);

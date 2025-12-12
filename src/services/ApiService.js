@@ -457,6 +457,34 @@ class ApiService {
             throw error;
         }
     }
+    /**
+     * Delete user account
+     */
+    static async deleteAccount(userId, deviceId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/auth/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId,
+                    deviceId,
+                }),
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to delete account');
+            }
+
+            const data = await response.json();
+            return data.success;
+        } catch (error) {
+            console.error('Error deleting account:', error);
+            throw error;
+        }
+    }
 }
 
 export default ApiService;

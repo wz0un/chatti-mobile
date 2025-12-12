@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import AuthService from '../services/AuthService';
+import ApiService from '../services/ApiService';
 import colors from '../theme/colors';
 
 const ProfileScreen = ({ navigation }) => {
@@ -69,24 +70,36 @@ const ProfileScreen = ({ navigation }) => {
         }
     };
 
-    const handleLogout = async () => {
+    const handleDeleteAccount = async () => {
         Alert.alert(
-            'Cerrar sesión',
-            '¿Estás seguro que deseas cerrar sesión?',
+            'Eliminar cuenta',
+            '¿Estás seguro de que quieres eliminar tu cuenta?\n\nEsta acción:\n• Eliminará todos tus chats privados\n• Eliminará tu usuario\n• Es irreversible',
             [
                 {
                     text: 'Cancelar',
                     style: 'cancel'
                 },
                 {
-                    text: 'Sí, cerrar',
+                    text: 'Eliminar cuenta',
                     style: 'destructive',
                     onPress: async () => {
-                        await AuthService.logout();
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: 'Login' }],
-                        });
+                        try {
+                            setLoading(true);
+                            if (user && user.userId) {
+                                await ApiService.deleteAccount(user.userId, deviceId);
+                            }
+                            await AuthService.logout();
+
+                            // Reset navigation to login
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: 'Login' }],
+                            });
+                        } catch (error) {
+                            console.error('Error deleting account:', error);
+                            Alert.alert('Error', 'No se pudo eliminar la cuenta. Inténtalo de nuevo.');
+                            setLoading(false);
+                        }
                     }
                 }
             ]
@@ -164,10 +177,10 @@ const ProfileScreen = ({ navigation }) => {
                 {/* Logout Button */}
                 <TouchableOpacity
                     style={styles.logoutButton}
-                    onPress={handleLogout}
+                    onPress={handleDeleteAccount}
                     activeOpacity={0.7}
                 >
-                    <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
+                    <Text style={styles.logoutButtonText}>Eliminar Cuenta</Text>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>

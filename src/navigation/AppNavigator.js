@@ -2,7 +2,8 @@
  * App Navigator - React Navigation setup
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/LoginScreen';
@@ -14,15 +15,46 @@ import AddContactScreen from '../screens/AddContactScreen';
 import ContactRequestsScreen from '../screens/ContactRequestsScreen';
 import ConversationsScreen from '../screens/ConversationsScreen';
 import DirectMessageScreen from '../screens/DirectMessageScreen';
+import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
+    const [isLoading, setIsLoading] = useState(true);
+    const [initialRoute, setInitialRoute] = useState('Login');
+    const [initialParams, setInitialParams] = useState(null);
+
+    useEffect(() => {
+        checkAuth();
+    }, []);
+
+    const checkAuth = async () => {
+        try {
+            const user = await AuthService.getCurrentUser();
+            if (user) {
+                setInitialRoute('RoomList');
+                setInitialParams({ username: user.fullUsername });
+            }
+        } catch (error) {
+            console.error('Error checking auth:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+        );
+    }
+
     return (
         <NavigationContainer>
             <Stack.Navigator
-                initialRouteName="Login"
+                initialRouteName={initialRoute}
                 screenOptions={{
                     headerStyle: {
                         backgroundColor: colors.primary,
@@ -44,6 +76,7 @@ const AppNavigator = () => {
                 <Stack.Screen
                     name="RoomList"
                     component={RoomListScreen}
+                    initialParams={initialRoute === 'RoomList' ? initialParams : undefined}
                     options={{
                         title: 'Salas',
                         headerBackVisible: false,
