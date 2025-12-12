@@ -35,6 +35,17 @@ const ConversationsScreen = ({ navigation }) => {
         }
     }, [currentUser]);
 
+    // Refresh when screen comes into focus
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            if (currentUser) {
+                loadConversations();
+            }
+        });
+
+        return unsubscribe;
+    }, [navigation, currentUser]);
+
     const loadCurrentUser = async () => {
         const user = await AuthService.getCurrentUser();
         setCurrentUser(user);
@@ -70,10 +81,39 @@ const ConversationsScreen = ({ navigation }) => {
         navigation.navigate('DirectMessage', {
             conversationId: conversation.conversationId,
             recipientId: recipientId,
-            recipientUsername: recipientId, // Will be improved later
+            recipientUsername: conversation.recipient?.fullUsername || recipientId,
+            recipientPublicKey: conversation.recipient?.publicKey,
             userId: currentUser.userId,
             username: currentUser.fullUsername,
         });
+    };
+
+    const handleLongPress = (conversation) => {
+        Alert.alert(
+            'Eliminar chat',
+            '¿Estás seguro de que quieres eliminar este chat?',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Eliminar',
+                    style: 'destructive',
+                    onPress: () => deleteConversation(conversation.conversationId)
+                }
+            ]
+        );
+    };
+
+    const deleteConversation = async (conversationId) => {
+        try {
+            setLoading(true);
+            await ApiService.deleteConversation(currentUser.userId, conversationId);
+            loadConversations();
+        } catch (error) {
+            console.error('Error deleting conversation:', error);
+            Alert.alert('Error', 'No se pudo eliminar el chat');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const renderConversation = ({ item }) => (
@@ -81,6 +121,7 @@ const ConversationsScreen = ({ navigation }) => {
             conversation={item}
             currentUserId={currentUser?.userId}
             onPress={() => handleConversationPress(item)}
+            onLongPress={() => handleLongPress(item)}
         />
     );
 

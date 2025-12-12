@@ -7,10 +7,13 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import colors from '../theme/colors';
 
-const ConversationListItem = ({ conversation, currentUserId, onPress }) => {
+const ConversationListItem = ({ conversation, currentUserId, onPress, onLongPress }) => {
     // Get the other participant ID
     const otherUserId = conversation.participants.find(id => id !== currentUserId);
-    const initial = otherUserId ? otherUserId.charAt(0).toUpperCase() : '?';
+
+    // Use enriched recipient data if available
+    const displayName = conversation.recipient?.fullUsername || otherUserId;
+    const initial = (conversation.recipient?.username || otherUserId).charAt(0).toUpperCase();
 
     const formatTimestamp = (timestamp) => {
         const date = new Date(timestamp);
@@ -25,14 +28,14 @@ const ConversationListItem = ({ conversation, currentUserId, onPress }) => {
     };
 
     return (
-        <TouchableOpacity style={styles.container} onPress={onPress}>
+        <TouchableOpacity style={styles.container} onPress={onPress} onLongPress={onLongPress} delayLongPress={500}>
             <View style={styles.avatar}>
                 <Text style={styles.avatarText}>{initial}</Text>
             </View>
             <View style={styles.info}>
                 <View style={styles.header}>
                     <Text style={styles.username} numberOfLines={1}>
-                        {otherUserId}
+                        {displayName}
                     </Text>
                     <Text style={styles.timestamp}>
                         {formatTimestamp(conversation.createdAt)}

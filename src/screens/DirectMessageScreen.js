@@ -31,6 +31,7 @@ const DirectMessageScreen = ({ route, navigation }) => {
         conversationId,
         recipientId,
         recipientUsername,
+        recipientPublicKey,
         userId,
         username
     } = route.params;
@@ -86,7 +87,7 @@ const DirectMessageScreen = ({ route, navigation }) => {
         dmServiceRef.current = dmService;
 
         // Connect to conversation
-        dmService.connect(conversationId, userId, username, recipientId, WORKER_URL);
+        dmService.connect(conversationId, userId, username, recipientId, WORKER_URL, recipientPublicKey);
 
         // Event listeners
         dmService.on('connected', () => {
@@ -106,15 +107,23 @@ const DirectMessageScreen = ({ route, navigation }) => {
         // Receive message history
         dmService.on('history', (data) => {
             console.log('Received DM history:', data.messages.length, 'messages');
-            messageListRef.current = data.messages;
             setMessageList(data.messages);
+            messageListRef.current = data.messages;
         });
 
         // Receive new message
         dmService.on('message', (data) => {
             console.log('New DM:', data);
-            messageListRef.current = [...messageListRef.current, data];
-            setMessageList(messageListRef.current);
+            // Use functional update to ensure we have latest state and avoid dupes
+            setMessageList(currentList => {
+                if (currentList.some(m => m.id === data.id)) {
+                    console.log('Duplicate message ignored:', data.id);
+                    return currentList;
+                }
+                const newList = [...currentList, data];
+                messageListRef.current = newList;
+                return newList;
+            });
         });
 
         // User joined

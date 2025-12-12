@@ -277,6 +277,34 @@ class ApiService {
     }
 
     /**
+     * Delete conversation
+     */
+    static async deleteConversation(userId, conversationId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/dm/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId,
+                    conversationId,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.success;
+        } catch (error) {
+            console.error('Error deleting conversation:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Get user by device ID
      */
     static async getUserByDeviceId(deviceId) {

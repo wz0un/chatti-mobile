@@ -98,6 +98,7 @@ const ContactsScreen = ({ navigation }) => {
             conversationId: contact.conversationId,
             recipientId: contact.userId,
             recipientUsername: contact.fullUsername,
+            recipientPublicKey: contact.publicKey,
             userId: currentUser.userId,
             username: currentUser.fullUsername,
         });

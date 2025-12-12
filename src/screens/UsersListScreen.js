@@ -93,6 +93,7 @@ const UsersListScreen = ({ navigation }) => {
                 conversationId: result.conversationId,
                 recipientId: user.userId,
                 recipientUsername: user.fullUsername,
+                recipientPublicKey: user.publicKey,
                 userId: currentUser.userId,
                 username: currentUser.fullUsername,
             });

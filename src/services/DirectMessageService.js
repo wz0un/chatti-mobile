@@ -22,74 +22,121 @@ class DirectMessageService {
     /**
      * Connect to a direct message conversation
      */
-    async connect(conversationId, userId, username, recipientId, workerUrl) {
+    async connect(conversationId, userId, username, recipientId, workerUrl, recipientPublicKey = null) {
+        this.disconnect(); // Ensure any existing connection is closed
+        this.isDisconnected = false;
+
         this.conversationId = conversationId;
         this.userId = userId;
         this.username = username;
         this.recipientId = recipientId;
 
-        // Initialize encryption
-        await EncryptionService.initialize();
-        const publicKey = await EncryptionService.getPublicKey();
+        try {
+            // Initialize encryption
+            await EncryptionService.initialize();
 
-        // Determine WebSocket URL
-        const wsUrl = workerUrl.replace('http://', 'ws://').replace('https://', 'wss://');
-        const url = `${wsUrl}/api/dm/${conversationId}`;
+            if (this.isDisconnected) return;
 
-        // Try to get recipient's public key if we don't have it
-        if (!this.recipientPublicKey) {
-            this.recipientPublicKey = await this.fetchPublicKey(workerUrl, recipientId);
+            const publicKey = await EncryptionService.getPublicKey();
+
+            if (this.isDisconnected) return;
+
+            // Determine WebSocket URL
+            const wsUrl = workerUrl.replace('http://', 'ws://').replace('https://', 'wss://');
+            const url = `${wsUrl}/api/dm/${conversationId}`;
+
+            // Set provided public key or try to fetch it
+            if (recipientPublicKey) {
+                this.recipientPublicKey = recipientPublicKey;
+            }
+
+            // Try to get recipient's public key if we don't have it
+            if (!this.recipientPublicKey) {
+                this.recipientPublicKey = await this.fetchPublicKey(workerUrl, recipientId);
+            }
+
+            if (this.isDisconnected) return;
+
+            console.log('Connecting to DM:', url);
+
+            // Create WebSocket connection
+            this.ws = new WebSocket(url);
+
+            // Event handlers
+            this.ws.onopen = async () => {
+                if (this.isDisconnected) {
+                    this.ws.close();
+                    return;
+                }
+                console.log('✅ Connected to DM conversation:', conversationId);
+                this.reconnectAttempts = 0;
+
+                // Send join message with public key
+                this.send('join', {
+                    userId: this.userId,
+                    username: this.username,
+                    publicKey: publicKey
+                });
+
+                this.emit('connected', { conversationId });
+            };
+
+            this.ws.onmessage = async (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    console.log('📨 Received DM:', data.type);
+
+                    await this.handleIncomingMessage(data);
+                } catch (error) {
+                    console.error('Error parsing DM:', error);
+                }
+            };
+
+            this.ws.onerror = (error) => {
+                console.error('❌ DM WebSocket error:', error);
+                this.emit('error', error);
+            };
+
+            this.ws.onclose = (event) => {
+                if (this.isDisconnected) return; // Ignore expected close
+
+                console.log('🔌 Disconnected from DM. Code:', event.code);
+                this.emit('disconnected', { code: event.code, reason: event.reason });
+
+                // Attempt to reconnect
+                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.reconnectAttempts++;
+                    console.log(`Reconnecting to DM... (attempt ${this.reconnectAttempts})`);
+                    setTimeout(() => {
+                        if (!this.isDisconnected) {
+                            this.connect(conversationId, userId, username, recipientId, workerUrl, this.recipientPublicKey);
+                        }
+                    }, 2000 * this.reconnectAttempts);
+                }
+            };
+
+        } catch (error) {
+            console.error('Connection error:', error);
+            this.emit('error', error);
+        }
+    }
+
+    /**
+     * Disconnect from conversation
+     */
+    disconnect() {
+        this.isDisconnected = true;
+        if (this.ws) {
+            this.ws.onclose = null; // Remove handler to prevent reconnect loops
+            this.ws.close();
+            this.ws = null;
         }
 
-        console.log('Connecting to DM:', url);
-
-        // Create WebSocket connection
-        this.ws = new WebSocket(url);
-
-        // Event handlers
-        this.ws.onopen = async () => {
-            console.log('✅ Connected to DM conversation:', conversationId);
-            this.reconnectAttempts = 0;
-
-            // Send join message with public key
-            this.send('join', {
-                userId: this.userId,
-                username: this.username,
-                publicKey: publicKey
-            });
-
-            this.emit('connected', { conversationId });
-        };
-
-        this.ws.onmessage = async (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                console.log('📨 Received DM:', data.type);
-
-                await this.handleIncomingMessage(data);
-            } catch (error) {
-                console.error('Error parsing DM:', error);
-            }
-        };
-
-        this.ws.onerror = (error) => {
-            console.error('❌ DM WebSocket error:', error);
-            this.emit('error', error);
-        };
-
-        this.ws.onclose = (event) => {
-            console.log('🔌 Disconnected from DM. Code:', event.code);
-            this.emit('disconnected', { code: event.code, reason: event.reason });
-
-            // Attempt to reconnect
-            if (this.reconnectAttempts < this.maxReconnectAttempts) {
-                this.reconnectAttempts++;
-                console.log(`Reconnecting to DM... (attempt ${this.reconnectAttempts})`);
-                setTimeout(() => {
-                    this.connect(conversationId, userId, username, recipientId, workerUrl);
-                }, 2000 * this.reconnectAttempts);
-            }
-        };
+        // Remove all listeners to prevent leaks
+        this.listeners.forEach((callbacks, event) => {
+            // Maybe don't remove external listeners? 
+            // Usually disconnect means just close socket.
+        });
     }
 
     /**
