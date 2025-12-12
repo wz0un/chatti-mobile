@@ -192,6 +192,25 @@ const RoomListScreen = ({ navigation, route }) => {
                 }
             />
 
+            {/* Navigation Buttons for DMs */}
+            <View style={styles.quickActions}>
+                <TouchableOpacity
+                    style={[styles.actionButton, styles.conversationsButton]}
+                    onPress={() => navigation.navigate('Conversations')}
+                    activeOpacity={0.8}
+                >
+                    <Text style={styles.actionButtonText}>💬 Mis Chats</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[styles.actionButton, styles.usersButton]}
+                    onPress={() => navigation.navigate('UsersList')}
+                    activeOpacity={0.8}
+                >
+                    <Text style={styles.actionButtonText}>👥 Usuarios</Text>
+                </TouchableOpacity>
+            </View>
+
             <TouchableOpacity
                 style={styles.createButton}
                 onPress={() => setModalVisible(true)}
@@ -423,6 +442,38 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
+    },
+    quickActions: {
+        position: 'absolute',
+        bottom: 90,
+        left: 20,
+        right: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    actionButton: {
+        flex: 1,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderRadius: 25,
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        marginHorizontal: 6,
+    },
+    conversationsButton: {
+        backgroundColor: colors.secondary,
+    },
+    usersButton: {
+        backgroundColor: '#4CAF50',
+    },
+    actionButtonText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '600',
+        textAlign: 'center',
     },
 });
 
