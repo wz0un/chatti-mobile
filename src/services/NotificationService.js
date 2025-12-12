@@ -67,6 +67,30 @@ class NotificationService {
     }
 
     /**
+     * Get Expo Push Token
+     */
+    async getExpoPushToken() {
+        try {
+            if (!this.permissionGranted) {
+                const granted = await this.initialize();
+                if (!granted) return null;
+            }
+
+            // Get the token
+            // Using the specific Project ID from app.json
+            const tokenData = await Notifications.getExpoPushTokenAsync({
+                projectId: 'bba1628d-3c75-4e56-ac00-fc572407c45b'
+            });
+
+            console.log('✅ Expo Push Token:', tokenData.data);
+            return tokenData.data;
+        } catch (error) {
+            console.error('Error getting push token:', error);
+            return null;
+        }
+    }
+
+    /**
      * Show notification for new message
      * Only shows when app is in background or inactive
      */

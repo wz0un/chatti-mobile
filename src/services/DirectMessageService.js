@@ -36,6 +36,11 @@ class DirectMessageService {
         const wsUrl = workerUrl.replace('http://', 'ws://').replace('https://', 'wss://');
         const url = `${wsUrl}/api/dm/${conversationId}`;
 
+        // Try to get recipient's public key if we don't have it
+        if (!this.recipientPublicKey) {
+            this.recipientPublicKey = await this.fetchPublicKey(workerUrl, recipientId);
+        }
+
         console.log('Connecting to DM:', url);
 
         // Create WebSocket connection
@@ -245,6 +250,31 @@ class DirectMessageService {
     }
 
     /**
+     * Fetch recipient's public key from server
+     */
+    async fetchPublicKey(workerUrl, userId) {
+        try {
+            const baseUrl = workerUrl.replace('ws://', 'http://').replace('wss://', 'https://');
+
+            // Call new endpoint to get public key by user ID
+            const response = await fetch(`${baseUrl}/api/users/public-key?userId=${userId}`);
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.publicKey) {
+                    console.log('Fetched recipient public key from server');
+                    return data.publicKey;
+                }
+            }
+
+            return null;
+        } catch (error) {
+            console.error('Error fetching public key:', error);
+            return null;
+        }
+    }
+
+    /**
      * Send encrypted message
      */
     async sendMessage(content) {
@@ -253,7 +283,11 @@ class DirectMessageService {
         try {
             if (!this.recipientPublicKey) {
                 console.warn('No recipient public key - cannot encrypt message');
-                this.emit('error', { message: 'Recipient not available for encryption' });
+
+                // One last try to fetch it if we implemented it
+                // this.recipientPublicKey = await this.fetchPublicKey(...);
+
+                this.emit('error', { message: 'Recipient not available for encryption. They may need to come online once.' });
                 return;
             }
 

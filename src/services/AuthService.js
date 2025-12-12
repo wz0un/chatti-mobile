@@ -4,6 +4,8 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NotificationService from './NotificationService';
+import EncryptionService from './EncryptionService';
 import * as Device from 'expo-device';
 
 const API_BASE_URL = 'https://chatti-workers.wz0un.workers.dev';
@@ -51,7 +53,6 @@ class AuthService {
 
         return `device_${timestamp}_${Math.abs(deviceHash)}_${random}`;
     }
-
     /**
      * Register or login user
      * Returns user object with discriminator
@@ -59,6 +60,14 @@ class AuthService {
     static async registerUser(username) {
         try {
             const deviceId = await this.getDeviceId();
+
+            // Get Push Token
+            const notificationService = new NotificationService();
+            const expoPushToken = await notificationService.getExpoPushToken();
+
+            // Get Encryption Public Key
+            await EncryptionService.initialize();
+            const publicKey = await EncryptionService.getPublicKey();
 
             const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
                 method: 'POST',
@@ -68,6 +77,8 @@ class AuthService {
                 body: JSON.stringify({
                     username: username.trim(),
                     deviceId,
+                    expoPushToken,
+                    publicKey,
                 }),
             });
 
