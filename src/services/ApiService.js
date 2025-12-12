@@ -275,6 +275,160 @@ class ApiService {
             throw error;
         }
     }
+
+    /**
+     * Get user by device ID
+     */
+    static async getUserByDeviceId(deviceId) {
+        try {
+            const params = new URLSearchParams({ deviceId });
+            const url = `${API_BASE_URL}/api/users/by-device-id?${params.toString()}`;
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                if (response.status === 404) {
+                    return null;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.success ? data.user : null;
+        } catch (error) {
+            console.error('Error getting user by device ID:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Send contact request
+     */
+    static async sendContactRequest(senderId, recipientDeviceId, senderUsername) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/contacts/request`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    senderId,
+                    recipientDeviceId,
+                    senderUsername,
+                }),
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to send contact request');
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error sending contact request:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get contact requests
+     */
+    static async getContactRequests(userId) {
+        try {
+            const params = new URLSearchParams({ userId });
+            const url = `${API_BASE_URL}/api/contacts/requests?${params.toString()}`;
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.requests || [];
+        } catch (error) {
+            console.error('Error getting contact requests:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Accept contact request
+     */
+    static async acceptContactRequest(requestId, userId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/contacts/accept`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    requestId,
+                    userId,
+                }),
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to accept contact request');
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error accepting contact request:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Reject contact request
+     */
+    static async rejectContactRequest(requestId, userId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/contacts/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    requestId,
+                    userId,
+                }),
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to reject contact request');
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error rejecting contact request:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get contacts list
+     */
+    static async getContactsList(userId) {
+        try {
+            const params = new URLSearchParams({ userId });
+            const url = `${API_BASE_URL}/api/contacts/list?${params.toString()}`;
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return data.contacts || [];
+        } catch (error) {
+            console.error('Error getting contacts list:', error);
+            throw error;
+        }
+    }
 }
 
 export default ApiService;

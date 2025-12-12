@@ -203,11 +203,19 @@ const RoomListScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={[styles.actionButton, styles.usersButton]}
-                    onPress={() => navigation.navigate('UsersList')}
+                    style={[styles.actionButton, styles.contactsButton]}
+                    onPress={() => navigation.navigate('Contacts')}
                     activeOpacity={0.8}
                 >
-                    <Text style={styles.actionButtonText}>👥 Usuarios</Text>
+                    <Text style={styles.actionButtonText}>👥 Contactos</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[styles.actionButton, styles.profileButton]}
+                    onPress={() => navigation.navigate('Profile')}
+                    activeOpacity={0.8}
+                >
+                    <Text style={styles.actionButtonText}>👤 Perfil</Text>
                 </TouchableOpacity>
             </View>
 
@@ -453,7 +461,7 @@ const styles = StyleSheet.create({
     },
     actionButton: {
         flex: 1,
-        paddingHorizontal: 16,
+        paddingHorizontal: 12,
         paddingVertical: 14,
         borderRadius: 25,
         elevation: 3,
@@ -461,13 +469,16 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 3,
-        marginHorizontal: 6,
+        marginHorizontal: 4,
     },
     conversationsButton: {
         backgroundColor: colors.secondary,
     },
-    usersButton: {
+    contactsButton: {
         backgroundColor: '#4CAF50',
+    },
+    profileButton: {
+        backgroundColor: '#FF9800',
     },
     actionButtonText: {
         color: '#fff',

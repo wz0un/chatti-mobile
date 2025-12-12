@@ -8,7 +8,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/LoginScreen';
 import RoomListScreen from '../screens/RoomListScreen';
 import ChatScreen from '../screens/ChatScreen';
-import UsersListScreen from '../screens/UsersListScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import ContactsScreen from '../screens/ContactsScreen';
+import AddContactScreen from '../screens/AddContactScreen';
+import ContactRequestsScreen from '../screens/ContactRequestsScreen';
 import ConversationsScreen from '../screens/ConversationsScreen';
 import DirectMessageScreen from '../screens/DirectMessageScreen';
 import colors from '../theme/colors';
@@ -54,10 +57,34 @@ const AppNavigator = () => {
                     }}
                 />
                 <Stack.Screen
-                    name="UsersList"
-                    component={UsersListScreen}
+                    name="Profile"
+                    component={ProfileScreen}
                     options={{
-                        title: 'Usuarios',
+                        title: 'Mi Perfil',
+                        headerBackTitle: 'Atrás',
+                    }}
+                />
+                <Stack.Screen
+                    name="Contacts"
+                    component={ContactsScreen}
+                    options={{
+                        title: 'Contactos',
+                        headerBackTitle: 'Atrás',
+                    }}
+                />
+                <Stack.Screen
+                    name="AddContact"
+                    component={AddContactScreen}
+                    options={{
+                        title: 'Agregar Contacto',
+                        headerBackTitle: 'Atrás',
+                    }}
+                />
+                <Stack.Screen
+                    name="ContactRequests"
+                    component={ContactRequestsScreen}
+                    options={{
+                        title: 'Solicitudes de Contacto',
                         headerBackTitle: 'Atrás',
                     }}
                 />
