@@ -185,14 +185,19 @@ class DirectMessageService {
                 this.recipientPublicKey = senderPublicKey;
             }
 
-            // Derive shared secret
-            const publicKey = senderPublicKey || this.recipientPublicKey;
-            if (!publicKey) {
+            // Determine correct public key and user for shared secret derivation
+            // If I am the sender, I need to use the recipient's key/ID to derive the secret
+            // If I am the receiver, I need to use the sender's key/ID
+            const isMe = senderId === this.userId;
+            const targetUserId = isMe ? this.recipientId : senderId;
+            const targetPublicKey = isMe ? this.recipientPublicKey : (senderPublicKey || this.recipientPublicKey);
+
+            if (!targetPublicKey) {
                 console.warn('No public key available for decryption');
                 return null;
             }
 
-            const sharedSecret = await EncryptionService.deriveSharedSecret(senderId, publicKey);
+            const sharedSecret = await EncryptionService.deriveSharedSecret(targetUserId, targetPublicKey);
 
             // Decrypt message
             const decryptedContent = await EncryptionService.decryptMessage(
