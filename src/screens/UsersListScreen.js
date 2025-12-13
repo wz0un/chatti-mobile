@@ -81,19 +81,34 @@ const UsersListScreen = ({ navigation }) => {
             return;
         }
 
+        console.log('Starting conversation with user:', JSON.stringify(user, null, 2));
+
         try {
+            // WORKAROUND: The user object from listUsers doesn't have the public key.
+            // Fetch the full user object to get the key and avoid calling the broken worker endpoint.
+            console.log(`Fetching full user object for ${user.fullUsername} to get public key.`);
+            const fullUser = await ApiService.findUserByUsername(user.fullUsername);
+
+            if (!fullUser || !fullUser.publicKey) {
+                console.error('Could not retrieve public key for user:', user.fullUsername);
+                Alert.alert('Error', `No se pudo obtener la clave pública para ${user.fullUsername}. No se puede iniciar el chat cifrado.`);
+                return;
+            }
+
             // Start or get existing conversation
             const result = await ApiService.startDirectMessage(
                 currentUser.userId,
                 user.userId
             );
 
+            console.log('Started DM, result:', JSON.stringify(result, null, 2));
+
             // Navigate to direct message screen
             navigation.navigate('DirectMessage', {
                 conversationId: result.conversationId,
                 recipientId: user.userId,
                 recipientUsername: user.fullUsername,
-                recipientPublicKey: user.publicKey,
+                recipientPublicKey: fullUser.publicKey, // Use the key we just fetched
                 userId: currentUser.userId,
                 username: currentUser.fullUsername,
             });

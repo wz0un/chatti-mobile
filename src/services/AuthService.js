@@ -8,7 +8,11 @@ import NotificationService from './NotificationService';
 import EncryptionService from './EncryptionService';
 import * as Device from 'expo-device';
 
-const API_BASE_URL = 'https://chatti-workers.wz0un.workers.dev';
+// Configuration - Set to false for local development
+const isProduction = true; // Change to false to test with local backend
+const API_BASE_URL = isProduction
+    ? 'https://chatti-workers.wz0un.workers.dev'
+    : 'http://192.168.1.100:8787'; // Replace with your computer's IP for device testing
 
 class AuthService {
     /**

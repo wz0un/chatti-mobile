@@ -82,18 +82,23 @@ class ChatService {
 
         this.ws.onerror = (error) => {
             console.error('❌ WebSocket error:', error);
+            console.error('Connection URL was:', url);
             this.emit('error', error);
         };
 
         this.ws.onclose = (event) => {
             console.log('🔌 Disconnected from chat room. Code:', event.code, 'Reason:', event.reason);
+            console.log('Was clean close:', event.wasClean);
             this.emit('disconnected', { code: event.code, reason: event.reason });
 
-            // Attempt to reconnect
-            if (this.reconnectAttempts < this.maxReconnectAttempts) {
+            // Attempt to reconnect only for unexpected disconnections
+            if (this.reconnectAttempts < this.maxReconnectAttempts && event.code !== 1000) {
                 this.reconnectAttempts++;
                 console.log(`Reconnecting... (attempt ${this.reconnectAttempts})`);
                 setTimeout(() => this.connect(roomId, username, workerUrl), 2000 * this.reconnectAttempts);
+            } else if (event.code !== 1000) {
+                console.error('Max reconnection attempts reached');
+                this.emit('error', { message: 'Could not connect to chat server' });
             }
         };
     }
@@ -122,12 +127,18 @@ class ChatService {
      */
     send(type, data) {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({
-                type,
-                ...data
-            }));
+            try {
+                this.ws.send(JSON.stringify({
+                    type,
+                    ...data
+                }));
+            } catch (error) {
+                console.error('Error sending message:', error);
+                this.emit('error', error);
+            }
         } else {
-            console.warn('WebSocket not connected');
+            console.warn('WebSocket not connected, state:', this.ws?.readyState);
+            this.emit('error', { message: 'Not connected to chat server' });
         }
     }
 

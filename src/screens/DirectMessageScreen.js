@@ -20,11 +20,11 @@ import ChatInput from '../components/ChatInput';
 import TypingIndicator from '../components/TypingIndicator';
 import colors from '../theme/colors';
 
-// Configuration
-const isProduction = true;
+// Configuration - Set to false for local development
+const isProduction = true; // Change to false to test with local backend
 const WORKER_URL = isProduction
     ? 'https://chatti-workers.wz0un.workers.dev'
-    : 'http://127.0.0.1:8787';
+    : 'http://192.168.1.100:8787'; // Replace with your computer's IP for device testing
 
 const DirectMessageScreen = ({ route, navigation }) => {
     const {
@@ -41,6 +41,7 @@ const DirectMessageScreen = ({ route, navigation }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [isTyping, setIsTyping] = useState(new Set());
     const [isEncrypted, setIsEncrypted] = useState(true);
+    const [connectionError, setConnectionError] = useState(null);
 
     const dmServiceRef = useRef(null);
     const messageListRef = useRef([]);
@@ -93,6 +94,7 @@ const DirectMessageScreen = ({ route, navigation }) => {
         dmService.on('connected', () => {
             console.log('Connected to DM conversation');
             setIsConnected(true);
+            setConnectionError(null);
         });
 
         dmService.on('disconnected', () => {
@@ -102,6 +104,8 @@ const DirectMessageScreen = ({ route, navigation }) => {
 
         dmService.on('error', (error) => {
             console.error('DM error:', error);
+            setConnectionError(error.message || 'Connection error');
+            setIsConnected(false);
         });
 
         // Receive message history
@@ -199,7 +203,15 @@ const DirectMessageScreen = ({ route, navigation }) => {
                 behavior="padding"
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : androidOffset}
             >
-                {!isConnected && (
+                {connectionError && (
+                    <View style={styles.errorBanner}>
+                        <Text style={styles.errorText}>
+                            ⚠️ {connectionError}
+                        </Text>
+                    </View>
+                )}
+
+                {!isConnected && !connectionError && (
                     <View style={styles.warningBanner}>
                         <Text style={styles.warningText}>
                             Conectando al chat cifrado...
@@ -259,6 +271,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     warningText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    errorBanner: {
+        backgroundColor: '#FF3B30',
+        padding: 8,
+        alignItems: 'center',
+    },
+    errorText: {
         color: '#fff',
         fontSize: 12,
         fontWeight: '600',

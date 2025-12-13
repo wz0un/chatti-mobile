@@ -93,15 +93,31 @@ const ContactsScreen = ({ navigation }) => {
             return;
         }
 
-        // Navigate to direct message
-        navigation.navigate('DirectMessage', {
-            conversationId: contact.conversationId,
-            recipientId: contact.userId,
-            recipientUsername: contact.fullUsername,
-            recipientPublicKey: contact.publicKey,
-            userId: currentUser.userId,
-            username: currentUser.fullUsername,
-        });
+        try {
+            // WORKAROUND: The contact object from getContactsList may not have the public key.
+            // Fetch the full user object to ensure we have the key and avoid calling the broken worker endpoint.
+            console.log(`Fetching full user object for ${contact.fullUsername} to get public key.`);
+            const fullUser = await ApiService.findUserByUsername(contact.fullUsername);
+
+            if (!fullUser || !fullUser.publicKey) {
+                console.error('Could not retrieve public key for contact:', contact.fullUsername);
+                Alert.alert('Error', `No se pudo obtener la clave pública para ${contact.fullUsername}. No se puede iniciar el chat cifrado.`);
+                return;
+            }
+
+            // Navigate to direct message
+            navigation.navigate('DirectMessage', {
+                conversationId: contact.conversationId,
+                recipientId: contact.userId,
+                recipientUsername: contact.fullUsername,
+                recipientPublicKey: fullUser.publicKey, // Use the key we just fetched
+                userId: currentUser.userId,
+                username: currentUser.fullUsername,
+            });
+        } catch (error) {
+            console.error('Error starting conversation with contact:', error);
+            Alert.alert('Error', 'No se pudo iniciar la conversación');
+        }
     };
 
     const renderContact = ({ item }) => (

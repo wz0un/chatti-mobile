@@ -94,17 +94,19 @@ class DirectMessageService {
 
             this.ws.onerror = (error) => {
                 console.error('❌ DM WebSocket error:', error);
+                console.error('DM Connection URL was:', url);
                 this.emit('error', error);
             };
 
             this.ws.onclose = (event) => {
                 if (this.isDisconnected) return; // Ignore expected close
 
-                console.log('🔌 Disconnected from DM. Code:', event.code);
+                console.log('🔌 Disconnected from DM. Code:', event.code, 'Reason:', event.reason);
+                console.log('Was clean close:', event.wasClean);
                 this.emit('disconnected', { code: event.code, reason: event.reason });
 
-                // Attempt to reconnect
-                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                // Attempt to reconnect only for unexpected disconnections
+                if (this.reconnectAttempts < this.maxReconnectAttempts && event.code !== 1000) {
                     this.reconnectAttempts++;
                     console.log(`Reconnecting to DM... (attempt ${this.reconnectAttempts})`);
                     setTimeout(() => {
@@ -112,6 +114,9 @@ class DirectMessageService {
                             this.connect(conversationId, userId, username, recipientId, workerUrl, this.recipientPublicKey);
                         }
                     }, 2000 * this.reconnectAttempts);
+                } else if (event.code !== 1000) {
+                    console.error('Max DM reconnection attempts reached');
+                    this.emit('error', { message: 'Could not connect to encrypted chat server' });
                 }
             };
 
@@ -131,12 +136,9 @@ class DirectMessageService {
             this.ws.close();
             this.ws = null;
         }
-
-        // Remove all listeners to prevent leaks
-        this.listeners.forEach((callbacks, event) => {
-            // Maybe don't remove external listeners? 
-            // Usually disconnect means just close socket.
-        });
+        this.messageCache = [];
+        this.listeners.clear();
+        this.recipientPublicKey = null;
     }
 
     /**
@@ -380,12 +382,18 @@ class DirectMessageService {
      */
     send(type, data) {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({
-                type,
-                ...data
-            }));
+            try {
+                this.ws.send(JSON.stringify({
+                    type,
+                    ...data
+                }));
+            } catch (error) {
+                console.error('Error sending DM message:', error);
+                this.emit('error', error);
+            }
         } else {
-            console.warn('WebSocket not connected');
+            console.warn('DM WebSocket not connected, state:', this.ws?.readyState);
+            this.emit('error', { message: 'Not connected to encrypted chat server' });
         }
     }
 
@@ -425,19 +433,6 @@ class DirectMessageService {
                 console.error(`Error in ${event} listener:`, error);
             }
         });
-    }
-
-    /**
-     * Disconnect from DM
-     */
-    disconnect() {
-        if (this.ws) {
-            this.ws.close();
-            this.ws = null;
-        }
-        this.messageCache = [];
-        this.listeners.clear();
-        this.recipientPublicKey = null;
     }
 
     /**

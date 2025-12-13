@@ -22,11 +22,11 @@ import ChatInput from '../components/ChatInput';
 import TypingIndicator from '../components/TypingIndicator';
 import colors from '../theme/colors';
 
-// Configuration
-const isProduction = true; // Change based on your deployment
+// Configuration - Set to false for local development
+const isProduction = true; // Change to false to test with local backend
 const WORKER_URL = isProduction
     ? 'https://chatti-workers.wz0un.workers.dev'
-    : 'http://127.0.0.1:8787';
+    : 'http://192.168.1.100:8787'; // Replace with your computer's IP for device testing
 
 const ChatScreen = ({ route, navigation }) => {
     const { username, roomId, roomName } = route.params;
@@ -39,6 +39,7 @@ const ChatScreen = ({ route, navigation }) => {
     const [usersOnline, setUsersOnline] = useState(0);
     const [isTyping, setIsTyping] = useState(new Set());
     const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const [connectionError, setConnectionError] = useState(null);
 
     const chatServiceRef = useRef(null);
     const messageListRef = useRef([]);
@@ -98,6 +99,7 @@ const ChatScreen = ({ route, navigation }) => {
         chatService.on('connected', () => {
             console.log('Connected to chat');
             setIsConnected(true);
+            setConnectionError(null);
         });
 
         chatService.on('disconnected', () => {
@@ -107,6 +109,8 @@ const ChatScreen = ({ route, navigation }) => {
 
         chatService.on('error', (error) => {
             console.error('Chat error:', error);
+            setConnectionError(error.message || 'Connection error');
+            setIsConnected(false);
         });
 
         // Receive message history
@@ -225,6 +229,14 @@ const ChatScreen = ({ route, navigation }) => {
                 behavior="padding"
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : androidOffset}
             >
+                {connectionError && (
+                    <View style={styles.errorBanner}>
+                        <Text style={styles.errorText}>
+                            ⚠️ {connectionError}
+                        </Text>
+                    </View>
+                )}
+
                 <FlatList
                     ref={flatListRef}
                     data={messageList}
@@ -270,6 +282,16 @@ const styles = StyleSheet.create({
     headerText: {
         fontSize: 12,
         color: colors.textLight,
+    },
+    errorBanner: {
+        backgroundColor: '#FF3B30',
+        padding: 8,
+        alignItems: 'center',
+    },
+    errorText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '600',
     },
 });
 
