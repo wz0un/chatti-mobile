@@ -139,28 +139,31 @@ const ContactsScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            {/* Header Buttons */}
-            <View style={styles.headerButtons}>
-                <TouchableOpacity
-                    style={styles.headerButton}
-                    onPress={() => navigation.navigate('ContactRequests')}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.headerButtonText}>
-                        📬 Solicitudes
-                        {pendingCount > 0 && (
-                            <Text style={styles.badge}> {pendingCount}</Text>
-                        )}
-                    </Text>
-                </TouchableOpacity>
+            {/* Header */}
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Contactos</Text>
+                <View style={styles.headerButtons}>
+                    <TouchableOpacity
+                        style={styles.headerButton}
+                        onPress={() => navigation.navigate('ContactRequests')}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.headerButtonText}>
+                            📬
+                            {pendingCount > 0 && (
+                                <Text style={styles.badge}> {pendingCount}</Text>
+                            )}
+                        </Text>
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={[styles.headerButton, styles.addButton]}
-                    onPress={() => navigation.navigate('AddContact')}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.headerButtonText}>+ Agregar</Text>
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.headerButton, styles.addButton]}
+                        onPress={() => navigation.navigate('AddContact')}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.headerButtonText}>+</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {loading && contacts.length === 0 ? (
@@ -207,33 +210,51 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.background,
     },
-    headerButtons: {
-        flexDirection: 'row',
-        padding: 16,
-        gap: 12,
+    header: {
         backgroundColor: colors.surface,
+        paddingVertical: 16,
+        paddingHorizontal: 20,
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: colors.text,
+    },
+    headerButtons: {
+        flexDirection: 'row',
+        gap: 12,
     },
     headerButton: {
-        flex: 1,
         backgroundColor: colors.primary,
-        padding: 12,
-        borderRadius: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
         alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 44,
     },
     addButton: {
         backgroundColor: colors.secondary,
     },
     headerButtonText: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: '600',
     },
     badge: {
         backgroundColor: '#FF3B30',
         color: '#fff',
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 'bold',
         paddingHorizontal: 6,
         paddingVertical: 2,

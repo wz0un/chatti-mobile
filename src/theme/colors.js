@@ -1,15 +1,16 @@
 // Color theme for Chat-ti mobile app
-// Matching the web app's orange and green theme
+// Matching the logo's orange and green theme
 
 export const colors = {
-    // Primary colors
-    primary: '#FF6B35', // Orange
+    // Primary colors - Orange from logo
+    primary: '#FF6B35', // Vibrant orange
     primaryDark: '#E55A2B',
     primaryLight: '#FF8C61',
 
-    secondary: '#4ECDC4', // Green/Teal
-    secondaryDark: '#45B8AF',
-    secondaryLight: '#6FD9D1',
+    // Secondary colors - Green from logo
+    secondary: '#4CAF50', // Bright green (matching logo)
+    secondaryDark: '#45A049',
+    secondaryLight: '#66BB6A',
 
     // Background colors
     background: '#F7F7F7',

@@ -12,11 +12,13 @@ import {
     Text,
     Alert,
     RefreshControl,
+    TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import ConversationListItem from '../components/ConversationListItem';
+import AppLogo from '../components/AppLogo';
 import colors from '../theme/colors';
 
 const ConversationsScreen = ({ navigation }) => {
@@ -137,17 +139,26 @@ const ConversationsScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
+            {/* Header */}
+            <View style={styles.header}>
+                <View style={styles.headerContent}>
+                    <AppLogo size={32} showText={false} />
+                    <Text style={styles.headerTitle}>i chatti</Text>
+                </View>
+            </View>
+
             {loading && conversations.length === 0 ? (
                 <View style={styles.centerContainer}>
                     <ActivityIndicator size="large" color={colors.primary} />
                 </View>
             ) : conversations.length === 0 ? (
                 <View style={styles.centerContainer}>
+                    <AppLogo size={80} showText={true} />
                     <Text style={styles.emptyText}>
                         No tienes conversaciones activas
                     </Text>
                     <Text style={styles.emptySubtext}>
-                        Ve a "Usuarios" para iniciar un chat
+                        Ve a "Contactos" para iniciar un chat
                     </Text>
                 </View>
             ) : (
@@ -161,6 +172,7 @@ const ConversationsScreen = ({ navigation }) => {
                             refreshing={refreshing}
                             onRefresh={handleRefresh}
                             colors={[colors.primary]}
+                            tintColor={colors.primary}
                         />
                     }
                 />
@@ -173,6 +185,28 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
+    },
+    header: {
+        backgroundColor: colors.surface,
+        paddingVertical: 16,
+        paddingHorizontal: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+    },
+    headerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: colors.primary,
+        marginLeft: 12,
     },
     list: {
         flexGrow: 1,
@@ -187,6 +221,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         color: colors.text,
+        marginTop: 20,
         marginBottom: 8,
     },
     emptySubtext: {

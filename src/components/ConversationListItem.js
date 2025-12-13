@@ -14,17 +14,31 @@ const ConversationListItem = ({ conversation, currentUserId, onPress, onLongPres
     // Use enriched recipient data if available
     const displayName = conversation.recipient?.fullUsername || otherUserId;
     const initial = (conversation.recipient?.username || otherUserId).charAt(0).toUpperCase();
+    
+    // Get unread count (assuming the API provides this, otherwise default to 0)
+    const unreadCount = conversation.unreadCount || 0;
+    const lastMessage = conversation.lastMessage || null;
 
     const formatTimestamp = (timestamp) => {
+        if (!timestamp) return '';
         const date = new Date(timestamp);
         const now = new Date();
         const diff = now - date;
 
         if (diff < 86400000) { // Less than 24 hours
             return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        } else if (diff < 604800000) { // Less than a week
+            return date.toLocaleDateString('es-ES', { weekday: 'short' });
         } else {
             return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
         }
+    };
+
+    const getLastMessagePreview = () => {
+        if (lastMessage) {
+            return lastMessage.content || 'Mensaje cifrado';
+        }
+        return 'Toca para abrir chat cifrado';
     };
 
     return (
@@ -37,13 +51,26 @@ const ConversationListItem = ({ conversation, currentUserId, onPress, onLongPres
                     <Text style={styles.username} numberOfLines={1}>
                         {displayName}
                     </Text>
-                    <Text style={styles.timestamp}>
-                        {formatTimestamp(conversation.createdAt)}
-                    </Text>
+                    <View style={styles.headerRight}>
+                        {lastMessage && (
+                            <Text style={styles.timestamp}>
+                                {formatTimestamp(lastMessage.timestamp || conversation.updatedAt || conversation.createdAt)}
+                            </Text>
+                        )}
+                    </View>
                 </View>
-                <Text style={styles.preview} numberOfLines={1}>
-                    Toca para abrir chat cifrado
-                </Text>
+                <View style={styles.footer}>
+                    <Text style={[styles.preview, unreadCount > 0 && styles.previewUnread]} numberOfLines={1}>
+                        {getLastMessagePreview()}
+                    </Text>
+                    {unreadCount > 0 && (
+                        <View style={styles.badge}>
+                            <Text style={styles.badgeText}>
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                            </Text>
+                        </View>
+                    )}
+                </View>
             </View>
         </TouchableOpacity>
     );
@@ -59,16 +86,16 @@ const styles = StyleSheet.create({
         borderBottomColor: colors.border,
     },
     avatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: colors.secondary,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: 14,
     },
     avatarText: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
         color: '#fff',
     },
@@ -79,22 +106,51 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: 6,
     },
     username: {
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: '600',
         color: colors.text,
         flex: 1,
     },
+    headerRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     timestamp: {
-        fontSize: 12,
+        fontSize: 13,
         color: colors.textLight,
         marginLeft: 8,
     },
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
     preview: {
-        fontSize: 14,
+        fontSize: 15,
         color: colors.textLight,
+        flex: 1,
+    },
+    previewUnread: {
+        fontWeight: '600',
+        color: colors.text,
+    },
+    badge: {
+        backgroundColor: colors.primary,
+        borderRadius: 12,
+        minWidth: 24,
+        height: 24,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        marginLeft: 8,
+    },
+    badgeText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: 'bold',
     },
 });
 

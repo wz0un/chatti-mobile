@@ -41,8 +41,8 @@ const LoginScreen = ({ navigation }) => {
                 throw new Error('No se recibió información del usuario');
             }
 
-            // Navigate to room list with the full username
-            navigation.navigate('RoomList', {
+            // Navigate to main tabs (Chats is the default screen)
+            navigation.navigate('MainTabs', {
                 username: user.fullUsername,
             });
         } catch (error) {

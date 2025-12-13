@@ -179,7 +179,7 @@ const RoomListScreen = ({ navigation, route }) => {
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['bottom']}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Salas de Chat</Text>
                 <Text style={styles.headerSubtitle}>Hola, {username}</Text>
@@ -202,33 +202,6 @@ const RoomListScreen = ({ navigation, route }) => {
                     />
                 }
             />
-
-            {/* Navigation Buttons for DMs */}
-            <View style={styles.quickActions}>
-                <TouchableOpacity
-                    style={[styles.actionButton, styles.conversationsButton]}
-                    onPress={() => navigation.navigate('Conversations')}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.actionButtonText}>💬 Mis Chats</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.actionButton, styles.contactsButton]}
-                    onPress={() => navigation.navigate('Contacts')}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.actionButtonText}>👥 Contactos</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.actionButton, styles.profileButton]}
-                    onPress={() => navigation.navigate('Profile')}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.actionButtonText}>👤 Perfil</Text>
-                </TouchableOpacity>
-            </View>
 
             <TouchableOpacity
                 style={styles.createButton}
@@ -308,16 +281,23 @@ const styles = StyleSheet.create({
     },
     header: {
         padding: 20,
-        backgroundColor: colors.primary,
+        backgroundColor: colors.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
     },
     headerTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#fff',
+        color: colors.text,
     },
     headerSubtitle: {
         fontSize: 14,
-        color: 'rgba(255,255,255,0.8)',
+        color: colors.textLight,
         marginTop: 4,
     },
     listContent: {
@@ -461,41 +441,6 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
-    },
-    quickActions: {
-        position: 'absolute',
-        bottom: 90,
-        left: 20,
-        right: 20,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    actionButton: {
-        flex: 1,
-        paddingHorizontal: 12,
-        paddingVertical: 14,
-        borderRadius: 25,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-        marginHorizontal: 4,
-    },
-    conversationsButton: {
-        backgroundColor: colors.secondary,
-    },
-    contactsButton: {
-        backgroundColor: '#4CAF50',
-    },
-    profileButton: {
-        backgroundColor: '#FF9800',
-    },
-    actionButtonText: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '600',
-        textAlign: 'center',
     },
 });
 

@@ -125,6 +125,10 @@ const ProfileScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
+            {/* Header */}
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Mi Perfil</Text>
+            </View>
             <ScrollView contentContainerStyle={styles.content}>
                 {/* Avatar */}
                 <View style={styles.avatarContainer}>
@@ -209,6 +213,23 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
+    },
+    header: {
+        backgroundColor: colors.surface,
+        paddingVertical: 16,
+        paddingHorizontal: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: colors.text,
     },
     centerContainer: {
         flex: 1,
