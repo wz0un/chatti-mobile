@@ -90,7 +90,11 @@ const ChatScreen = ({ route, navigation }) => {
         chatServiceRef.current = chatService;
 
         // Initialize notifications
-        chatService.initNotifications();
+        chatService.initNotifications().then(() => {
+            console.log('🔔 Notifications initialized for chat');
+        }).catch(error => {
+            console.error('Failed to initialize notifications:', error);
+        });
 
         // Connect to chat
         chatService.connect(roomId, username, WORKER_URL);
@@ -100,6 +104,11 @@ const ChatScreen = ({ route, navigation }) => {
             console.log('Connected to chat');
             setIsConnected(true);
             setConnectionError(null);
+            
+            // Test notification on connect
+            if (__DEV__) {
+                chatService.notificationService.testNotification();
+            }
         });
 
         chatService.on('disconnected', () => {

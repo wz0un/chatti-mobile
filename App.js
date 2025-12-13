@@ -7,12 +7,16 @@ import React, { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import AppNavigator from './src/navigation/AppNavigator';
+import GlobalNotificationService from './src/services/GlobalNotificationService';
 
 export default function App() {
   const notificationListener = useRef();
   const responseListener = useRef();
 
   useEffect(() => {
+    // Initialize global notification service
+    GlobalNotificationService.initialize();
+
     // Listen for incoming notifications
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
       console.log('Notification received:', notification);
@@ -25,6 +29,7 @@ export default function App() {
     });
 
     return () => {
+      GlobalNotificationService.cleanup();
       Notifications.removeNotificationSubscription(notificationListener.current);
       Notifications.removeNotificationSubscription(responseListener.current);
     };

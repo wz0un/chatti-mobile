@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import AuthService from '../services/AuthService';
 import ApiService from '../services/ApiService';
+import NotificationService from '../services/NotificationService';
 import colors from '../theme/colors';
 
 const ProfileScreen = ({ navigation }) => {
@@ -174,6 +175,23 @@ const ProfileScreen = ({ navigation }) => {
                     </View>
                 </View>
 
+                {/* Test Notifications Button */}
+                <TouchableOpacity
+                    style={styles.testButton}
+                    onPress={async () => {
+                        const notificationService = new NotificationService();
+                        await notificationService.initialize();
+                        const success = await notificationService.testNotification();
+                        Alert.alert(
+                            success ? 'Notificación enviada' : 'Error',
+                            success ? 'Revisa si apareció la notificación' : 'No se pudo enviar la notificación'
+                        );
+                    }}
+                    activeOpacity={0.7}
+                >
+                    <Text style={styles.testButtonText}>🔔 Probar Notificaciones</Text>
+                </TouchableOpacity>
+
                 {/* Logout Button */}
                 <TouchableOpacity
                     style={styles.logoutButton}
@@ -326,12 +344,24 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: colors.text,
     },
+    testButton: {
+        backgroundColor: colors.secondary,
+        borderRadius: 8,
+        padding: 14,
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    testButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
     logoutButton: {
         backgroundColor: '#FF3B30',
         borderRadius: 8,
         padding: 14,
         alignItems: 'center',
-        marginTop: 8,
+        marginTop: 4,
     },
     logoutButtonText: {
         color: '#fff',

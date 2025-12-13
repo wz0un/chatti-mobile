@@ -24,7 +24,9 @@
       "package": "com.chatti.mobile",
       "permissions": [
         "android.permission.RECORD_AUDIO",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK"
       ],
       "softwareKeyboardLayoutMode": "resize",
       "edgeToEdgeEnabled": true
@@ -35,7 +37,8 @@
     "notification": {
       "color": "#FF6B35",
       "androidMode": "default",
-      "androidCollapsedTitle": "{{unread_count}} new messages"
+      "androidCollapsedTitle": "{{unread_count}} new messages",
+      "iosDisplayInForeground": true
     },
     "plugins": [
       [

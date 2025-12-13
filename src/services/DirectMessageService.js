@@ -4,6 +4,7 @@
  */
 
 import EncryptionService from './EncryptionService';
+import NotificationService from './NotificationService';
 
 class DirectMessageService {
     constructor() {
@@ -17,6 +18,7 @@ class DirectMessageService {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.messageCache = []; // Decrypted messages cache
+        this.notificationService = new NotificationService();
     }
 
     /**
@@ -32,8 +34,9 @@ class DirectMessageService {
         this.recipientId = recipientId;
 
         try {
-            // Initialize encryption
+            // Initialize encryption and notifications
             await EncryptionService.initialize();
+            await this.notificationService.initialize();
 
             if (this.isDisconnected) return;
 
@@ -215,6 +218,13 @@ class DirectMessageService {
             if (decrypted) {
                 this.messageCache.push(decrypted);
                 this.emit('message', decrypted);
+                
+                // Show notification if message is from other user
+                if (decrypted.senderId !== this.userId) {
+                    // Get sender username from participants or use senderId
+                    const senderUsername = this.participants.get(decrypted.senderId)?.username || decrypted.senderId;
+                    this.notificationService.notifyEncryptedMessage(senderUsername, this.conversationId);
+                }
             }
         } catch (error) {
             console.error('Error handling encrypted message:', error);
