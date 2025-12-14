@@ -22,18 +22,11 @@ class GlobalNotificationService {
         if (this.isInitialized) return;
 
         try {
-            // Initialize notification service
             await this.notificationService.initialize();
-
-            // Listen for app state changes
             this.appStateSubscription = AppState.addEventListener('change', this.handleAppStateChange.bind(this));
-
-            // Listen for notification responses (when user taps notification)
             this.notificationSubscription = Notifications.addNotificationResponseReceivedListener(
                 this.handleNotificationResponse.bind(this)
             );
-
-            console.log('✅ Global notification service initialized');
             this.isInitialized = true;
         } catch (error) {
             console.error('Error initializing global notifications:', error);
@@ -44,14 +37,7 @@ class GlobalNotificationService {
      * Handle app state changes
      */
     handleAppStateChange(nextAppState) {
-        console.log('App state changed to:', nextAppState);
-        
-        if (nextAppState === 'background' || nextAppState === 'inactive') {
-            // App went to background - notifications will now show
-            console.log('📱 App in background - notifications enabled');
-        } else if (nextAppState === 'active') {
-            // App became active - clear any pending notifications
-            console.log('📱 App active - clearing notifications');
+        if (nextAppState === 'active') {
             this.clearAllNotifications();
         }
     }
@@ -61,16 +47,7 @@ class GlobalNotificationService {
      */
     handleNotificationResponse(response) {
         const data = response.notification.request.content.data;
-        console.log('📱 Notification tapped:', data);
-
-        // Handle different notification types
-        if (data.type === 'message' && data.roomId) {
-            // Navigate to chat room
-            console.log('Navigate to room:', data.roomId);
-        } else if (data.type === 'encrypted_message' && data.conversationId) {
-            // Navigate to DM conversation
-            console.log('Navigate to conversation:', data.conversationId);
-        }
+        // Navigation handled by App.js listener
     }
 
     /**

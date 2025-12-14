@@ -8,13 +8,11 @@ import { Platform, AppState } from 'react-native';
 
 // Configure how notifications are shown when app is in foreground
 Notifications.setNotificationHandler({
-    handleNotification: async () => {
-        return {
-            shouldShowAlert: true, // Always show notifications
-            shouldPlaySound: true, // Always play sound
-            shouldSetBadge: true,
-        };
-    },
+    handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+    }),
 });
 
 class NotificationService {
@@ -37,12 +35,10 @@ class NotificationService {
             }
 
             if (finalStatus !== 'granted') {
-                console.log('⚠️ Notification permissions not granted');
                 this.permissionGranted = false;
                 return false;
             }
 
-            console.log('✅ Notification permissions granted');
             this.permissionGranted = true;
 
             // Configure notification channels for Android
@@ -98,25 +94,35 @@ class NotificationService {
                 if (!granted) return null;
             }
 
-            // Check if we're in Expo Go (push notifications don't work)
-            const isExpoGo = __DEV__ && !Platform.select({ native: false, default: true });
+            let isExpoGo = false;
+            try {
+                const Constants = require('expo-constants').default;
+                if (Constants) {
+                    isExpoGo = Constants.executionEnvironment === 'storeClient';
+                }
+            } catch (e) {
+                if (__DEV__) {
+                    isExpoGo = true;
+                }
+            }
             
             if (isExpoGo) {
-                console.log('⚠️ Running in Expo Go - Push notifications not supported');
                 return 'expo-go-mock-token';
             }
 
-            // Get the token
             const tokenData = await Notifications.getExpoPushTokenAsync({
                 projectId: 'bba1628d-3c75-4e56-ac00-fc572407c45b'
             });
 
-            console.log('✅ Expo Push Token:', tokenData.data);
-            return tokenData.data;
+            if (tokenData?.data) {
+                return tokenData.data;
+            }
+            return null;
         } catch (error) {
-            console.error('Error getting push token:', error);
-            // Return mock token for development
-            return 'development-mock-token';
+            if (__DEV__) {
+                return 'development-mock-token';
+            }
+            return null;
         }
     }
 
@@ -125,13 +131,9 @@ class NotificationService {
      * Works with local notifications in Expo Go
      */
     async notifyNewMessage(username, content, roomId) {
-        if (!this.permissionGranted) {
-            console.log('⚠️ No notification permissions');
-            return;
-        }
+        if (!this.permissionGranted) return;
 
         try {
-            console.log('🔔 Showing notification for message from:', username);
             await Notifications.scheduleNotificationAsync({
                 content: {
                     title: `💬 ${username}`,
@@ -160,7 +162,6 @@ class NotificationService {
         if (!this.permissionGranted) return;
 
         try {
-            console.log('🔔 Showing join notification for:', username);
             await Notifications.scheduleNotificationAsync({
                 content: {
                     title: `👋 ${username} se unió`,
@@ -238,13 +239,9 @@ class NotificationService {
      * Show notification for encrypted message
      */
     async notifyEncryptedMessage(senderUsername, conversationId) {
-        if (!this.permissionGranted) {
-            console.log('⚠️ No notification permissions');
-            return;
-        }
+        if (!this.permissionGranted) return;
 
         try {
-            console.log('🔔 Showing encrypted message notification from:', senderUsername);
             await Notifications.scheduleNotificationAsync({
                 content: {
                     title: `🔒 ${senderUsername}`,
@@ -271,7 +268,6 @@ class NotificationService {
      */
     async testNotification() {
         try {
-            console.log('🔔 Sending test notification');
             await Notifications.scheduleNotificationAsync({
                 content: {
                     title: '💬 Chat-Ti Test',
