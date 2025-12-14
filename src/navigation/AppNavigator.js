@@ -66,7 +66,7 @@ const AppNavigator = () => {
                     name="Login"
                     component={LoginScreen}
                     options={{
-                        title: 'Chat-ti',
+                        title: 'Chat-Ti',
                         headerShown: false,
                     }}
                 />

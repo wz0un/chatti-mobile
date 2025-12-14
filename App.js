@@ -1,5 +1,5 @@
 /**
- * Chat-ti Mobile App
+ * Chat-Ti Mobile App
  * Main entry point
  */
 

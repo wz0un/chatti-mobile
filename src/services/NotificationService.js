@@ -274,7 +274,7 @@ class NotificationService {
             console.log('🔔 Sending test notification');
             await Notifications.scheduleNotificationAsync({
                 content: {
-                    title: '💬 Chat-ti Test',
+                    title: '💬 Chat-Ti Test',
                     body: 'Las notificaciones están funcionando correctamente!',
                     data: { test: true },
                     sound: true,

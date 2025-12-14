@@ -1,6 +1,6 @@
 /**
  * App Logo Component
- * Displays the i chatti logo
+ * Displays the Chat-Ti logo
  */
 
 import React from 'react';
@@ -45,7 +45,7 @@ const AppLogo = ({ size = 40, showText = true }) => {
                 </View>
             </View>
             {showText && (
-                <Text style={styles.logoText}>i chatti</Text>
+                <Text style={styles.logoText}>Chat-Ti</Text>
             )}
         </View>
     );

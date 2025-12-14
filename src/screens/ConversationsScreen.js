@@ -143,7 +143,7 @@ const ConversationsScreen = ({ navigation }) => {
             <View style={styles.header}>
                 <View style={styles.headerContent}>
                     <AppLogo size={32} showText={false} />
-                    <Text style={styles.headerTitle}>i chatti</Text>
+                    <Text style={styles.headerTitle}>Chat-Ti</Text>
                 </View>
             </View>
 

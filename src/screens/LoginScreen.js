@@ -60,7 +60,7 @@ const LoginScreen = ({ navigation }) => {
         >
             <View style={styles.content}>
                 <View style={styles.header}>
-                    <Text style={styles.title}>Chat-ti</Text>
+                    <Text style={styles.title}>Chat-Ti</Text>
                     <Text style={styles.subtitle}>Bienvenido al chat</Text>
                 </View>
 

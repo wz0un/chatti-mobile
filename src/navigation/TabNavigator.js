@@ -4,7 +4,8 @@
 
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ConversationsScreen from '../screens/ConversationsScreen';
 import ContactsScreen from '../screens/ContactsScreen';
 import RoomListScreen from '../screens/RoomListScreen';
@@ -14,11 +15,22 @@ import colors from '../theme/colors';
 const Tab = createBottomTabNavigator();
 
 const TabNavigator = () => {
+    const insets = useSafeAreaInsets();
+    
+    // Calculate bottom padding for Android navigation bar
+    const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 8) : 8;
+    
     return (
         <Tab.Navigator
             screenOptions={{
                 headerShown: false,
-                tabBarStyle: styles.tabBar,
+                tabBarStyle: [
+                    styles.tabBar,
+                    {
+                        paddingBottom: bottomPadding,
+                        height: 70 + bottomPadding - 8, // Adjust height based on padding
+                    }
+                ],
                 tabBarActiveTintColor: colors.primary,
                 tabBarInactiveTintColor: colors.textLight,
                 tabBarLabelStyle: styles.tabLabel,
@@ -74,8 +86,6 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: colors.border,
         paddingTop: 8,
-        paddingBottom: 8,
-        height: 70,
         elevation: 8,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -2 },
