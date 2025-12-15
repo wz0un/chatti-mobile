@@ -18,6 +18,7 @@ import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import UserListItem from '../components/UserListItem';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const ContactsScreen = ({ navigation }) => {
     const [contacts, setContacts] = useState([]);
@@ -25,6 +26,7 @@ const ContactsScreen = ({ navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
     const [pendingCount, setPendingCount] = useState(0);
+    const { t } = useTranslation();
 
     useEffect(() => {
         loadCurrentUser();
@@ -63,7 +65,7 @@ const ContactsScreen = ({ navigation }) => {
             setContacts(result);
         } catch (error) {
             console.error('Error loading contacts:', error);
-            Alert.alert('Error', 'No se pudieron cargar los contactos');
+            Alert.alert(t('common.error'), t('contacts.errorLoad'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -89,7 +91,7 @@ const ContactsScreen = ({ navigation }) => {
 
     const handleContactPress = async (contact) => {
         if (!currentUser) {
-            Alert.alert('Error', 'No se pudo obtener tu usuario actual');
+            Alert.alert(t('common.error'), t('contacts.errorCurrent'));
             return;
         }
 
@@ -101,7 +103,7 @@ const ContactsScreen = ({ navigation }) => {
 
             if (!fullUser || !fullUser.publicKey) {
                 console.error('Could not retrieve public key for contact:', contact.fullUsername);
-                Alert.alert('Error', `No se pudo obtener la clave pública para ${contact.fullUsername}. No se puede iniciar el chat cifrado.`);
+                Alert.alert(t('common.error'), t('contacts.errorStart'));
                 return;
             }
 
@@ -116,7 +118,7 @@ const ContactsScreen = ({ navigation }) => {
             });
         } catch (error) {
             console.error('Error starting conversation with contact:', error);
-            Alert.alert('Error', 'No se pudo iniciar la conversación');
+            Alert.alert(t('common.error'), t('contacts.errorStart'));
         }
     };
 
@@ -141,7 +143,7 @@ const ContactsScreen = ({ navigation }) => {
         <SafeAreaView style={styles.container} edges={['top']}>
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Contactos</Text>
+                <Text style={styles.headerTitle}>{t('contacts.title')}</Text>
                 <View style={styles.headerButtons}>
                     <TouchableOpacity
                         style={styles.headerButton}
@@ -173,17 +175,17 @@ const ContactsScreen = ({ navigation }) => {
             ) : contacts.length === 0 ? (
                 <View style={styles.centerContainer}>
                     <Text style={styles.emptyText}>
-                        No tienes contactos aún
+                                {t('contacts.emptyTitle')}
                     </Text>
                     <Text style={styles.emptySubtext}>
-                        Agrega contactos para comenzar a  chatear de forma cifrada
+                                {t('contacts.emptySubtitle')}
                     </Text>
                     <TouchableOpacity
                         style={styles.emptyButton}
                         onPress={() => navigation.navigate('AddContact')}
                         activeOpacity={0.7}
                     >
-                        <Text style={styles.emptyButtonText}>+ Agregar Contacto</Text>
+                                <Text style={styles.emptyButtonText}>+ {t('contacts.addContact')}</Text>
                     </TouchableOpacity>
                 </View>
             ) : (

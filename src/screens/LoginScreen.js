@@ -16,16 +16,18 @@ import {
 } from 'react-native';
 import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const LoginScreen = ({ navigation }) => {
     const [username, setUsername] = useState('');
     const [loading, setLoading] = useState(false);
+    const { t } = useTranslation();
 
     const handleJoinChat = async () => {
         const trimmedUsername = username.trim();
 
         if (!trimmedUsername) {
-            Alert.alert('Error', 'Por favor ingresa tu nombre de usuario');
+            Alert.alert(t('common.error'), t('login.errors.empty'));
             return;
         }
 
@@ -33,12 +35,10 @@ const LoginScreen = ({ navigation }) => {
             setLoading(true);
 
             // Register user with backend (creates or retrieves user with discriminator)
-            console.log('Registering user:', trimmedUsername);
             const user = await AuthService.registerUser(trimmedUsername);
-            console.log('User registered:', user);
 
             if (!user) {
-                throw new Error('No se recibió información del usuario');
+                throw new Error(t('login.errors.noUser'));
             }
 
             // Navigate to main tabs (Chats is the default screen)
@@ -47,7 +47,7 @@ const LoginScreen = ({ navigation }) => {
             });
         } catch (error) {
             console.error('Error during registration:', error);
-            Alert.alert('Error', 'No se pudo conectar con el servidor. Verifica tu conexión.');
+            Alert.alert(t('common.error'), t('login.errors.server'));
         } finally {
             setLoading(false);
         }
@@ -60,15 +60,15 @@ const LoginScreen = ({ navigation }) => {
         >
             <View style={styles.content}>
                 <View style={styles.header}>
-                    <Text style={styles.title}>Chat-Ti</Text>
-                    <Text style={styles.subtitle}>Bienvenido al chat</Text>
+                    <Text style={styles.title}>{t('login.title')}</Text>
+                    <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
                 </View>
 
                 <View style={styles.form}>
-                    <Text style={styles.label}>Nombre de usuario</Text>
+                    <Text style={styles.label}>{t('login.usernameLabel')}</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="Tu nombre"
+                        placeholder={t('login.usernamePlaceholder')}
                         placeholderTextColor={colors.placeholder}
                         value={username}
                         onChangeText={setUsername}
@@ -89,14 +89,14 @@ const LoginScreen = ({ navigation }) => {
                         {loading ? (
                             <ActivityIndicator color={colors.textInverse} />
                         ) : (
-                            <Text style={styles.buttonText}>Continuar</Text>
+                            <Text style={styles.buttonText}>{t('login.join')}</Text>
                         )}
                     </TouchableOpacity>
                 </View>
 
                 <View style={styles.footer}>
                     <Text style={styles.footerText}>
-                        Al unirte, aceptas las reglas del chat
+                        {t('login.footer')}
                     </Text>
                 </View>
             </View>

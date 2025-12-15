@@ -10,6 +10,7 @@ import * as Notifications from 'expo-notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import GlobalNotificationService from './src/services/GlobalNotificationService';
 import AuthService from './src/services/AuthService';
+import { LanguageProvider } from './src/i18n';
 
 export default function App() {
   const notificationListener = useRef();
@@ -75,9 +76,9 @@ export default function App() {
   }, []);
 
   return (
-    <>
+    <LanguageProvider>
       <AppNavigator />
       <StatusBar style="light" />
-    </>
+    </LanguageProvider>
   );
 }

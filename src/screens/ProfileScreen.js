@@ -18,11 +18,13 @@ import AuthService from '../services/AuthService';
 import ApiService from '../services/ApiService';
 import NotificationService from '../services/NotificationService';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const ProfileScreen = ({ navigation }) => {
     const [user, setUser] = useState(null);
     const [deviceId, setDeviceId] = useState('');
     const [loading, setLoading] = useState(true);
+    const { t, language, setLanguage } = useTranslation();
 
     useEffect(() => {
         loadUserProfile();
@@ -37,13 +39,12 @@ const ProfileScreen = ({ navigation }) => {
             console.log('Profile - User:', currentUser);
             console.log('Profile - DeviceId:', currentDeviceId);
 
-            // Si no hay usuario, redirigir a login
             if (!currentUser) {
                 Alert.alert(
-                    'Sesión no encontrada',
-                    'Necesitas iniciar sesión primero',
+                    t('profile.sessionMissingTitle'),
+                    t('profile.sessionMissingMessage'),
                     [{
-                        text: 'OK',
+                        text: t('common.ok'),
                         onPress: () => {
                             navigation.reset({
                                 index: 0,
@@ -67,21 +68,21 @@ const ProfileScreen = ({ navigation }) => {
     const copyDeviceId = async () => {
         if (deviceId) {
             await Clipboard.setStringAsync(deviceId);
-            Alert.alert('Copiado', 'ID de dispositivo copiado al portapapeles');
+            Alert.alert(t('common.ok'), t('common.copy'));
         }
     };
 
     const handleDeleteAccount = async () => {
         Alert.alert(
-            'Eliminar cuenta',
-            '¿Estás seguro de que quieres eliminar tu cuenta?\n\nEsta acción:\n• Eliminará todos tus chats privados\n• Eliminará tu usuario\n• Es irreversible',
+            t('profile.deleteTitle'),
+            t('profile.deleteMessage'),
             [
                 {
-                    text: 'Cancelar',
+                    text: t('common.cancel'),
                     style: 'cancel'
                 },
                 {
-                    text: 'Eliminar cuenta',
+                    text: t('profile.deleteConfirm'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -98,7 +99,7 @@ const ProfileScreen = ({ navigation }) => {
                             });
                         } catch (error) {
                             console.error('Error deleting account:', error);
-                            Alert.alert('Error', 'No se pudo eliminar la cuenta. Inténtalo de nuevo.');
+                            Alert.alert(t('common.error'), t('profile.deleteError'));
                             setLoading(false);
                         }
                     }
@@ -112,7 +113,7 @@ const ProfileScreen = ({ navigation }) => {
             <SafeAreaView style={styles.container}>
                 <View style={styles.centerContainer}>
                     <ActivityIndicator size="large" color={colors.primary} />
-                    <Text style={styles.loadingText}>Cargando perfil...</Text>
+                    <Text style={styles.loadingText}>{t('profile.loading')}</Text>
                 </View>
             </SafeAreaView>
         );
@@ -127,7 +128,32 @@ const ProfileScreen = ({ navigation }) => {
         <SafeAreaView style={styles.container} edges={['top']}>
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Mi Perfil</Text>
+                <Text style={styles.headerTitle}>{t('profile.title')}</Text>
+            </View>
+            <View style={styles.languageRow}>
+                {[
+                    { code: 'en', label: 'English' },
+                    { code: 'es', label: 'Español' },
+                    { code: 'ar', label: 'العربية' },
+                ].map((lang) => (
+                    <TouchableOpacity
+                        key={lang.code}
+                        style={[
+                            styles.langButton,
+                            language === lang.code && styles.langButtonActive
+                        ]}
+                        onPress={() => setLanguage(lang.code)}
+                    >
+                        <Text
+                            style={[
+                                styles.langButtonText,
+                                language === lang.code && styles.langButtonTextActive
+                            ]}
+                        >
+                            {lang.label}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
             </View>
             <ScrollView contentContainerStyle={styles.content}>
                 {/* Avatar */}
@@ -141,18 +167,18 @@ const ProfileScreen = ({ navigation }) => {
 
                 {/* Username */}
                 <Text style={styles.username}>{user.fullUsername}</Text>
-                <Text style={styles.label}>Usuario</Text>
+                <Text style={styles.label}>{t('profile.user')}</Text>
 
                 {/* Device ID Section */}
                 <View style={styles.card}>
-                    <Text style={styles.cardTitle}>ID Único de Dispositivo</Text>
+                    <Text style={styles.cardTitle}>{t('profile.deviceIdTitle')}</Text>
                     <Text style={styles.cardDescription}>
-                        Comparte este ID con otros usuarios para que puedan agregarte como contacto
+                        {t('profile.deviceIdDescription')}
                     </Text>
 
                     <View style={styles.deviceIdContainer}>
                         <Text style={styles.deviceIdText} selectable>
-                            {deviceId || 'Cargando...'}
+                            {deviceId || t('profile.deviceIdPlaceholder')}
                         </Text>
                     </View>
 
@@ -162,13 +188,13 @@ const ProfileScreen = ({ navigation }) => {
                         activeOpacity={0.7}
                         disabled={!deviceId}
                     >
-                        <Text style={styles.copyButtonText}>📋 Copiar ID</Text>
+                        <Text style={styles.copyButtonText}>{t('profile.copy')}</Text>
                     </TouchableOpacity>
                 </View>
 
                 {/* Stats Section */}
                 <View style={styles.statsCard}>
-                    <Text style={styles.cardTitle}>Información</Text>
+                    <Text style={styles.cardTitle}>{t('profile.info')}</Text>
                     <View style={styles.statsRow}>
                         <View style={styles.stat}>
                             <Text style={styles.statLabel}>User ID</Text>
@@ -187,13 +213,13 @@ const ProfileScreen = ({ navigation }) => {
                         await notificationService.initialize();
                         const success = await notificationService.testNotification();
                         Alert.alert(
-                            success ? 'Notificación enviada' : 'Error',
-                            success ? 'Revisa si apareció la notificación' : 'No se pudo enviar la notificación'
+                            success ? t('profile.notificationTestSuccess') : t('common.error'),
+                            success ? t('profile.notificationTestSuccess') : t('profile.notificationTestError')
                         );
                     }}
                     activeOpacity={0.7}
                 >
-                    <Text style={styles.testButtonText}>🔔 Probar Notificaciones</Text>
+                    <Text style={styles.testButtonText}>{t('profile.notificationTestSend')}</Text>
                 </TouchableOpacity>
 
                 {/* Logout Button */}
@@ -202,7 +228,7 @@ const ProfileScreen = ({ navigation }) => {
                     onPress={handleDeleteAccount}
                     activeOpacity={0.7}
                 >
-                    <Text style={styles.logoutButtonText}>Eliminar Cuenta</Text>
+                    <Text style={styles.logoutButtonText}>{t('profile.logout')}</Text>
                 </TouchableOpacity>
             </ScrollView>
         </SafeAreaView>
@@ -235,6 +261,31 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    languageRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        backgroundColor: colors.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    langButton: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
+        backgroundColor: colors.inputBackground,
+    },
+    langButtonActive: {
+        backgroundColor: colors.primary,
+    },
+    langButtonText: {
+        color: colors.text,
+        fontWeight: '600',
+    },
+    langButtonTextActive: {
+        color: colors.textInverse,
     },
     loadingText: {
         fontSize: 16,

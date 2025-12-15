@@ -2,7 +2,7 @@
  * Room List Screen - Browse and create chat rooms
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     FlatList,
@@ -19,9 +19,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const RoomListScreen = ({ navigation, route }) => {
     const [username, setUsername] = useState(route.params?.username || null);
+    const { t, locale } = useTranslation();
 
     useEffect(() => {
         if (!username) {
@@ -63,7 +65,7 @@ const RoomListScreen = ({ navigation, route }) => {
             setHasMore(data.hasMore);
         } catch (error) {
             console.error('Error loading rooms:', error);
-            Alert.alert('Error', 'No se pudieron cargar las salas');
+            Alert.alert(t('common.error'), t('rooms.errors.load'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -88,7 +90,7 @@ const RoomListScreen = ({ navigation, route }) => {
 
     const handleCreateRoom = async () => {
         if (!newRoomName.trim()) {
-            Alert.alert('Error', 'Por favor ingresa un nombre para la sala');
+            Alert.alert(t('common.error'), t('rooms.errors.nameRequired'));
             return;
         }
 
@@ -111,7 +113,7 @@ const RoomListScreen = ({ navigation, route }) => {
             });
         } catch (error) {
             console.error('Error creating room:', error);
-            Alert.alert('Error', 'No se pudo crear la sala');
+            Alert.alert(t('common.error'), t('rooms.errors.create'));
         } finally {
             setCreating(false);
         }
@@ -135,14 +137,14 @@ const RoomListScreen = ({ navigation, route }) => {
                 <Text style={styles.roomName}>{item.name}</Text>
                 {item.isPrivate && (
                     <View style={styles.privateBadge}>
-                        <Text style={styles.privateBadgeText}>🔒 Privada</Text>
+                        <Text style={styles.privateBadgeText}>{t('rooms.private')}</Text>
                     </View>
                 )}
             </View>
             <View style={styles.roomFooter}>
-                <Text style={styles.roomOwner}>Creada por: {item.owner}</Text>
+                <Text style={styles.roomOwner}>{t('rooms.createdBy', { owner: item.owner })}</Text>
                 <Text style={styles.roomDate}>
-                    {new Date(item.createdAt).toLocaleDateString('es-ES', {
+                    {new Date(item.createdAt).toLocaleDateString(locale, {
                         day: 'numeric',
                         month: 'short',
                         hour: '2-digit',
@@ -155,8 +157,8 @@ const RoomListScreen = ({ navigation, route }) => {
 
     const renderEmpty = () => (
         <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No hay salas disponibles</Text>
-            <Text style={styles.emptySubtext}>¡Crea la primera sala!</Text>
+            <Text style={styles.emptyText}>{t('rooms.emptyTitle')}</Text>
+            <Text style={styles.emptySubtext}>{t('rooms.emptySubtitle')}</Text>
         </View>
     );
 
@@ -173,7 +175,7 @@ const RoomListScreen = ({ navigation, route }) => {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={styles.loadingText}>Cargando salas...</Text>
+                <Text style={styles.loadingText}>{t('rooms.loading')}</Text>
             </View>
         );
     }
@@ -181,8 +183,8 @@ const RoomListScreen = ({ navigation, route }) => {
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Salas de Chat</Text>
-                <Text style={styles.headerSubtitle}>Hola, {username}</Text>
+                <Text style={styles.headerTitle}>{t('rooms.headerTitle')}</Text>
+                <Text style={styles.headerSubtitle}>{t('rooms.headerSubtitle', { username })}</Text>
             </View>
 
             <FlatList
@@ -208,7 +210,7 @@ const RoomListScreen = ({ navigation, route }) => {
                 onPress={() => setModalVisible(true)}
                 activeOpacity={0.8}
             >
-                <Text style={styles.createButtonText}>+ Crear Sala</Text>
+                <Text style={styles.createButtonText}>{t('rooms.createButton')}</Text>
             </TouchableOpacity>
 
             {/* Create Room Modal */}
@@ -220,11 +222,11 @@ const RoomListScreen = ({ navigation, route }) => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Crear Nueva Sala</Text>
+                        <Text style={styles.modalTitle}>{t('rooms.modalTitle')}</Text>
 
                         <TextInput
                             style={styles.input}
-                            placeholder="Nombre de la sala"
+                            placeholder={t('rooms.inputPlaceholder')}
                             placeholderTextColor={colors.textLight}
                             value={newRoomName}
                             onChangeText={setNewRoomName}
@@ -241,7 +243,7 @@ const RoomListScreen = ({ navigation, route }) => {
                                 }}
                                 disabled={creating}
                             >
-                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                                <Text style={styles.cancelButtonText}>{t('rooms.cancel')}</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -252,7 +254,7 @@ const RoomListScreen = ({ navigation, route }) => {
                                 {creating ? (
                                     <ActivityIndicator size="small" color="#fff" />
                                 ) : (
-                                    <Text style={styles.confirmButtonText}>Crear</Text>
+                                    <Text style={styles.confirmButtonText}>{t('rooms.create')}</Text>
                                 )}
                             </TouchableOpacity>
                         </View>

@@ -21,6 +21,7 @@ import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import TypingIndicator from '../components/TypingIndicator';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 // Configuration - Set to false for local development
 const isProduction = true; // Change to false to test with local backend
@@ -30,6 +31,7 @@ const WORKER_URL = isProduction
 
 const ChatScreen = ({ route, navigation }) => {
     const { username, roomId, roomName } = route.params;
+    const { t } = useTranslation();
 
     // Estado para el offset
     const [androidOffset, setAndroidOffset] = useState(30);
@@ -69,7 +71,7 @@ const ChatScreen = ({ route, navigation }) => {
     useEffect(() => {
         // Set navigation header
         navigation.setOptions({
-            title: roomName || `Sala: ${roomId}`,
+            title: roomName || `${t('navigator.roomsBack')}: ${roomId}`,
             headerRight: () => (
                 <View style={styles.headerRight}>
                     <View style={[
@@ -77,12 +79,14 @@ const ChatScreen = ({ route, navigation }) => {
                         { backgroundColor: isConnected ? colors.connected : colors.disconnected }
                     ]} />
                     <Text style={styles.headerText}>
-                        {usersOnline} {usersOnline === 1 ? 'usuario' : 'usuarios'}
+                        {usersOnline === 1
+                            ? t('chat.userCountOne', { count: usersOnline })
+                            : t('chat.userCountOther', { count: usersOnline })}
                     </Text>
                 </View>
             ),
         });
-    }, [navigation, roomId, roomName, isConnected, usersOnline]);
+    }, [navigation, roomId, roomName, isConnected, usersOnline, t]);
 
     useEffect(() => {
         // Create chat service instance
@@ -150,8 +154,8 @@ const ChatScreen = ({ route, navigation }) => {
 
             const systemMessage = {
                 id: `system_${Date.now()}`,
-                username: 'Sistema',
-                content: `${data.username} se unió al chat`,
+                username: t('common.system'),
+                content: t('chat.joined', { username: data.username }),
                 timestamp: data.timestamp,
                 isSystem: true,
             };
@@ -166,8 +170,8 @@ const ChatScreen = ({ route, navigation }) => {
 
             const systemMessage = {
                 id: `system_${Date.now()}`,
-                username: 'Sistema',
-                content: `${data.username} salió del chat`,
+                username: t('common.system'),
+                content: t('chat.left', { username: data.username }),
                 timestamp: data.timestamp,
                 isSystem: true,
             };

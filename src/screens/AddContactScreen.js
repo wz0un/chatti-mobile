@@ -16,14 +16,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const AddContactScreen = ({ navigation }) => {
     const [deviceId, setDeviceId] = useState('');
     const [loading, setLoading] = useState(false);
+    const { t } = useTranslation();
 
     const handleSendRequest = async () => {
         if (!deviceId.trim()) {
-            Alert.alert('Error', 'Por favor ingresa un Device ID válido');
+            Alert.alert(t('common.error'), t('addContact.errors.empty'));
             return;
         }
 
@@ -34,13 +36,13 @@ const AddContactScreen = ({ navigation }) => {
             // Validate that user exists
             const recipient = await ApiService.getUserByDeviceId(deviceId.trim());
             if (!recipient) {
-                Alert.alert('Error', 'Usuario no encontrado con ese Device ID');
+                Alert.alert(t('common.error'), t('addContact.errors.notFound'));
                 return;
             }
 
             // Check if trying to add yourself
             if (recipient.userId === currentUser.userId) {
-                Alert.alert('Error', 'No puedes agregarte a ti mismo como contacto');
+                Alert.alert(t('common.error'), t('addContact.errors.self'));
                 return;
             }
 
@@ -52,11 +54,11 @@ const AddContactScreen = ({ navigation }) => {
             );
 
             Alert.alert(
-                'Solicitud enviada',
-                `Se ha enviado una solicitud de contacto a ${recipient.fullUsername}`,
+                t('addContact.successTitle'),
+                t('addContact.successMessage', { username: recipient.fullUsername }),
                 [
                     {
-                        text: 'OK',
+                        text: t('common.ok'),
                         onPress: () => navigation.goBack()
                     }
                 ]
@@ -66,7 +68,7 @@ const AddContactScreen = ({ navigation }) => {
 
         } catch (error) {
             console.error('Error sending contact request:', error);
-            Alert.alert('Error', error.message || 'No se pudo enviar la solicitud');
+            Alert.alert(t('common.error'), error.message || t('addContact.errors.send'));
         } finally {
             setLoading(false);
         }
@@ -75,23 +77,23 @@ const AddContactScreen = ({ navigation }) => {
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.content}>
-                <Text style={styles.title}>Agregar Contacto</Text>
+                <Text style={styles.title}>{t('addContact.title')}</Text>
                 <Text style={styles.description}>
-                    Para agregar un contacto, necesitas su ID único de dispositivo
+                    {t('addContact.description')}
                 </Text>
 
                 <View style={styles.stepBox}>
-                    <Text style={styles.stepTitle}>📋 Paso 1: Obtén el ID</Text>
+                    <Text style={styles.stepTitle}>{t('addContact.step1Title')}</Text>
                     <Text style={styles.stepText}>
-                        La otra persona debe ir a su Perfil (👤) y copiar su Device ID
+                        {t('addContact.step1Text')}
                     </Text>
                 </View>
 
                 <View style={styles.stepBox}>
-                    <Text style={styles.stepTitle}>✏️ Paso 2: Pega el ID aquí</Text>
+                    <Text style={styles.stepTitle}>{t('addContact.step2Title')}</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="Ejemplo: device_1234567890_abc123..."
+                        placeholder={t('addContact.placeholder')}
                         placeholderTextColor={colors.textLight}
                         value={deviceId}
                         onChangeText={setDeviceId}
@@ -111,17 +113,14 @@ const AddContactScreen = ({ navigation }) => {
                     {loading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={styles.sendButtonText}>✉️ Enviar Solicitud</Text>
+                            <Text style={styles.sendButtonText}>{t('addContact.send')}</Text>
                     )}
                 </TouchableOpacity>
 
                 <View style={styles.infoBox}>
-                    <Text style={styles.infoTitle}>💡 ¿Cómo funciona?</Text>
+                    <Text style={styles.infoTitle}>{t('addContact.infoTitle')}</Text>
                     <Text style={styles.infoText}>
-                        • Tu contacto recibirá una solicitud{'\n'}
-                        • Debe aceptarla en "📬 Solicitudes"{'\n'}
-                        • Una vez aceptada, podrán chatear cifrado 🔒{'\n'}
-                        • Solo los contactos aceptados pueden chatear
+                        {t('addContact.infoText')}
                     </Text>
                 </View>
             </View>

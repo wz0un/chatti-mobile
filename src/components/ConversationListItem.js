@@ -6,10 +6,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const ConversationListItem = ({ conversation, currentUserId, onPress, onLongPress }) => {
     // Get the other participant ID
     const otherUserId = conversation.participants.find(id => id !== currentUserId);
+    const { t, locale } = useTranslation();
 
     // Use enriched recipient data if available
     const displayName = conversation.recipient?.fullUsername || otherUserId;
@@ -26,19 +28,19 @@ const ConversationListItem = ({ conversation, currentUserId, onPress, onLongPres
         const diff = now - date;
 
         if (diff < 86400000) { // Less than 24 hours
-            return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
         } else if (diff < 604800000) { // Less than a week
-            return date.toLocaleDateString('es-ES', { weekday: 'short' });
+            return date.toLocaleDateString(locale, { weekday: 'short' });
         } else {
-            return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+            return date.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
         }
     };
 
     const getLastMessagePreview = () => {
         if (lastMessage) {
-            return lastMessage.content || 'Mensaje cifrado';
+            return lastMessage.content || t('conversations.previewEncrypted');
         }
-        return 'Toca para abrir chat cifrado';
+        return t('conversations.previewStart');
     };
 
     return (

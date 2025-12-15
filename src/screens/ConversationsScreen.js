@@ -20,12 +20,14 @@ import AuthService from '../services/AuthService';
 import ConversationListItem from '../components/ConversationListItem';
 import AppLogo from '../components/AppLogo';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const ConversationsScreen = ({ navigation }) => {
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         loadCurrentUser();
@@ -62,7 +64,7 @@ const ConversationsScreen = ({ navigation }) => {
             setConversations(result);
         } catch (error) {
             console.error('Error loading conversations:', error);
-            Alert.alert('Error', 'No se pudieron cargar las conversaciones');
+            Alert.alert(t('common.error'), t('conversations.errorLoad'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -92,12 +94,12 @@ const ConversationsScreen = ({ navigation }) => {
 
     const handleLongPress = (conversation) => {
         Alert.alert(
-            'Eliminar chat',
-            '¿Estás seguro de que quieres eliminar este chat?',
+            t('conversations.deleteTitle'),
+            t('conversations.deleteMessage'),
             [
-                { text: 'Cancelar', style: 'cancel' },
+                { text: t('conversations.deleteCancel'), style: 'cancel' },
                 {
-                    text: 'Eliminar',
+                    text: t('conversations.deleteConfirm'),
                     style: 'destructive',
                     onPress: () => deleteConversation(conversation.conversationId)
                 }
@@ -112,7 +114,7 @@ const ConversationsScreen = ({ navigation }) => {
             loadConversations();
         } catch (error) {
             console.error('Error deleting conversation:', error);
-            Alert.alert('Error', 'No se pudo eliminar el chat');
+            Alert.alert(t('common.error'), t('conversations.deleteError'));
         } finally {
             setLoading(false);
         }
@@ -143,7 +145,7 @@ const ConversationsScreen = ({ navigation }) => {
             <View style={styles.header}>
                 <View style={styles.headerContent}>
                     <AppLogo size={32} showText={false} />
-                    <Text style={styles.headerTitle}>Chat-Ti</Text>
+                    <Text style={styles.headerTitle}>{t('conversations.headerTitle')}</Text>
                 </View>
             </View>
 
@@ -155,10 +157,10 @@ const ConversationsScreen = ({ navigation }) => {
                 <View style={styles.centerContainer}>
                     <AppLogo size={80} showText={true} />
                     <Text style={styles.emptyText}>
-                        No tienes conversaciones activas
+                        {t('conversations.emptyTitle')}
                     </Text>
                     <Text style={styles.emptySubtext}>
-                        Ve a "Contactos" para iniciar un chat
+                        {t('conversations.emptySubtitle')}
                     </Text>
                 </View>
             ) : (

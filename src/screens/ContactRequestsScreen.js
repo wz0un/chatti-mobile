@@ -18,12 +18,14 @@ import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import ContactRequestItem from '../components/ContactRequestItem';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const ContactRequestsScreen = ({ navigation }) => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         loadCurrentUser();
@@ -49,7 +51,7 @@ const ContactRequestsScreen = ({ navigation }) => {
             setRequests(result);
         } catch (error) {
             console.error('Error loading requests:', error);
-            Alert.alert('Error', 'No se pudieron cargar las solicitudes');
+            Alert.alert(t('common.error'), t('contactRequests.errorLoad'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -66,11 +68,11 @@ const ContactRequestsScreen = ({ navigation }) => {
             await ApiService.acceptContactRequest(request.requestId, currentUser.userId);
 
             Alert.alert(
-                'Solicitud aceptada',
-                `${request.senderUsername} ha sido agregado a tus contactos. ¡Ahora pueden chatear de forma cifrada!`,
+                t('contactRequests.acceptTitle'),
+                t('contactRequests.acceptMessage', { username: request.senderUsername }),
                 [
                     {
-                        text: 'OK',
+                        text: t('common.ok'),
                         onPress: () => loadRequests()
                     }
                 ]
@@ -78,21 +80,21 @@ const ContactRequestsScreen = ({ navigation }) => {
 
         } catch (error) {
             console.error('Error accepting request:', error);
-            Alert.alert('Error', error.message || 'No se pudo aceptar la solicitud');
+            Alert.alert(t('common.error'), error.message || t('contactRequests.errorLoad'));
         }
     };
 
     const handleReject = async (request) => {
         Alert.alert(
-            'Rechazar solicitud',
-            `¿Estás seguro que deseas rechazar la solicitud de ${request.senderUsername}?`,
+            t('contactRequests.rejectTitle'),
+            t('contactRequests.rejectMessage', { username: request.senderUsername }),
             [
                 {
-                    text: 'Cancelar',
+                    text: t('common.cancel'),
                     style: 'cancel'
                 },
                 {
-                    text: 'Rechazar',
+                    text: t('contactRequests.rejectConfirm'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -100,7 +102,7 @@ const ContactRequestsScreen = ({ navigation }) => {
                             loadRequests();
                         } catch (error) {
                             console.error('Error rejecting request:', error);
-                            Alert.alert('Error', 'No se pudo rechazar la solicitud');
+                            Alert.alert(t('common.error'), t('contactRequests.rejectError'));
                         }
                     }
                 }
@@ -135,10 +137,10 @@ const ContactRequestsScreen = ({ navigation }) => {
             ) : requests.length === 0 ? (
                 <View style={styles.centerContainer}>
                     <Text style={styles.emptyText}>
-                        No tienes solicitudes pendientes
+                        {t('contactRequests.emptyTitle')}
                     </Text>
                     <Text style={styles.emptySubtext}>
-                        Las solicitudes enviadas por otros usuarios aparecerán aquí
+                        {t('contactRequests.emptySubtitle')}
                     </Text>
                 </View>
             ) : (

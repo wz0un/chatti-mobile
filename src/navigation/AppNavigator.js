@@ -14,6 +14,7 @@ import DirectMessageScreen from '../screens/DirectMessageScreen';
 import TabNavigator from './TabNavigator';
 import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +22,7 @@ const AppNavigator = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [initialRoute, setInitialRoute] = useState('Login');
     const [initialParams, setInitialParams] = useState(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         checkAuth();
@@ -66,7 +68,7 @@ const AppNavigator = () => {
                     name="Login"
                     component={LoginScreen}
                     options={{
-                        title: 'Chat-Ti',
+                        title: t('common.appName'),
                         headerShown: false,
                     }}
                 />
@@ -82,30 +84,30 @@ const AppNavigator = () => {
                     name="Chat"
                     component={ChatScreen}
                     options={{
-                        headerBackTitle: 'Salas',
+                        headerBackTitle: t('navigator.roomsBack'),
                     }}
                 />
                 <Stack.Screen
                     name="AddContact"
                     component={AddContactScreen}
                     options={{
-                        title: 'Agregar Contacto',
-                        headerBackTitle: 'Atrás',
+                        title: t('navigator.addContact'),
+                        headerBackTitle: t('navigator.back'),
                     }}
                 />
                 <Stack.Screen
                     name="ContactRequests"
                     component={ContactRequestsScreen}
                     options={{
-                        title: 'Solicitudes de Contacto',
-                        headerBackTitle: 'Atrás',
+                        title: t('navigator.contactRequests'),
+                        headerBackTitle: t('navigator.back'),
                     }}
                 />
                 <Stack.Screen
                     name="DirectMessage"
                     component={DirectMessageScreen}
                     options={{
-                        headerBackTitle: 'Atrás',
+                        headerBackTitle: t('navigator.back'),
                     }}
                 />
             </Stack.Navigator>

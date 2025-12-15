@@ -11,11 +11,13 @@ import ContactsScreen from '../screens/ContactsScreen';
 import RoomListScreen from '../screens/RoomListScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const Tab = createBottomTabNavigator();
 
 const TabNavigator = () => {
     const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
     
     // Calculate bottom padding for Android navigation bar
     const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 8) : 8;
@@ -43,7 +45,7 @@ const TabNavigator = () => {
                     tabBarIcon: ({ color, size }) => (
                         <Text style={{ fontSize: size, color }}>💬</Text>
                     ),
-                    tabBarLabel: 'Chats',
+                    tabBarLabel: t('tabs.chats'),
                 }}
             />
             <Tab.Screen
@@ -53,7 +55,7 @@ const TabNavigator = () => {
                     tabBarIcon: ({ color, size }) => (
                         <Text style={{ fontSize: size, color }}>👥</Text>
                     ),
-                    tabBarLabel: 'Contactos',
+                    tabBarLabel: t('tabs.contacts'),
                 }}
             />
             <Tab.Screen
@@ -63,7 +65,7 @@ const TabNavigator = () => {
                     tabBarIcon: ({ color, size }) => (
                         <Text style={{ fontSize: size, color }}>🏠</Text>
                     ),
-                    tabBarLabel: 'Salas',
+                    tabBarLabel: t('tabs.rooms'),
                 }}
             />
             <Tab.Screen
@@ -73,7 +75,7 @@ const TabNavigator = () => {
                     tabBarIcon: ({ color, size }) => (
                         <Text style={{ fontSize: size, color }}>👤</Text>
                     ),
-                    tabBarLabel: 'Perfil',
+                    tabBarLabel: t('tabs.profile'),
                 }}
             />
         </Tab.Navigator>

@@ -4,6 +4,7 @@
  */
 
 import * as Notifications from 'expo-notifications';
+import { getTranslator } from '../i18n';
 import { Platform, AppState } from 'react-native';
 
 // Configure how notifications are shown when app is in foreground
@@ -162,10 +163,11 @@ class NotificationService {
         if (!this.permissionGranted) return;
 
         try {
+            const translate = await getTranslator();
             await Notifications.scheduleNotificationAsync({
                 content: {
-                    title: `👋 ${username} se unió`,
-                    body: `${username} se ha unido al chat`,
+                    title: translate('notifications.joinTitle', { username }),
+                    body: translate('notifications.joinBody', { username }),
                     data: {
                         roomId,
                         type: 'user_joined',
@@ -189,10 +191,11 @@ class NotificationService {
         if (!this.permissionGranted) return;
 
         try {
+            const translate = await getTranslator();
             await Notifications.scheduleNotificationAsync({
                 content: {
-                    title: `👋 ${username} left`,
-                    body: `${username} has left the chat`,
+                    title: translate('notifications.leftTitle', { username }),
+                    body: translate('notifications.leftBody', { username }),
                     data: {
                         roomId,
                         type: 'user_left',
