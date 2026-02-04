@@ -125,7 +125,12 @@ class EncryptionService {
 
             // Check if we already have it
             if (this.sharedSecrets.has(otherUserId)) {
-                return this.sharedSecrets.get(otherUserId);
+                const cached = this.sharedSecrets.get(otherUserId);
+                // Only return cached secret if the public key matches
+                if (cached.publicKey === otherPublicKeyHex) {
+                    return cached.secret;
+                }
+                console.log(`Public key changed for user ${otherUserId}, deriving new secret`);
             }
 
             if (!otherPublicKeyHex) {
@@ -156,7 +161,11 @@ class EncryptionService {
                 secretBigInt.toString(16)
             );
 
-            this.sharedSecrets.set(otherUserId, sharedSecret);
+            // Store secret AND the public key used to derive it
+            this.sharedSecrets.set(otherUserId, {
+                secret: sharedSecret,
+                publicKey: otherPublicKeyHex
+            });
 
             console.log(`Derived shared secret with user ${otherUserId.substring(0, 12)}...`);
             return sharedSecret;

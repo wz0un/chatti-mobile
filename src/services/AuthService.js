@@ -58,10 +58,10 @@ class AuthService {
         return `device_${timestamp}_${Math.abs(deviceHash)}_${random}`;
     }
     /**
-     * Register or login user
+     * Register new user with username and password
      * Returns user object with discriminator
      */
-    static async registerUser(username) {
+    static async registerUser(username, password) {
         try {
             const deviceId = await this.getDeviceId();
 
@@ -80,6 +80,7 @@ class AuthService {
                 },
                 body: JSON.stringify({
                     username: username.trim(),
+                    password,
                     deviceId,
                     expoPushToken,
                     publicKey,
@@ -87,7 +88,8 @@ class AuthService {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
@@ -102,6 +104,54 @@ class AuthService {
             return data.user;
         } catch (error) {
             console.error('Error registering user:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Login user with username#discriminator and password
+     * Returns user object
+     */
+    static async loginUser(fullUsername, password) {
+        try {
+            // Get Push Token
+            const notificationService = new NotificationService();
+            const expoPushToken = await notificationService.getExpoPushToken();
+
+            // Get Encryption Public Key
+            await EncryptionService.initialize();
+            const publicKey = await EncryptionService.getPublicKey();
+
+            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    fullUsername: fullUsername.trim(),
+                    password,
+                    expoPushToken,
+                    publicKey,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to login');
+            }
+
+            // Save user data locally
+            await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+
+            return data.user;
+        } catch (error) {
+            console.error('Error logging in:', error);
             throw error;
         }
     }
