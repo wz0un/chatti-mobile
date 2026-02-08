@@ -14,6 +14,7 @@ import {
     StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import DirectMessageService from '../services/DirectMessageService';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
@@ -47,6 +48,19 @@ const DirectMessageScreen = ({ route, navigation }) => {
     const messageListRef = useRef([]);
     const flatListRef = useRef(null);
 
+    // Actualizar "Visto por última vez" para este destinatario
+    const updateLastSeen = async () => {
+        try {
+            const lastSeenStr = await AsyncStorage.getItem(`lastSeen_${userId}`) || '{}';
+            const lastSeen = JSON.parse(lastSeenStr);
+            lastSeen[recipientId] = Date.now();
+            await AsyncStorage.setItem(`lastSeen_${userId}`, JSON.stringify(lastSeen));
+            console.log('✅ Last seen updated for:', recipientId);
+        } catch (error) {
+            console.error('Error updating lastSeen:', error);
+        }
+    };
+
     // Detect navigation type (buttons vs gestures)
     useEffect(() => {
         if (Platform.OS === 'android') {
@@ -65,6 +79,9 @@ const DirectMessageScreen = ({ route, navigation }) => {
     }, []);
 
     useEffect(() => {
+        // Marcamos como visto al entrar
+        updateLastSeen();
+
         // Set navigation header
         navigation.setOptions({
             title: recipientUsername || `Chat con ${recipientId.substring(0, 8)}...`,
@@ -113,6 +130,7 @@ const DirectMessageScreen = ({ route, navigation }) => {
             console.log('Received DM history:', data.messages.length, 'messages');
             setMessageList(data.messages);
             messageListRef.current = data.messages;
+            updateLastSeen(); // Actualizar visto al recibir el historial
         });
 
         // Receive new message
@@ -126,6 +144,10 @@ const DirectMessageScreen = ({ route, navigation }) => {
                 }
                 const newList = [...currentList, data];
                 messageListRef.current = newList;
+
+                // Si el mensaje es para nosotros o somos parte de la sala activa, actualizamos visto
+                updateLastSeen();
+
                 return newList;
             });
         });

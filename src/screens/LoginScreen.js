@@ -2,7 +2,7 @@
  * Login Screen - Username/Password authentication with Login and Register tabs
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -11,8 +11,8 @@ import {
     StyleSheet,
     KeyboardAvoidingView,
     Platform,
-    Alert,
     ActivityIndicator,
+    Animated,
 } from 'react-native';
 import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
@@ -23,23 +23,38 @@ const LoginScreen = ({ navigation }) => {
     const [fullUsername, setFullUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [successInfo, setSuccessInfo] = useState('');
+
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+        }).start();
+    }, []);
 
     const handleLogin = async () => {
         const trimmedUsername = fullUsername.trim();
         const trimmedPassword = password.trim();
 
+        setError('');
+        setSuccessInfo('');
+
         if (!trimmedUsername) {
-            Alert.alert('Error', 'Por favor ingresa tu nombre de usuario completo (ej: usuario#1234)');
+            setError('Por favor, introduce tu usuario completo (ej: nombre#1234)');
             return;
         }
 
         if (!trimmedUsername.includes('#')) {
-            Alert.alert('Error', 'Formato inválido. Usa: nombre#1234');
+            setError('Formato inválido. Usa: nombre#1234');
             return;
         }
 
         if (!trimmedPassword) {
-            Alert.alert('Error', 'Por favor ingresa tu contraseña');
+            setError('Por favor, introduce tu contraseña');
             return;
         }
 
@@ -58,9 +73,9 @@ const LoginScreen = ({ navigation }) => {
             navigation.navigate('RoomList', {
                 username: user.fullUsername,
             });
-        } catch (error) {
-            console.error('Error during login:', error);
-            Alert.alert('Error', error.message || 'No se pudo iniciar sesión. Verifica tus credenciales.');
+        } catch (err) {
+            console.error('Error during login:', err);
+            setError(err.message || 'Error al iniciar sesión. Verifica tus credenciales.');
         } finally {
             setLoading(false);
         }
@@ -70,18 +85,21 @@ const LoginScreen = ({ navigation }) => {
         const trimmedUsername = username.trim();
         const trimmedPassword = password.trim();
 
+        setError('');
+        setSuccessInfo('');
+
         if (!trimmedUsername) {
-            Alert.alert('Error', 'Por favor ingresa tu nombre de usuario');
+            setError('Por favor, elige un nombre de usuario');
             return;
         }
 
         if (!trimmedPassword) {
-            Alert.alert('Error', 'Por favor ingresa tu contraseña');
+            setError('Por favor, crea una contraseña');
             return;
         }
 
         if (trimmedPassword.length < 6) {
-            Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+            setError('La contraseña debe tener al menos 6 caracteres');
             return;
         }
 
@@ -96,25 +114,19 @@ const LoginScreen = ({ navigation }) => {
                 throw new Error('No se recibió información del usuario');
             }
 
-            // Show the assigned username with discriminator
-            Alert.alert(
-                '¡Registro exitoso!',
-                `Tu nombre de usuario es: ${user.fullUsername}\n\nGuárdalo para iniciar sesión.`,
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => {
-                            // Navigate to room list
-                            navigation.navigate('RoomList', {
-                                username: user.fullUsername,
-                            });
-                        }
-                    }
-                ]
-            );
-        } catch (error) {
-            console.error('Error during registration:', error);
-            Alert.alert('Error', error.message || 'No se pudo registrar. Verifica tu conexión.');
+            // Show success message on screen
+            setSuccessInfo(`¡Registro exitoso! Tu usuario es: ${user.fullUsername}. Guárdalo para iniciar sesión.`);
+
+            // Automatically log in after 3 seconds
+            setTimeout(() => {
+                navigation.navigate('RoomList', {
+                    username: user.fullUsername,
+                });
+            }, 3000);
+
+        } catch (err) {
+            console.error('Error during registration:', err);
+            setError(err.message || 'Error al registrarse. Intenta con otro nombre.');
         } finally {
             setLoading(false);
         }
@@ -125,25 +137,33 @@ const LoginScreen = ({ navigation }) => {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <View style={styles.content}>
+            <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
                 <View style={styles.header}>
                     <Text style={styles.title}>Chat-ti</Text>
-                    <Text style={styles.subtitle}>Bienvenido al chat</Text>
+                    <Text style={styles.subtitle}>Comunicación segura y privada</Text>
                 </View>
 
                 {/* Tabs */}
                 <View style={styles.tabContainer}>
                     <TouchableOpacity
                         style={[styles.tab, activeTab === 'login' && styles.activeTab]}
-                        onPress={() => setActiveTab('login')}
+                        onPress={() => {
+                            setActiveTab('login');
+                            setError('');
+                            setSuccessInfo('');
+                        }}
                     >
                         <Text style={[styles.tabText, activeTab === 'login' && styles.activeTabText]}>
-                            Iniciar Sesión
+                            Entrar
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.tab, activeTab === 'register' && styles.activeTab]}
-                        onPress={() => setActiveTab('register')}
+                        onPress={() => {
+                            setActiveTab('register');
+                            setError('');
+                            setSuccessInfo('');
+                        }}
                     >
                         <Text style={[styles.tabText, activeTab === 'register' && styles.activeTabText]}>
                             Registrarse
@@ -154,10 +174,10 @@ const LoginScreen = ({ navigation }) => {
                 {/* Login Form */}
                 {activeTab === 'login' && (
                     <View style={styles.form}>
-                        <Text style={styles.label}>Nombre de usuario completo</Text>
+                        <Text style={styles.label}>Usuario completo</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="usuario#1234"
+                            placeholder="nombre#1234"
                             placeholderTextColor={colors.placeholder}
                             value={fullUsername}
                             onChangeText={setFullUsername}
@@ -178,6 +198,8 @@ const LoginScreen = ({ navigation }) => {
                             autoCorrect={false}
                             editable={!loading}
                         />
+
+                        {error && <Text style={styles.errorText}>{error}</Text>}
 
                         <TouchableOpacity
                             style={[
@@ -202,7 +224,7 @@ const LoginScreen = ({ navigation }) => {
                         <Text style={styles.label}>Nombre de usuario</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Tu nombre"
+                            placeholder="Elige un nombre"
                             placeholderTextColor={colors.placeholder}
                             value={username}
                             onChangeText={setUsername}
@@ -225,6 +247,9 @@ const LoginScreen = ({ navigation }) => {
                             editable={!loading}
                         />
 
+                        {error && <Text style={styles.errorText}>{error}</Text>}
+                        {successInfo && <Text style={styles.successText}>{successInfo}</Text>}
+
                         <TouchableOpacity
                             style={[
                                 styles.button,
@@ -236,7 +261,7 @@ const LoginScreen = ({ navigation }) => {
                             {loading ? (
                                 <ActivityIndicator color={colors.textInverse} />
                             ) : (
-                                <Text style={styles.buttonText}>Registrarse</Text>
+                                <Text style={styles.buttonText}>Crear Cuenta</Text>
                             )}
                         </TouchableOpacity>
                     </View>
@@ -244,10 +269,12 @@ const LoginScreen = ({ navigation }) => {
 
                 <View style={styles.footer}>
                     <Text style={styles.footerText}>
-                        Al continuar, aceptas las reglas del chat
+                        {activeTab === 'login'
+                            ? 'Necesitas tu nombre y el #identificador que se te asignó al registrarte.'
+                            : 'Se te asignará un identificador único (ej: usuario#1234) para que otros te agreguen.'}
                     </Text>
                 </View>
-            </View>
+            </Animated.View>
         </KeyboardAvoidingView>
     );
 };
@@ -264,37 +291,52 @@ const styles = StyleSheet.create({
     },
     header: {
         alignItems: 'center',
-        marginBottom: 32,
+        marginBottom: 40,
     },
     title: {
-        fontSize: 48,
+        fontSize: 56,
         fontWeight: 'bold',
         color: colors.primary,
         marginBottom: 8,
+        textShadowColor: 'rgba(255, 107, 53, 0.3)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 10,
     },
     subtitle: {
-        fontSize: 18,
+        fontSize: 16,
         color: colors.textLight,
+        fontWeight: '500',
     },
     tabContainer: {
         flexDirection: 'row',
-        marginBottom: 24,
-        borderRadius: 12,
+        marginBottom: 32,
+        borderRadius: 16,
         backgroundColor: colors.surface,
-        padding: 4,
+        padding: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
     },
     tab: {
         flex: 1,
-        paddingVertical: 12,
+        paddingVertical: 14,
         alignItems: 'center',
-        borderRadius: 8,
+        borderRadius: 12,
+        transition: 'all 0.3s ease',
     },
     activeTab: {
         backgroundColor: colors.primary,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
     },
     tabText: {
-        fontSize: 14,
-        fontWeight: '600',
+        fontSize: 15,
+        fontWeight: '700',
         color: colors.textLight,
     },
     activeTabText: {
@@ -312,39 +354,81 @@ const styles = StyleSheet.create({
     },
     input: {
         backgroundColor: colors.surface,
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+        borderRadius: 14,
+        paddingHorizontal: 18,
+        paddingVertical: 14,
         fontSize: 16,
         color: colors.text,
         marginBottom: 20,
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: colors.border,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    errorText: {
+        color: '#e74c3c',
+        fontSize: 13,
+        marginTop: -12,
+        marginBottom: 16,
+        marginLeft: 4,
+        fontWeight: '600',
+        backgroundColor: '#ffe6e6',
+        padding: 10,
+        borderRadius: 8,
+        borderLeftWidth: 4,
+        borderLeftColor: '#e74c3c',
+    },
+    successText: {
+        color: '#27ae60',
+        fontSize: 13,
+        marginTop: -12,
+        marginBottom: 16,
+        marginLeft: 4,
+        fontWeight: '600',
+        backgroundColor: '#e8f8f5',
+        padding: 12,
+        borderRadius: 8,
+        borderLeftWidth: 4,
+        borderLeftColor: '#27ae60',
+        lineHeight: 20,
     },
     button: {
         backgroundColor: colors.primary,
-        borderRadius: 12,
+        borderRadius: 14,
         paddingVertical: 16,
         alignItems: 'center',
         marginTop: 8,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 5,
     },
     buttonDisabled: {
         backgroundColor: colors.inputBackground,
-        opacity: 0.6,
+        opacity: 0.5,
+        shadowOpacity: 0,
+        elevation: 0,
     },
     buttonText: {
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: 'bold',
         color: colors.textInverse,
     },
     footer: {
         alignItems: 'center',
-        marginTop: 24,
+        marginTop: 32,
+        paddingHorizontal: 16,
     },
     footerText: {
         fontSize: 12,
         color: colors.textLight,
         textAlign: 'center',
+        lineHeight: 18,
+        fontStyle: 'italic',
     },
 });
 
