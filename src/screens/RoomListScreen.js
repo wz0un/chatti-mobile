@@ -2,7 +2,7 @@
  * Room List Screen - Browse and create chat rooms
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     FlatList,
@@ -16,19 +16,26 @@ import {
     Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
 
 const RoomListScreen = ({ navigation, route }) => {
     const [username, setUsername] = useState(route.params?.username || null);
+    const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
         if (!username) {
             AuthService.getCurrentUser().then(user => {
                 if (user) {
                     setUsername(user.fullUsername);
+                    setCurrentUser(user);
                 }
+            });
+        } else {
+            AuthService.getCurrentUser().then(user => {
+                setCurrentUser(user);
             });
         }
     }, []);
@@ -47,7 +54,7 @@ const RoomListScreen = ({ navigation, route }) => {
 
     useEffect(() => {
         loadRooms();
-    }, []);
+    }, [currentUser]);
 
     const loadRooms = async (isRefresh = false) => {
         try {
@@ -179,11 +186,23 @@ const RoomListScreen = ({ navigation, route }) => {
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['bottom']}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Salas de Chat</Text>
-                <Text style={styles.headerSubtitle}>Hola, {username}</Text>
-            </View>
+        <SafeAreaView style={styles.container} edges={['top']}>
+            <LinearGradient
+                colors={colors.primaryGradient}
+                style={styles.header}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+            >
+                <View style={styles.headerContent}>
+                    <View>
+                        <Text style={styles.headerTitle}>Chat-ti</Text>
+                        <Text style={styles.headerSubtitle}>Hola, {username}</Text>
+                    </View>
+                    <View style={styles.headerAvatar}>
+                        <Text style={styles.headerAvatarText}>{username?.charAt(0).toUpperCase()}</Text>
+                    </View>
+                </View>
+            </LinearGradient>
 
             <FlatList
                 data={rooms}
@@ -203,39 +222,19 @@ const RoomListScreen = ({ navigation, route }) => {
                 }
             />
 
-            {/* Navigation Buttons for DMs */}
-            <View style={styles.quickActions}>
-                <TouchableOpacity
-                    style={[styles.actionButton, styles.conversationsButton]}
-                    onPress={() => navigation.navigate('Conversations')}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.actionButtonText}>💬 Mis Chats</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.actionButton, styles.contactsButton]}
-                    onPress={() => navigation.navigate('Contacts')}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.actionButtonText}>👥 Contactos</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.actionButton, styles.profileButton]}
-                    onPress={() => navigation.navigate('Profile')}
-                    activeOpacity={0.8}
-                >
-                    <Text style={styles.actionButtonText}>👤 Perfil</Text>
-                </TouchableOpacity>
-            </View>
-
             <TouchableOpacity
-                style={styles.createButton}
+                style={styles.fabWrapper}
                 onPress={() => setModalVisible(true)}
-                activeOpacity={0.8}
+                activeOpacity={0.9}
             >
-                <Text style={styles.createButtonText}>+ Crear Sala</Text>
+                <LinearGradient
+                    colors={colors.primaryGradient}
+                    style={styles.fab}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <Text style={styles.fabIcon}>+</Text>
+                </LinearGradient>
             </TouchableOpacity>
 
             {/* Create Room Modal */}
@@ -304,35 +303,57 @@ const styles = StyleSheet.create({
     loadingText: {
         marginTop: 16,
         fontSize: 16,
-        color: colors.textLight,
+        color: colors.textSecondary,
     },
     header: {
-        padding: 20,
-        backgroundColor: colors.primary,
+        paddingHorizontal: 20,
+        paddingTop: 16,
+        paddingBottom: 20,
+    },
+    headerContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     headerTitle: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
         color: '#fff',
+        marginBottom: 4,
     },
     headerSubtitle: {
         fontSize: 14,
-        color: 'rgba(255,255,255,0.8)',
-        marginTop: 4,
+        color: 'rgba(255,255,255,0.9)',
+    },
+    headerAvatar: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.3)',
+    },
+    headerAvatarText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#fff',
     },
     listContent: {
         padding: 16,
+        paddingBottom: 100, // Adjusted padding for FAB
     },
     roomCard: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
+        backgroundColor: colors.surface,
+        borderRadius: 16,
         padding: 16,
         marginBottom: 12,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowColor: 'rgba(255, 107, 53, 0.3)',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 6,
+        elevation: 4,
     },
     roomHeader: {
         flexDirection: 'row',
@@ -348,12 +369,13 @@ const styles = StyleSheet.create({
     },
     privateBadge: {
         backgroundColor: colors.secondary,
-        paddingHorizontal: 8,
+        paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 4,
+        borderRadius: 12,
     },
     privateBadgeText: {
-        fontSize: 12,
+        fontSize: 11,
+        fontWeight: '600',
         color: '#fff',
     },
     roomFooter: {
@@ -362,12 +384,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     roomOwner: {
-        fontSize: 14,
-        color: colors.textLight,
+        fontSize: 13,
+        color: colors.textSecondary,
     },
     roomDate: {
         fontSize: 12,
-        color: colors.textLight,
+        color: colors.textTertiary,
     },
     emptyContainer: {
         alignItems: 'center',
@@ -376,60 +398,73 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 18,
-        color: colors.textLight,
+        fontWeight: '600',
+        color: colors.textSecondary,
         marginBottom: 8,
     },
     emptySubtext: {
         fontSize: 14,
-        color: colors.textLight,
+        color: colors.textTertiary,
     },
     footerLoader: {
         paddingVertical: 20,
         alignItems: 'center',
     },
-    createButton: {
+    // FAB (Floating Action Button)
+    fabWrapper: {
         position: 'absolute',
         bottom: 20,
         right: 20,
-        backgroundColor: colors.primary,
-        paddingHorizontal: 24,
-        paddingVertical: 16,
+    },
+    fab: {
+        width: 60,
+        height: 60,
         borderRadius: 30,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: 'rgba(255, 107, 53, 0.5)',
+        shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.25,
-        shadowRadius: 4,
+        shadowRadius: 16,
+        elevation: 12,
     },
-    createButtonText: {
+    fabIcon: {
         color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
+        fontSize: 32,
+        fontWeight: '300',
+        marginTop: -2,
     },
+    // Modal Styles
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
         justifyContent: 'center',
         alignItems: 'center',
     },
     modalContent: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
+        backgroundColor: colors.surface,
+        borderRadius: 20,
         padding: 24,
         width: '85%',
         maxWidth: 400,
+        shadowColor: 'rgba(255, 107, 53, 0.5)',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+        elevation: 12,
     },
     modalTitle: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
         color: colors.text,
         marginBottom: 20,
     },
     input: {
+        backgroundColor: colors.inputBackground,
         borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: 8,
-        padding: 12,
+        borderColor: colors.inputBorder,
+        borderRadius: 12,
+        padding: 14,
         fontSize: 16,
         color: colors.text,
         marginBottom: 20,
@@ -437,20 +472,19 @@ const styles = StyleSheet.create({
     modalButtons: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        gap: 12,
     },
     modalButton: {
         flex: 1,
-        paddingVertical: 12,
-        borderRadius: 8,
+        paddingVertical: 14,
+        borderRadius: 12,
         alignItems: 'center',
     },
     cancelButton: {
-        backgroundColor: colors.border,
-        marginRight: 8,
+        backgroundColor: colors.backgroundTertiary,
     },
     confirmButton: {
         backgroundColor: colors.primary,
-        marginLeft: 8,
     },
     cancelButtonText: {
         color: colors.text,
@@ -460,42 +494,7 @@ const styles = StyleSheet.create({
     confirmButtonText: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: '600',
-    },
-    quickActions: {
-        position: 'absolute',
-        bottom: 90,
-        left: 20,
-        right: 20,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    actionButton: {
-        flex: 1,
-        paddingHorizontal: 12,
-        paddingVertical: 14,
-        borderRadius: 25,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-        marginHorizontal: 4,
-    },
-    conversationsButton: {
-        backgroundColor: colors.secondary,
-    },
-    contactsButton: {
-        backgroundColor: '#4CAF50',
-    },
-    profileButton: {
-        backgroundColor: '#FF9800',
-    },
-    actionButtonText: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '600',
-        textAlign: 'center',
+        fontWeight: '700',
     },
 });
 

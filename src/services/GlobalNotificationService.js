@@ -45,7 +45,7 @@ class GlobalNotificationService {
      */
     handleAppStateChange(nextAppState) {
         console.log('App state changed to:', nextAppState);
-        
+
         if (nextAppState === 'background' || nextAppState === 'inactive') {
             // App went to background - notifications will now show
             console.log('📱 App in background - notifications enabled');
@@ -70,6 +70,10 @@ class GlobalNotificationService {
         } else if (data.type === 'encrypted_message' && data.conversationId) {
             // Navigate to DM conversation
             console.log('Navigate to conversation:', data.conversationId);
+        } else if (data.type === 'contact_request') {
+            // Navigate to requests list
+            console.log('Navigate to contact requests');
+            // Assuming we have access to navigation here or through a ref
         }
     }
 

@@ -1,5 +1,5 @@
 /**
- * App Navigator - React Navigation setup
+ * App Navigator - React Navigation setup with Bottom Tabs
  */
 
 import React, { useState, useEffect } from 'react';
@@ -7,13 +7,10 @@ import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/LoginScreen';
-import RoomListScreen from '../screens/RoomListScreen';
+import MainTabs from './MainTabs';
 import ChatScreen from '../screens/ChatScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import ContactsScreen from '../screens/ContactsScreen';
 import AddContactScreen from '../screens/AddContactScreen';
 import ContactRequestsScreen from '../screens/ContactRequestsScreen';
-import ConversationsScreen from '../screens/ConversationsScreen';
 import DirectMessageScreen from '../screens/DirectMessageScreen';
 import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
@@ -33,7 +30,7 @@ const AppNavigator = () => {
         try {
             const user = await AuthService.getCurrentUser();
             if (user) {
-                setInitialRoute('RoomList');
+                setInitialRoute('Main');
                 setInitialParams({ username: user.fullUsername });
             }
         } catch (error) {
@@ -74,34 +71,17 @@ const AppNavigator = () => {
                     }}
                 />
                 <Stack.Screen
-                    name="RoomList"
-                    component={RoomListScreen}
-                    initialParams={initialRoute === 'RoomList' ? initialParams : undefined}
+                    name="Main"
+                    component={MainTabs}
+                    initialParams={initialRoute === 'Main' ? initialParams : undefined}
                     options={{
-                        title: 'Salas',
-                        headerBackVisible: false,
+                        headerShown: false,
                     }}
                 />
                 <Stack.Screen
                     name="Chat"
                     component={ChatScreen}
                     options={{
-                        headerBackTitle: 'Salas',
-                    }}
-                />
-                <Stack.Screen
-                    name="Profile"
-                    component={ProfileScreen}
-                    options={{
-                        title: 'Mi Perfil',
-                        headerBackTitle: 'Atrás',
-                    }}
-                />
-                <Stack.Screen
-                    name="Contacts"
-                    component={ContactsScreen}
-                    options={{
-                        title: 'Contactos',
                         headerBackTitle: 'Atrás',
                     }}
                 />
@@ -118,14 +98,6 @@ const AppNavigator = () => {
                     component={ContactRequestsScreen}
                     options={{
                         title: 'Solicitudes de Contacto',
-                        headerBackTitle: 'Atrás',
-                    }}
-                />
-                <Stack.Screen
-                    name="Conversations"
-                    component={ConversationsScreen}
-                    options={{
-                        title: 'Chats Privados',
                         headerBackTitle: 'Atrás',
                     }}
                 />

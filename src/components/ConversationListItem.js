@@ -1,11 +1,12 @@
 /**
- * Conversation List Item Component
+ * Conversation List Item Component - Modern WhatsApp/Telegram Style
  * Displays a conversation in the conversations list
  */
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import colors from '../theme/colors';
+import { LinearGradient } from 'expo-linear-gradient';
+import colors, { spacing } from '../theme/colors';
 
 const ConversationListItem = ({ conversation, currentUserId, isUnread, onPress, onLongPress }) => {
     // Get the other participant ID
@@ -41,20 +42,37 @@ const ConversationListItem = ({ conversation, currentUserId, isUnread, onPress, 
 
     const msgTime = conversation.lastMessage?.timestamp || conversation.lastMessageTime || conversation.createdAt;
 
+    // Generate consistent color for avatar based on username
+    const getAvatarColor = (name) => {
+        const colors_list = ['#5865F2', '#7289DA', '#25D366', '#0088CC', '#F23F42', '#F0B232'];
+        const index = name.charCodeAt(0) % colors_list.length;
+        return colors_list[index];
+    };
+
     return (
         <TouchableOpacity
             style={[styles.container, isUnread && styles.unreadContainer]}
             onPress={onPress}
             onLongPress={onLongPress}
             delayLongPress={500}
-            activeOpacity={0.7}
+            activeOpacity={0.6}
         >
-            <View style={[styles.avatar, isUnread && styles.unreadAvatarOverlay]}>
-                <Text style={styles.avatarText}>{initial}</Text>
-                {isUnread && <View style={styles.unreadDot} />}
+            {/* Avatar with gradient */}
+            <View style={styles.avatarContainer}>
+                <LinearGradient
+                    colors={isUnread ? colors.primaryGradient : [getAvatarColor(displayName), getAvatarColor(displayName)]}
+                    style={styles.avatar}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <Text style={styles.avatarText}>{initial}</Text>
+                </LinearGradient>
+                {/* Online status indicator */}
+                <View style={styles.onlineIndicator} />
             </View>
 
-            <View style={styles.info}>
+            {/* Content */}
+            <View style={styles.content}>
                 <View style={styles.header}>
                     <Text style={[styles.username, isUnread && styles.unreadText]} numberOfLines={1}>
                         {displayName}
@@ -65,12 +83,12 @@ const ConversationListItem = ({ conversation, currentUserId, isUnread, onPress, 
                 </View>
 
                 <View style={styles.previewContainer}>
-                    <Text style={[styles.preview, isUnread && styles.unreadPreview]} numberOfLines={1}>
+                    <Text style={[styles.preview, isUnread && styles.unreadPreview]} numberOfLines={2}>
                         {lastMsg}
                     </Text>
                     {isUnread && (
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>Nuevo</Text>
+                        <View style={styles.unreadBadge}>
+                            <Text style={styles.unreadBadgeText}>•</Text>
                         </View>
                     )}
                 </View>
@@ -83,71 +101,71 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm + 4,
         backgroundColor: colors.surface,
-        borderBottomWidth: 1,
+        borderBottomWidth: 0.5,
         borderBottomColor: colors.border,
     },
     unreadContainer: {
-        backgroundColor: colors.surface, // Puede ser un tono ligerísimamente distinto si se desea
+        backgroundColor: colors.surfaceHover,
+    },
+    avatarContainer: {
+        position: 'relative',
+        marginRight: spacing.md,
     },
     avatar: {
-        width: 54,
-        height: 54,
-        borderRadius: 27,
-        backgroundColor: colors.secondary,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 14,
-        position: 'relative',
-        shadowColor: '#000',
+        shadowColor: 'rgba(255, 107, 53, 0.2)',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    unreadAvatarOverlay: {
-        backgroundColor: colors.primary, // Naranja para usuarios con mensajes nuevos
+        shadowRadius: 3,
+        elevation: 2,
     },
     avatarText: {
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: 'bold',
-        color: '#fff',
+        color: colors.textInverse,
     },
-    unreadDot: {
+    onlineIndicator: {
         position: 'absolute',
-        top: 2,
+        bottom: 2,
         right: 2,
         width: 14,
         height: 14,
         borderRadius: 7,
-        backgroundColor: colors.primary,
-        borderWidth: 2,
+        backgroundColor: colors.online,
+        borderWidth: 2.5,
         borderColor: colors.surface,
     },
-    info: {
+    content: {
         flex: 1,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: spacing.xs,
     },
     username: {
         fontSize: 16,
         fontWeight: '600',
         color: colors.text,
         flex: 1,
+        marginRight: spacing.sm,
     },
     unreadText: {
-        fontWeight: '800',
-        color: '#000',
+        fontWeight: 'bold',
+        color: colors.text,
     },
     timestamp: {
         fontSize: 12,
-        color: colors.textLight,
-        marginLeft: 8,
+        color: colors.textSecondary,
+        fontWeight: '400',
     },
     unreadTime: {
         color: colors.primary,
@@ -155,29 +173,33 @@ const styles = StyleSheet.create({
     },
     previewContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
+        justifyContent: 'space-between',
     },
     preview: {
         fontSize: 14,
-        color: colors.textLight,
+        color: colors.textSecondary,
         flex: 1,
-        marginRight: 8,
+        lineHeight: 18,
     },
     unreadPreview: {
         color: colors.text,
-        fontWeight: '600',
+        fontWeight: '500',
     },
-    badge: {
-        backgroundColor: colors.primary,
-        paddingHorizontal: 8,
-        paddingVertical: 2,
+    unreadBadge: {
+        width: 20,
+        height: 20,
         borderRadius: 10,
+        backgroundColor: colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: spacing.sm,
     },
-    badgeText: {
-        color: '#fff',
-        fontSize: 10,
+    unreadBadgeText: {
+        color: colors.textInverse,
+        fontSize: 12,
         fontWeight: 'bold',
+        marginTop: -4,
     },
 });
 

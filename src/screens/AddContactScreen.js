@@ -18,12 +18,17 @@ import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
 
 const AddContactScreen = ({ navigation }) => {
-    const [deviceId, setDeviceId] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSendRequest = async () => {
-        if (!deviceId.trim()) {
-            Alert.alert('Error', 'Por favor ingresa un Device ID válido');
+        if (!searchQuery.trim()) {
+            Alert.alert('Error', 'Por favor ingresa un nombre de usuario válido (ej. usuario#1234)');
+            return;
+        }
+
+        if (!searchQuery.includes('#')) {
+            Alert.alert('Error', 'El formato debe ser usuario#1234');
             return;
         }
 
@@ -31,10 +36,11 @@ const AddContactScreen = ({ navigation }) => {
             setLoading(true);
             const currentUser = await AuthService.getCurrentUser();
 
-            // Validate that user exists
-            const recipient = await ApiService.getUserByDeviceId(deviceId.trim());
+            // Find user by username#discriminator
+            const recipient = await ApiService.findUserByUsername(searchQuery.trim());
+
             if (!recipient) {
-                Alert.alert('Error', 'Usuario no encontrado con ese Device ID');
+                Alert.alert('Error', 'Usuario no encontrado');
                 return;
             }
 
@@ -44,10 +50,27 @@ const AddContactScreen = ({ navigation }) => {
                 return;
             }
 
+            // Check if already in contacts or has pending request
+            const contacts = await ApiService.getContactsList(currentUser.userId);
+            const incomingRequests = await ApiService.getContactRequests(currentUser.userId);
+
+            const isAlreadyContact = contacts.some(c => c.userId === recipient.userId);
+            const hasIncomingRequest = incomingRequests.some(r => r.senderId === recipient.userId);
+
+            if (isAlreadyContact) {
+                Alert.alert('Error', 'Este usuario ya está en tu lista de contactos');
+                return;
+            }
+
+            if (hasIncomingRequest) {
+                Alert.alert('Error', 'Este usuario ya te ha enviado una solicitud. Revisa tus solicitudes pendientes.');
+                return;
+            }
+
             // Send request
             await ApiService.sendContactRequest(
                 currentUser.userId,
-                deviceId.trim(),
+                recipient.deviceId,
                 currentUser.fullUsername
             );
 
@@ -62,7 +85,7 @@ const AddContactScreen = ({ navigation }) => {
                 ]
             );
 
-            setDeviceId('');
+            setSearchQuery('');
 
         } catch (error) {
             console.error('Error sending contact request:', error);
@@ -77,26 +100,24 @@ const AddContactScreen = ({ navigation }) => {
             <View style={styles.content}>
                 <Text style={styles.title}>Agregar Contacto</Text>
                 <Text style={styles.description}>
-                    Para agregar un contacto, necesitas su ID único de dispositivo
+                    Para agregar un contacto, ingresa su nombre de usuario y etiqueta
                 </Text>
 
                 <View style={styles.stepBox}>
-                    <Text style={styles.stepTitle}>📋 Paso 1: Obtén el ID</Text>
+                    <Text style={styles.stepTitle}>📋 Paso 1: Obtén el nombre</Text>
                     <Text style={styles.stepText}>
-                        La otra persona debe ir a su Perfil (👤) y copiar su Device ID
+                        Pide a tu amigo su nombre de usuario completo (ej. Alejandro#1234)
                     </Text>
                 </View>
 
                 <View style={styles.stepBox}>
-                    <Text style={styles.stepTitle}>✏️ Paso 2: Pega el ID aquí</Text>
+                    <Text style={styles.stepTitle}>✏️ Paso 2: Ingresa el nombre aquí</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="Ejemplo: device_1234567890_abc123..."
+                        placeholder="Ejemplo: usuario#1234"
                         placeholderTextColor={colors.textLight}
-                        value={deviceId}
-                        onChangeText={setDeviceId}
-                        multiline
-                        numberOfLines={3}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
                         autoCapitalize="none"
                         autoCorrect={false}
                     />
@@ -105,7 +126,7 @@ const AddContactScreen = ({ navigation }) => {
                 <TouchableOpacity
                     style={[styles.sendButton, loading && styles.sendButtonDisabled]}
                     onPress={handleSendRequest}
-                    disabled={loading || !deviceId.trim()}
+                    disabled={loading || !searchQuery.trim()}
                     activeOpacity={0.7}
                 >
                     {loading ? (
@@ -177,8 +198,6 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border,
         marginBottom: 16,
-        minHeight: 80,
-        textAlignVertical: 'top',
     },
     sendButton: {
         backgroundColor: colors.primary,

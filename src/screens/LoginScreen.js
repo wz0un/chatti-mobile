@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     errorText: {
-        color: '#e74c3c',
+        color: colors.error,
         fontSize: 13,
         marginTop: -12,
         marginBottom: 16,
@@ -379,10 +379,10 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 8,
         borderLeftWidth: 4,
-        borderLeftColor: '#e74c3c',
+        borderLeftColor: colors.error,
     },
     successText: {
-        color: '#27ae60',
+        color: colors.success,
         fontSize: 13,
         marginTop: -12,
         marginBottom: 16,
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
         padding: 12,
         borderRadius: 8,
         borderLeftWidth: 4,
-        borderLeftColor: '#27ae60',
+        borderLeftColor: colors.success,
         lineHeight: 20,
     },
     button: {

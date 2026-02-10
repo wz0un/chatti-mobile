@@ -1,5 +1,6 @@
 /**
- * Profile Screen - User profile with shareable device ID
+ * Profile Screen - Settings Menu Style
+ * Redesigned with modern UI/UX inspired by Telegram/WhatsApp
  */
 
 import React, { useState, useEffect } from 'react';
@@ -11,18 +12,52 @@ import {
     Alert,
     ScrollView,
     ActivityIndicator,
+    Image,
+    Switch
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
 import AuthService from '../services/AuthService';
 import ApiService from '../services/ApiService';
 import NotificationService from '../services/NotificationService';
-import colors from '../theme/colors';
+import colors, { spacing, borderRadius } from '../theme/colors';
+
+const SettingsItem = ({ icon, label, value, onPress, isDestructive, hasToggle, isToggled, onToggle }) => (
+    <TouchableOpacity
+        style={styles.settingsItem}
+        onPress={onPress}
+        disabled={hasToggle}
+        activeOpacity={0.7}
+    >
+        <View style={styles.settingsIconContainer}>
+            <Text style={styles.settingsIcon}>{icon}</Text>
+        </View>
+        <View style={styles.settingsContent}>
+            <Text style={[styles.settingsLabel, isDestructive && styles.destructiveLabel]}>
+                {label}
+            </Text>
+            {value && <Text style={styles.settingsValue}>{value}</Text>}
+        </View>
+        {hasToggle ? (
+            <Switch
+                value={isToggled}
+                onValueChange={onToggle}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={'#fff'}
+            />
+        ) : (
+            <Text style={styles.settingsArrow}>›</Text>
+        )}
+    </TouchableOpacity>
+);
 
 const ProfileScreen = ({ navigation }) => {
     const [user, setUser] = useState(null);
     const [deviceId, setDeviceId] = useState('');
     const [loading, setLoading] = useState(true);
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+    const [darkModeEnabled, setDarkModeEnabled] = useState(false);
 
     useEffect(() => {
         loadUserProfile();
@@ -34,24 +69,11 @@ const ProfileScreen = ({ navigation }) => {
             const currentUser = await AuthService.getCurrentUser();
             const currentDeviceId = await AuthService.getDeviceId();
 
-            console.log('Profile - User:', currentUser);
-            console.log('Profile - DeviceId:', currentDeviceId);
-
-            // Si no hay usuario, redirigir a login
             if (!currentUser) {
-                Alert.alert(
-                    'Sesión no encontrada',
-                    'Necesitas iniciar sesión primero',
-                    [{
-                        text: 'OK',
-                        onPress: () => {
-                            navigation.reset({
-                                index: 0,
-                                routes: [{ name: 'Login' }],
-                            });
-                        }
-                    }]
-                );
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                });
                 return;
             }
 
@@ -76,10 +98,7 @@ const ProfileScreen = ({ navigation }) => {
             'Eliminar cuenta',
             '¿Estás seguro de que quieres eliminar tu cuenta?\n\nEsta acción:\n• Eliminará todos tus chats privados\n• Eliminará tu usuario\n• Es irreversible',
             [
-                {
-                    text: 'Cancelar',
-                    style: 'cancel'
-                },
+                { text: 'Cancelar', style: 'cancel' },
                 {
                     text: 'Eliminar cuenta',
                     style: 'destructive',
@@ -90,15 +109,12 @@ const ProfileScreen = ({ navigation }) => {
                                 await ApiService.deleteAccount(user.userId, deviceId);
                             }
                             await AuthService.logout();
-
-                            // Reset navigation to login
                             navigation.reset({
                                 index: 0,
                                 routes: [{ name: 'Login' }],
                             });
                         } catch (error) {
-                            console.error('Error deleting account:', error);
-                            Alert.alert('Error', 'No se pudo eliminar la cuenta. Inténtalo de nuevo.');
+                            Alert.alert('Error', 'No se pudo eliminar la cuenta');
                             setLoading(false);
                         }
                     }
@@ -107,99 +123,135 @@ const ProfileScreen = ({ navigation }) => {
         );
     };
 
+    const handleLogout = async () => {
+        Alert.alert(
+            'Cerrar sesión',
+            '¿Estás seguro de que quieres cerrar sesión?',
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Cerrar sesión',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await AuthService.logout();
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'Login' }],
+                        });
+                    }
+                }
+            ]
+        );
+    };
+
     if (loading) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                    <Text style={styles.loadingText}>Cargando perfil...</Text>
-                </View>
-            </SafeAreaView>
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
         );
-    }
-
-    if (!user) {
-        // Este caso ya no debería llegar aquí porque redirigimos arriba
-        return null;
     }
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            <ScrollView contentContainerStyle={styles.content}>
-                {/* Avatar */}
-                <View style={styles.avatarContainer}>
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>
-                            {user.username?.charAt(0).toUpperCase() || '?'}
-                        </Text>
-                    </View>
-                </View>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>Ajustes</Text>
+            </View>
 
-                {/* Username */}
-                <Text style={styles.username}>{user.fullUsername}</Text>
-                <Text style={styles.label}>Usuario</Text>
-
-                {/* Device ID Section */}
-                <View style={styles.card}>
-                    <Text style={styles.cardTitle}>ID Único de Dispositivo</Text>
-                    <Text style={styles.cardDescription}>
-                        Comparte este ID con otros usuarios para que puedan agregarte como contacto
-                    </Text>
-
-                    <View style={styles.deviceIdContainer}>
-                        <Text style={styles.deviceIdText} selectable>
-                            {deviceId || 'Cargando...'}
-                        </Text>
-                    </View>
-
-                    <TouchableOpacity
-                        style={styles.copyButton}
-                        onPress={copyDeviceId}
-                        activeOpacity={0.7}
-                        disabled={!deviceId}
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+                {/* User Profile Card */}
+                <View style={styles.profileCard}>
+                    <LinearGradient
+                        colors={colors.primaryGradient}
+                        style={styles.avatarContainer}
                     >
-                        <Text style={styles.copyButtonText}>📋 Copiar ID</Text>
+                        <Text style={styles.avatarText}>
+                            {user?.username?.charAt(0).toUpperCase() || '?'}
+                        </Text>
+                    </LinearGradient>
+                    <View style={styles.profileInfo}>
+                        <Text style={styles.username}>{user?.fullUsername}</Text>
+                        <Text style={styles.userId}>@{user?.username}</Text>
+                    </View>
+                    <TouchableOpacity onPress={copyDeviceId} style={styles.qrButton}>
+                        <Text style={styles.qrIcon}>🆔</Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* Stats Section */}
-                <View style={styles.statsCard}>
-                    <Text style={styles.cardTitle}>Información</Text>
-                    <View style={styles.statsRow}>
-                        <View style={styles.stat}>
-                            <Text style={styles.statLabel}>User ID</Text>
-                            <Text style={styles.statValue} numberOfLines={1}>
-                                {user.userId?.substring(0, 12)}...
-                            </Text>
-                        </View>
-                    </View>
+                {/* Account Settings */}
+                <Text style={styles.sectionTitle}>Cuenta</Text>
+                <View style={styles.section}>
+                    <SettingsItem
+                        icon="🔑"
+                        label="ID de Dispositivo"
+                        value={deviceId ? `${deviceId.substring(0, 8)}...` : 'Cargando...'}
+                        onPress={copyDeviceId}
+                    />
+                    <SettingsItem
+                        icon="🔒"
+                        label="Privacidad y Seguridad"
+                        onPress={() => { }}
+                    />
                 </View>
 
-                {/* Test Notifications Button */}
-                <TouchableOpacity
-                    style={styles.testButton}
-                    onPress={async () => {
-                        const notificationService = new NotificationService();
-                        await notificationService.initialize();
-                        const success = await notificationService.testNotification();
-                        Alert.alert(
-                            success ? 'Notificación enviada' : 'Error',
-                            success ? 'Revisa si apareció la notificación' : 'No se pudo enviar la notificación'
-                        );
-                    }}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.testButtonText}>🔔 Probar Notificaciones</Text>
-                </TouchableOpacity>
+                {/* App Settings */}
+                <Text style={styles.sectionTitle}>Aplicación</Text>
+                <View style={styles.section}>
+                    <SettingsItem
+                        icon="🔔"
+                        label="Notificaciones"
+                        hasToggle
+                        isToggled={notificationsEnabled}
+                        onToggle={(v) => setNotificationsEnabled(v)}
+                    />
+                    <SettingsItem
+                        icon="🌙"
+                        label="Modo Oscuro"
+                        hasToggle
+                        isToggled={darkModeEnabled}
+                        onToggle={(v) => setDarkModeEnabled(v)}
+                    />
+                    <SettingsItem
+                        icon="🌐"
+                        label="Idioma"
+                        value="Español"
+                        onPress={() => { }}
+                    />
+                </View>
 
-                {/* Logout Button */}
-                <TouchableOpacity
-                    style={styles.logoutButton}
-                    onPress={handleDeleteAccount}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.logoutButtonText}>Eliminar Cuenta</Text>
-                </TouchableOpacity>
+                {/* Help & Support */}
+                <Text style={styles.sectionTitle}>Ayuda</Text>
+                <View style={styles.section}>
+                    <SettingsItem
+                        icon="❓"
+                        label="Preguntas Frecuentes"
+                        onPress={() => { }}
+                    />
+                    <SettingsItem
+                        icon="📝"
+                        label="Términos y Condiciones"
+                        onPress={() => { }}
+                    />
+                </View>
+
+                {/* Actions */}
+                <Text style={styles.sectionTitle}>Acciones</Text>
+                <View style={styles.section}>
+                    <SettingsItem
+                        icon="🚪"
+                        label="Cerrar Sesión"
+                        isDestructive
+                        onPress={handleLogout}
+                    />
+                    <SettingsItem
+                        icon="🗑️"
+                        label="Eliminar Cuenta"
+                        isDestructive
+                        onPress={handleDeleteAccount}
+                    />
+                </View>
+
+                <Text style={styles.version}>Versión 1.2.0 • Build 2026</Text>
             </ScrollView>
         </SafeAreaView>
     );
@@ -210,163 +262,145 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.background,
     },
-    centerContainer: {
+    loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: colors.background,
     },
-    loadingText: {
-        fontSize: 16,
-        color: colors.textLight,
-        marginTop: 12,
+    header: {
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        borderBottomWidth: 0.5,
+        borderBottomColor: colors.border,
+        backgroundColor: colors.surface,
     },
-    errorText: {
-        fontSize: 16,
-        color: '#FF3B30',
-        marginBottom: 16,
-    },
-    retryButton: {
-        backgroundColor: colors.primary,
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 8,
-    },
-    retryButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    content: {
-        padding: 20,
-    },
-    avatarContainer: {
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    avatar: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: colors.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    avatarText: {
-        fontSize: 40,
-        fontWeight: 'bold',
-        color: '#fff',
-    },
-    username: {
+    headerTitle: {
         fontSize: 24,
         fontWeight: 'bold',
         color: colors.text,
-        textAlign: 'center',
-        marginBottom: 4,
     },
-    label: {
-        fontSize: 14,
-        color: colors.textLight,
-        textAlign: 'center',
-        marginBottom: 24,
+    scrollContent: {
+        padding: 20,
+        paddingBottom: 40,
     },
-    card: {
-        backgroundColor: colors.surface,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-    },
-    cardTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.text,
-        marginBottom: 8,
-    },
-    cardDescription: {
-        fontSize: 14,
-        color: colors.textLight,
-        marginBottom: 12,
-    },
-    deviceIdContainer: {
-        backgroundColor: colors.background,
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    deviceIdText: {
-        fontSize: 12,
-        fontFamily: 'monospace',
-        color: colors.text,
-    },
-    copyButton: {
-        backgroundColor: colors.primary,
-        borderRadius: 8,
-        padding: 12,
-        alignItems: 'center',
-    },
-    copyButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    statsCard: {
-        backgroundColor: colors.surface,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-    },
-    statsRow: {
+    profileCard: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
-    },
-    stat: {
         alignItems: 'center',
+        backgroundColor: colors.surface,
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 24,
+        shadowColor: 'rgba(255, 107, 53, 0.2)',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+    avatarContainer: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+    avatarText: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#fff',
+    },
+    profileInfo: {
         flex: 1,
     },
-    statLabel: {
-        fontSize: 12,
-        color: colors.textLight,
+    username: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: colors.text,
         marginBottom: 4,
     },
-    statValue: {
-        fontSize: 16,
+    userId: {
+        fontSize: 14,
+        color: colors.textSecondary,
+    },
+    qrButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: colors.background,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    qrIcon: {
+        fontSize: 20,
+    },
+    sectionTitle: {
+        fontSize: 14,
         fontWeight: '600',
+        color: colors.textTertiary,
+        marginBottom: 8,
+        marginLeft: 12,
+        textTransform: 'uppercase',
+    },
+    section: {
+        backgroundColor: colors.surface,
+        borderRadius: 16,
+        marginBottom: 24,
+        overflow: 'hidden',
+        shadowColor: 'rgba(255, 107, 53, 0.2)',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 2,
+    },
+    settingsItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderBottomWidth: 0.5,
+        borderBottomColor: colors.border,
+    },
+    settingsIconContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        backgroundColor: colors.background,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    settingsIcon: {
+        fontSize: 16,
+    },
+    settingsContent: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    settingsLabel: {
+        fontSize: 16,
         color: colors.text,
     },
-    testButton: {
-        backgroundColor: colors.secondary,
-        borderRadius: 8,
-        padding: 14,
-        alignItems: 'center',
-        marginBottom: 12,
+    destructiveLabel: {
+        color: '#FF3B30',
     },
-    testButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
+    settingsValue: {
+        fontSize: 14,
+        color: colors.textSecondary,
+        marginRight: 8,
     },
-    logoutButton: {
-        backgroundColor: '#FF3B30',
-        borderRadius: 8,
-        padding: 14,
-        alignItems: 'center',
-        marginTop: 4,
+    settingsArrow: {
+        fontSize: 20,
+        color: colors.textTertiary,
+        marginLeft: 8,
     },
-    logoutButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
+    version: {
+        textAlign: 'center',
+        color: colors.textTertiary,
+        fontSize: 12,
+        marginTop: 10,
     },
 });
 

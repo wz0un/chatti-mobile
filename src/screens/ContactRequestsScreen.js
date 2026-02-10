@@ -35,6 +35,14 @@ const ContactRequestsScreen = ({ navigation }) => {
         }
     }, [currentUser]);
 
+    // Refresh requests when screen comes into focus
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            loadRequests();
+        });
+        return unsubscribe;
+    }, [navigation, currentUser]);
+
     const loadCurrentUser = async () => {
         const user = await AuthService.getCurrentUser();
         setCurrentUser(user);
