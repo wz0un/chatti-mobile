@@ -70,7 +70,7 @@ const LoginScreen = ({ navigation }) => {
             }
 
             // Navigate to room list
-            navigation.navigate('RoomList', {
+            navigation.navigate('Main', {
                 username: user.fullUsername,
             });
         } catch (err) {
@@ -119,7 +119,7 @@ const LoginScreen = ({ navigation }) => {
 
             // Automatically log in after 3 seconds
             setTimeout(() => {
-                navigation.navigate('RoomList', {
+                navigation.navigate('Main', {
                     username: user.fullUsername,
                 });
             }, 3000);
