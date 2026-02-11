@@ -148,7 +148,7 @@ const RoomListScreen = ({ navigation, route }) => {
                 )}
             </View>
             <View style={styles.roomFooter}>
-                <Text style={styles.roomOwner}>{t('rooms.createdBy')}: {item.owner}</Text>
+                <Text style={styles.roomOwner}>{t('rooms.createdBy', { owner: item.owner })}</Text>
                 <Text style={styles.roomDate}>
                     {new Date(item.createdAt).toLocaleDateString(locale, {
                         day: 'numeric',

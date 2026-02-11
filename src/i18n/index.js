@@ -217,7 +217,7 @@ const translations = {
     },
     rooms: {
       headerTitle: 'Chat Rooms',
-      headerSubtitle: 'Hi, {{username}}',
+      welcome: 'Hi, {{name}}',
       loading: 'Loading rooms...',
       emptyTitle: 'No rooms available',
       emptySubtitle: 'Create the first room!',
@@ -226,7 +226,7 @@ const translations = {
       inputPlaceholder: 'Room name',
       cancel: 'Cancel',
       create: 'Create',
-      createdBy: 'Created by: {{owner}}',
+      createdBy: 'Created by {{owner}}',
       private: '🔒 Private',
       dateLocale: 'en-US',
       errors: {
@@ -455,7 +455,7 @@ const translations = {
     },
     rooms: {
       headerTitle: 'Salas de Chat',
-      headerSubtitle: 'Hola, {{username}}',
+      welcome: 'Hola, {{name}}',
       loading: 'Cargando salas...',
       emptyTitle: 'No hay salas disponibles',
       emptySubtitle: '¡Crea la primera sala!',
@@ -464,7 +464,7 @@ const translations = {
       inputPlaceholder: 'Nombre de la sala',
       cancel: 'Cancelar',
       create: 'Crear',
-      createdBy: 'Creada por: {{owner}}',
+      createdBy: 'Creada por {{owner}}',
       private: '🔒 Privada',
       dateLocale: 'es-ES',
       errors: {
@@ -675,7 +675,7 @@ const translations = {
     },
     rooms: {
       headerTitle: 'غرف الدردشة',
-      headerSubtitle: 'مرحباً، {{username}}',
+      welcome: 'مرحباً، {{name}}',
       loading: 'جار تحميل الغرف...',
       emptyTitle: 'لا توجد غرف متاحة',
       emptySubtitle: 'أنشئ أول غرفة!',
@@ -684,7 +684,7 @@ const translations = {
       inputPlaceholder: 'اسم الغرفة',
       cancel: 'إلغاء',
       create: 'إنشاء',
-      createdBy: 'أنشأها: {{owner}}',
+      createdBy: 'أنشأها {{owner}}',
       private: '🔒 خاصة',
       dateLocale: 'ar',
       errors: {
@@ -894,7 +894,7 @@ const translations = {
     },
     rooms: {
       headerTitle: 'Salons de chat',
-      headerSubtitle: 'Bonjour, {{name}}',
+      welcome: 'Bonjour, {{name}}',
       loading: 'Chargement des salons...',
       emptyTitle: 'Aucun salon disponible',
       emptySubtitle: 'Créez le premier salon !',
@@ -903,7 +903,7 @@ const translations = {
       inputPlaceholder: 'Nom du salon',
       cancel: 'Annuler',
       create: 'Créer',
-      createdBy: 'Créé par : {{owner}}',
+      createdBy: 'Créé par {{owner}}',
       private: '🔒 Privé',
       dateLocale: 'fr-FR',
       errors: {
