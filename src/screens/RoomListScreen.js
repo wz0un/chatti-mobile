@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     // FAB (Floating Action Button)
     fabWrapper: {
         position: 'absolute',
-        bottom: 20,
+        bottom: 90,
         right: 20,
     },
     fab: {

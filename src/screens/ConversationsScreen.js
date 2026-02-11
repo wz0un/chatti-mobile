@@ -289,6 +289,7 @@ const styles = StyleSheet.create({
     },
     list: {
         flexGrow: 1,
+        paddingBottom: 80,
     },
     centerContainer: {
         flex: 1,

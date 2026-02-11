@@ -175,17 +175,17 @@ const ContactsScreen = ({ navigation }) => {
             ) : contacts.length === 0 ? (
                 <View style={styles.centerContainer}>
                     <Text style={styles.emptyText}>
-                                {t('contacts.emptyTitle')}
+                        {t('contacts.emptyTitle')}
                     </Text>
                     <Text style={styles.emptySubtext}>
-                                {t('contacts.emptySubtitle')}
+                        {t('contacts.emptySubtitle')}
                     </Text>
                     <TouchableOpacity
                         style={styles.emptyButton}
                         onPress={() => navigation.navigate('AddContact')}
                         activeOpacity={0.7}
                     >
-                                <Text style={styles.emptyButtonText}>+ {t('contacts.addContact')}</Text>
+                        <Text style={styles.emptyButtonText}>+ {t('contacts.addContact')}</Text>
                     </TouchableOpacity>
                 </View>
             ) : (
@@ -294,6 +294,7 @@ const styles = StyleSheet.create({
     },
     list: {
         flexGrow: 1,
+        paddingBottom: 80,
     },
 });
 
