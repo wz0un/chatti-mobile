@@ -13,6 +13,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const Tab = createBottomTabNavigator();
 
@@ -30,6 +31,7 @@ const MainTabs = ({ route, navigation }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [unreadChatsCount, setUnreadChatsCount] = useState(0);
     const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+    const { t } = useTranslation();
 
     // Initial auth check
     useEffect(() => {
@@ -119,7 +121,7 @@ const MainTabs = ({ route, navigation }) => {
                 initialParams={{ username }}
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon emoji="🏠" label="Salas" focused={focused} />
+                        <TabIcon emoji="🏠" label={t('tabs.rooms')} focused={focused} />
                     ),
                 }}
             />
@@ -128,7 +130,7 @@ const MainTabs = ({ route, navigation }) => {
                 component={ConversationsScreen}
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon emoji="💬" label="Chats" focused={focused} />
+                        <TabIcon emoji="💬" label={t('tabs.chats')} focused={focused} />
                     ),
                     tabBarBadge: unreadChatsCount > 0 ? unreadChatsCount : undefined,
                     tabBarBadgeStyle: styles.badge,
@@ -139,7 +141,7 @@ const MainTabs = ({ route, navigation }) => {
                 component={ContactsScreen}
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon emoji="👥" label="Contactos" focused={focused} />
+                        <TabIcon emoji="👥" label={t('tabs.contacts')} focused={focused} />
                     ),
                     tabBarBadge: pendingRequestsCount > 0 ? pendingRequestsCount : undefined,
                     tabBarBadgeStyle: styles.badge,
@@ -150,7 +152,7 @@ const MainTabs = ({ route, navigation }) => {
                 component={ProfileScreen}
                 options={{
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon emoji="⚙️" label="Ajustes" focused={focused} />
+                        <TabIcon emoji="⚙️" label={t('tabs.profile')} focused={focused} />
                     ),
                 }}
             />

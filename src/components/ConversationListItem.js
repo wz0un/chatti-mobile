@@ -7,8 +7,10 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import colors, { spacing } from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const ConversationListItem = ({ conversation, currentUserId, isUnread, onPress, onLongPress }) => {
+    const { t, locale } = useTranslation();
     // Get the other participant ID
     const otherUserId = conversation.participants?.find(id => id !== currentUserId) || conversation.normalizedRecipientId;
 
@@ -17,10 +19,10 @@ const ConversationListItem = ({ conversation, currentUserId, isUnread, onPress, 
     const initial = (conversation.recipient?.username || conversation.recipientUsername || otherUserId).charAt(0).toUpperCase();
 
     // Extract last message preview
-    let lastMsg = 'Sin mensajes aún';
+    let lastMsg = t('conversations.emptyTitle');
     if (conversation.lastMessage) {
         lastMsg = typeof conversation.lastMessage === 'object'
-            ? (conversation.lastMessage.content || '🔒 Mensaje Cifrado')
+            ? (conversation.lastMessage.content || t('conversations.previewEncrypted'))
             : conversation.lastMessage;
     }
 
@@ -31,12 +33,20 @@ const ConversationListItem = ({ conversation, currentUserId, isUnread, onPress, 
         const diff = now - date;
 
         if (diff < 86400000) { // Less than 24 hours
-            return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
         } else if (diff < 604800000) { // Less than a week
-            const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            const days = [
+                t('time.days.sun') || 'Dom',
+                t('time.days.mon') || 'Lun',
+                t('time.days.tue') || 'Mar',
+                t('time.days.wed') || 'Mié',
+                t('time.days.thu') || 'Jue',
+                t('time.days.fri') || 'Vie',
+                t('time.days.sat') || 'Sáb'
+            ];
             return days[date.getDay()];
         } else {
-            return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+            return date.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
         }
     };
 

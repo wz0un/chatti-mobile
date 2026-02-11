@@ -16,19 +16,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const AddContactScreen = ({ navigation }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(false);
+    const { t } = useTranslation();
 
     const handleSendRequest = async () => {
         if (!searchQuery.trim()) {
-            Alert.alert('Error', 'Por favor ingresa un nombre de usuario válido (ej. usuario#1234)');
+            Alert.alert(t('common.error'), t('addContact.errors.empty'));
             return;
         }
 
         if (!searchQuery.includes('#')) {
-            Alert.alert('Error', 'El formato debe ser usuario#1234');
+            Alert.alert(t('common.error'), t('addContact.errors.invalidFormat'));
             return;
         }
 
@@ -40,13 +42,13 @@ const AddContactScreen = ({ navigation }) => {
             const recipient = await ApiService.findUserByUsername(searchQuery.trim());
 
             if (!recipient) {
-                Alert.alert('Error', 'Usuario no encontrado');
+                Alert.alert(t('common.error'), t('addContact.errors.notFound'));
                 return;
             }
 
             // Check if trying to add yourself
             if (recipient.userId === currentUser.userId) {
-                Alert.alert('Error', 'No puedes agregarte a ti mismo como contacto');
+                Alert.alert(t('common.error'), t('addContact.errors.self'));
                 return;
             }
 
@@ -58,12 +60,12 @@ const AddContactScreen = ({ navigation }) => {
             const hasIncomingRequest = incomingRequests.some(r => r.senderId === recipient.userId);
 
             if (isAlreadyContact) {
-                Alert.alert('Error', 'Este usuario ya está en tu lista de contactos');
+                Alert.alert(t('common.error'), t('addContact.errors.alreadyContact'));
                 return;
             }
 
             if (hasIncomingRequest) {
-                Alert.alert('Error', 'Este usuario ya te ha enviado una solicitud. Revisa tus solicitudes pendientes.');
+                Alert.alert(t('common.error'), t('addContact.errors.incomingRequest'));
                 return;
             }
 
@@ -75,11 +77,11 @@ const AddContactScreen = ({ navigation }) => {
             );
 
             Alert.alert(
-                'Solicitud enviada',
-                `Se ha enviado una solicitud de contacto a ${recipient.fullUsername}`,
+                t('addContact.successTitle'),
+                t('addContact.successMessage', { username: recipient.fullUsername }),
                 [
                     {
-                        text: 'OK',
+                        text: t('common.ok'),
                         onPress: () => navigation.goBack()
                     }
                 ]
@@ -89,7 +91,7 @@ const AddContactScreen = ({ navigation }) => {
 
         } catch (error) {
             console.error('Error sending contact request:', error);
-            Alert.alert('Error', error.message || 'No se pudo enviar la solicitud');
+            Alert.alert(t('common.error'), error.message || t('addContact.errors.send'));
         } finally {
             setLoading(false);
         }
@@ -98,23 +100,23 @@ const AddContactScreen = ({ navigation }) => {
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.content}>
-                <Text style={styles.title}>Agregar Contacto</Text>
+                <Text style={styles.title}>{t('addContact.title')}</Text>
                 <Text style={styles.description}>
-                    Para agregar un contacto, ingresa su nombre de usuario y etiqueta
+                    {t('addContact.description')}
                 </Text>
 
                 <View style={styles.stepBox}>
-                    <Text style={styles.stepTitle}>📋 Paso 1: Obtén el nombre</Text>
+                    <Text style={styles.stepTitle}>{t('addContact.step1Title')}</Text>
                     <Text style={styles.stepText}>
-                        Pide a tu amigo su nombre de usuario completo (ej. Alejandro#1234)
+                        {t('addContact.step1Text')}
                     </Text>
                 </View>
 
                 <View style={styles.stepBox}>
-                    <Text style={styles.stepTitle}>✏️ Paso 2: Ingresa el nombre aquí</Text>
+                    <Text style={styles.stepTitle}>{t('addContact.step2Title')}</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="Ejemplo: usuario#1234"
+                        placeholder={t('addContact.placeholder')}
                         placeholderTextColor={colors.textLight}
                         value={searchQuery}
                         onChangeText={setSearchQuery}
@@ -132,17 +134,14 @@ const AddContactScreen = ({ navigation }) => {
                     {loading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={styles.sendButtonText}>✉️ Enviar Solicitud</Text>
+                        <Text style={styles.sendButtonText}>{t('addContact.send')}</Text>
                     )}
                 </TouchableOpacity>
 
                 <View style={styles.infoBox}>
-                    <Text style={styles.infoTitle}>💡 ¿Cómo funciona?</Text>
+                    <Text style={styles.infoTitle}>{t('addContact.infoTitle')}</Text>
                     <Text style={styles.infoText}>
-                        • Tu contacto recibirá una solicitud{'\n'}
-                        • Debe aceptarla en "📬 Solicitudes"{'\n'}
-                        • Una vez aceptada, podrán chatear cifrado 🔒{'\n'}
-                        • Solo los contactos aceptados pueden chatear
+                        {t('addContact.infoText')}
                     </Text>
                 </View>
             </View>

@@ -9,11 +9,12 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    Alert,
-    ScrollView,
+    TextInput,
+    Modal,
     ActivityIndicator,
     Image,
-    Switch
+    Switch,
+    ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,6 +23,7 @@ import AuthService from '../services/AuthService';
 import ApiService from '../services/ApiService';
 import NotificationService from '../services/NotificationService';
 import colors, { spacing, borderRadius } from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const SettingsItem = ({ icon, label, value, onPress, isDestructive, hasToggle, isToggled, onToggle }) => (
     <TouchableOpacity
@@ -58,6 +60,16 @@ const ProfileScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [darkModeEnabled, setDarkModeEnabled] = useState(false);
+    const { t, language, setLanguage } = useTranslation();
+
+    const languages = [
+        { code: 'en', label: 'English' },
+        { code: 'es', label: 'Español' },
+        { code: 'ar', label: 'العربية' },
+        { code: 'fr', label: 'Français' },
+    ];
+
+    const currentLanguageLabel = languages.find(l => l.code === language)?.label || 'Español';
 
     useEffect(() => {
         loadUserProfile();
@@ -89,18 +101,29 @@ const ProfileScreen = ({ navigation }) => {
     const copyDeviceId = async () => {
         if (deviceId) {
             await Clipboard.setStringAsync(deviceId);
-            Alert.alert('Copiado', 'ID de dispositivo copiado al portapapeles');
+            Alert.alert(t('profile.copied'), t('profile.copiedText'));
         }
+    };
+
+    const [languageModalVisible, setLanguageModalVisible] = useState(false);
+
+    const showLanguageSelector = () => {
+        setLanguageModalVisible(true);
+    };
+
+    const handleSelectLanguage = (langCode) => {
+        setLanguage(langCode);
+        setLanguageModalVisible(false);
     };
 
     const handleDeleteAccount = async () => {
         Alert.alert(
-            'Eliminar cuenta',
-            '¿Estás seguro de que quieres eliminar tu cuenta?\n\nEsta acción:\n• Eliminará todos tus chats privados\n• Eliminará tu usuario\n• Es irreversible',
+            t('profile.deleteTitle'),
+            t('profile.deleteMessage'),
             [
-                { text: 'Cancelar', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'Eliminar cuenta',
+                    text: t('profile.deleteConfirm'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
@@ -114,7 +137,7 @@ const ProfileScreen = ({ navigation }) => {
                                 routes: [{ name: 'Login' }],
                             });
                         } catch (error) {
-                            Alert.alert('Error', 'No se pudo eliminar la cuenta');
+                            Alert.alert(t('common.error'), t('profile.deleteError'));
                             setLoading(false);
                         }
                     }
@@ -125,12 +148,12 @@ const ProfileScreen = ({ navigation }) => {
 
     const handleLogout = async () => {
         Alert.alert(
-            'Cerrar sesión',
-            '¿Estás seguro de que quieres cerrar sesión?',
+            t('profile.logoutTitle'),
+            t('profile.logoutMessage'),
             [
-                { text: 'Cancelar', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'Cerrar sesión',
+                    text: t('profile.logoutConfirm'),
                     style: 'destructive',
                     onPress: async () => {
                         await AuthService.logout();
@@ -148,6 +171,7 @@ const ProfileScreen = ({ navigation }) => {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={{ marginTop: 10, color: colors.textTertiary }}>{t('profile.loading')}</Text>
             </View>
         );
     }
@@ -155,7 +179,7 @@ const ProfileScreen = ({ navigation }) => {
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Ajustes</Text>
+                <Text style={styles.headerTitle}>{t('profile.title')}</Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -179,73 +203,73 @@ const ProfileScreen = ({ navigation }) => {
                 </View>
 
                 {/* Account Settings */}
-                <Text style={styles.sectionTitle}>Cuenta</Text>
+                <Text style={styles.sectionTitle}>{t('profile.sections.account')}</Text>
                 <View style={styles.section}>
                     <SettingsItem
                         icon="🔑"
-                        label="ID de Dispositivo"
-                        value={deviceId ? `${deviceId.substring(0, 8)}...` : 'Cargando...'}
+                        label={t('profile.deviceIdTitle')}
+                        value={deviceId ? `${deviceId.substring(0, 8)}...` : t('profile.deviceIdPlaceholder')}
                         onPress={copyDeviceId}
                     />
                     <SettingsItem
                         icon="🔒"
-                        label="Privacidad y Seguridad"
+                        label={t('profile.items.privacy')}
                         onPress={() => { }}
                     />
                 </View>
 
                 {/* App Settings */}
-                <Text style={styles.sectionTitle}>Aplicación</Text>
+                <Text style={styles.sectionTitle}>{t('profile.sections.app')}</Text>
                 <View style={styles.section}>
                     <SettingsItem
                         icon="🔔"
-                        label="Notificaciones"
+                        label={t('profile.items.notifications')}
                         hasToggle
                         isToggled={notificationsEnabled}
                         onToggle={(v) => setNotificationsEnabled(v)}
                     />
                     <SettingsItem
                         icon="🌙"
-                        label="Modo Oscuro"
+                        label={t('profile.items.darkMode')}
                         hasToggle
                         isToggled={darkModeEnabled}
                         onToggle={(v) => setDarkModeEnabled(v)}
                     />
                     <SettingsItem
                         icon="🌐"
-                        label="Idioma"
-                        value="Español"
-                        onPress={() => { }}
+                        label={t('profile.items.language')}
+                        value={currentLanguageLabel}
+                        onPress={showLanguageSelector}
                     />
                 </View>
 
                 {/* Help & Support */}
-                <Text style={styles.sectionTitle}>Ayuda</Text>
+                <Text style={styles.sectionTitle}>{t('profile.sections.help')}</Text>
                 <View style={styles.section}>
                     <SettingsItem
                         icon="❓"
-                        label="Preguntas Frecuentes"
+                        label={t('profile.items.faq')}
                         onPress={() => { }}
                     />
                     <SettingsItem
                         icon="📝"
-                        label="Términos y Condiciones"
+                        label={t('profile.items.terms')}
                         onPress={() => { }}
                     />
                 </View>
 
                 {/* Actions */}
-                <Text style={styles.sectionTitle}>Acciones</Text>
+                <Text style={styles.sectionTitle}>{t('profile.sections.actions')}</Text>
                 <View style={styles.section}>
                     <SettingsItem
                         icon="🚪"
-                        label="Cerrar Sesión"
+                        label={t('profile.items.logout')}
                         isDestructive
                         onPress={handleLogout}
                     />
                     <SettingsItem
                         icon="🗑️"
-                        label="Eliminar Cuenta"
+                        label={t('profile.items.delete')}
                         isDestructive
                         onPress={handleDeleteAccount}
                     />
@@ -253,6 +277,58 @@ const ProfileScreen = ({ navigation }) => {
 
                 <Text style={styles.version}>Versión 1.2.0 • Build 2026</Text>
             </ScrollView>
+
+            <Modal
+                visible={languageModalVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setLanguageModalVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setLanguageModalVisible(false)}
+                >
+                    <View style={styles.languageModalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>{t('profile.languages.select')}</Text>
+                            <TouchableOpacity onPress={() => setLanguageModalVisible(false)}>
+                                <Text style={styles.closeButton}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {languages.map((lang) => (
+                            <TouchableOpacity
+                                key={lang.code}
+                                style={[
+                                    styles.languageOption,
+                                    language === lang.code && styles.languageOptionActive
+                                ]}
+                                onPress={() => handleSelectLanguage(lang.code)}
+                            >
+                                <View style={styles.languageInfo}>
+                                    <Text style={styles.languageFlag}>
+                                        {lang.code === 'en' ? '🇺🇸' :
+                                            lang.code === 'es' ? '🇪🇸' :
+                                                lang.code === 'ar' ? '🇸🇦' : '🇫🇷'}
+                                    </Text>
+                                    <Text style={[
+                                        styles.languageLabel,
+                                        language === lang.code && styles.languageLabelActive
+                                    ]}>
+                                        {lang.label}
+                                    </Text>
+                                </View>
+                                {language === lang.code && (
+                                    <View style={styles.checkIcon}>
+                                        <Text style={styles.checkText}>✓</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -402,6 +478,88 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 10,
     },
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    languageModalContent: {
+        backgroundColor: colors.surface,
+        width: '100%',
+        maxWidth: 340,
+        borderRadius: 24,
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
+        elevation: 10,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+        paddingHorizontal: 4,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: colors.text,
+    },
+    closeButton: {
+        fontSize: 20,
+        color: colors.textSecondary,
+        padding: 4,
+    },
+    languageOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderRadius: 16,
+        marginBottom: 8,
+        backgroundColor: colors.background,
+    },
+    languageOptionActive: {
+        backgroundColor: colors.primary + '15',
+        borderWidth: 1,
+        borderColor: colors.primary + '30',
+    },
+    languageInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    languageFlag: {
+        fontSize: 24,
+        marginRight: 16,
+    },
+    languageLabel: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: colors.text,
+    },
+    languageLabelActive: {
+        color: colors.primary,
+        fontWeight: '700',
+    },
+    checkIcon: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    checkText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: 'bold',
+    }
 });
 
 export default ProfileScreen;

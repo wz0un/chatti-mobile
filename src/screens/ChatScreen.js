@@ -108,7 +108,7 @@ const ChatScreen = ({ route, navigation }) => {
             console.log('Connected to chat');
             setIsConnected(true);
             setConnectionError(null);
-            
+
             // Test notification on connect
             if (__DEV__) {
                 chatService.notificationService.testNotification();
@@ -122,7 +122,7 @@ const ChatScreen = ({ route, navigation }) => {
 
         chatService.on('error', (error) => {
             console.error('Chat error:', error);
-            setConnectionError(error.message || 'Connection error');
+            setConnectionError(error.message || t('chat.connectionError'));
             setIsConnected(false);
         });
 

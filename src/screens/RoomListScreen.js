@@ -20,10 +20,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const RoomListScreen = ({ navigation, route }) => {
     const [username, setUsername] = useState(route.params?.username || null);
     const [currentUser, setCurrentUser] = useState(null);
+    const { t, locale } = useTranslation();
 
     useEffect(() => {
         if (!username) {
@@ -70,7 +72,7 @@ const RoomListScreen = ({ navigation, route }) => {
             setHasMore(data.hasMore);
         } catch (error) {
             console.error('Error loading rooms:', error);
-            Alert.alert('Error', 'No se pudieron cargar las salas');
+            Alert.alert(t('common.error'), t('rooms.errorLoad'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -95,7 +97,7 @@ const RoomListScreen = ({ navigation, route }) => {
 
     const handleCreateRoom = async () => {
         if (!newRoomName.trim()) {
-            Alert.alert('Error', 'Por favor ingresa un nombre para la sala');
+            Alert.alert(t('common.error'), t('rooms.errorName'));
             return;
         }
 
@@ -110,7 +112,6 @@ const RoomListScreen = ({ navigation, route }) => {
             setModalVisible(false);
             setNewRoomName('');
 
-            // Navigate to the new room
             navigation.navigate('Chat', {
                 username,
                 roomId: room.id,
@@ -118,7 +119,7 @@ const RoomListScreen = ({ navigation, route }) => {
             });
         } catch (error) {
             console.error('Error creating room:', error);
-            Alert.alert('Error', 'No se pudo crear la sala');
+            Alert.alert(t('common.error'), t('rooms.errorCreate'));
         } finally {
             setCreating(false);
         }
@@ -142,14 +143,14 @@ const RoomListScreen = ({ navigation, route }) => {
                 <Text style={styles.roomName}>{item.name}</Text>
                 {item.isPrivate && (
                     <View style={styles.privateBadge}>
-                        <Text style={styles.privateBadgeText}>🔒 Privada</Text>
+                        <Text style={styles.privateBadgeText}>{t('rooms.private')}</Text>
                     </View>
                 )}
             </View>
             <View style={styles.roomFooter}>
-                <Text style={styles.roomOwner}>Creada por: {item.owner}</Text>
+                <Text style={styles.roomOwner}>{t('rooms.createdBy')}: {item.owner}</Text>
                 <Text style={styles.roomDate}>
-                    {new Date(item.createdAt).toLocaleDateString('es-ES', {
+                    {new Date(item.createdAt).toLocaleDateString(locale, {
                         day: 'numeric',
                         month: 'short',
                         hour: '2-digit',
@@ -162,8 +163,8 @@ const RoomListScreen = ({ navigation, route }) => {
 
     const renderEmpty = () => (
         <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No hay salas disponibles</Text>
-            <Text style={styles.emptySubtext}>¡Crea la primera sala!</Text>
+            <Text style={styles.emptyText}>{t('rooms.empty')}</Text>
+            <Text style={styles.emptySubtext}>{t('rooms.createFirst')}</Text>
         </View>
     );
 
@@ -180,7 +181,7 @@ const RoomListScreen = ({ navigation, route }) => {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={styles.loadingText}>Cargando salas...</Text>
+                <Text style={styles.loadingText}>{t('rooms.loading')}</Text>
             </View>
         );
     }
@@ -196,7 +197,7 @@ const RoomListScreen = ({ navigation, route }) => {
                 <View style={styles.headerContent}>
                     <View>
                         <Text style={styles.headerTitle}>Chat-ti</Text>
-                        <Text style={styles.headerSubtitle}>Hola, {username}</Text>
+                        <Text style={styles.headerSubtitle}>{t('rooms.welcome', { name: username || '' })}</Text>
                     </View>
                     <View style={styles.headerAvatar}>
                         <Text style={styles.headerAvatarText}>{username?.charAt(0).toUpperCase()}</Text>
@@ -246,11 +247,11 @@ const RoomListScreen = ({ navigation, route }) => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Crear Nueva Sala</Text>
+                        <Text style={styles.modalTitle}>{t('rooms.createTitle')}</Text>
 
                         <TextInput
                             style={styles.input}
-                            placeholder="Nombre de la sala"
+                            placeholder={t('rooms.roomNamePlaceholder')}
                             placeholderTextColor={colors.textLight}
                             value={newRoomName}
                             onChangeText={setNewRoomName}
@@ -267,7 +268,7 @@ const RoomListScreen = ({ navigation, route }) => {
                                 }}
                                 disabled={creating}
                             >
-                                <Text style={styles.cancelButtonText}>Cancelar</Text>
+                                <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
@@ -278,7 +279,7 @@ const RoomListScreen = ({ navigation, route }) => {
                                 {creating ? (
                                     <ActivityIndicator size="small" color="#fff" />
                                 ) : (
-                                    <Text style={styles.confirmButtonText}>Crear</Text>
+                                    <Text style={styles.confirmButtonText}>{t('common.create')}</Text>
                                 )}
                             </TouchableOpacity>
                         </View>

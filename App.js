@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import GlobalNotificationService from './src/services/GlobalNotificationService';
+import { LanguageProvider } from './src/i18n';
 
 export default function App() {
   const notificationListener = useRef();
@@ -31,18 +32,19 @@ export default function App() {
     return () => {
       GlobalNotificationService.cleanup();
       if (notificationListener.current) {
-        notificationListener.current.remove();
+        Notifications.removeNotificationSubscription(notificationListener.current);
       }
       if (responseListener.current) {
-        responseListener.current.remove();
+        Notifications.removeNotificationSubscription(responseListener.current);
       }
     };
   }, []);
 
   return (
-    <>
+    <LanguageProvider>
       <AppNavigator />
       <StatusBar style="light" />
-    </>
+    </LanguageProvider>
   );
 }
+

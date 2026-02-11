@@ -20,6 +20,7 @@ import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import ConversationListItem from '../components/ConversationListItem';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const ConversationsScreen = ({ navigation }) => {
     const [conversations, setConversations] = useState([]);
@@ -29,6 +30,7 @@ const ConversationsScreen = ({ navigation }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [lastSeenData, setLastSeenData] = useState({});
     const [searchQuery, setSearchQuery] = useState('');
+    const { t } = useTranslation();
 
     useEffect(() => {
         loadCurrentUser();
@@ -137,7 +139,7 @@ const ConversationsScreen = ({ navigation }) => {
             setConversations(uniqueConvos);
         } catch (error) {
             console.error('Error loading conversations:', error);
-            if (showLoading) Alert.alert('Error', 'No se pudieron cargar las conversaciones');
+            if (showLoading) Alert.alert(t('common.error'), t('conversations.errorLoad'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -165,12 +167,12 @@ const ConversationsScreen = ({ navigation }) => {
 
     const handleLongPress = (conversation) => {
         Alert.alert(
-            'Eliminar chat',
-            '¿Estás seguro de que quieres eliminar este chat?',
+            t('conversations.deleteTitle'),
+            t('conversations.deleteMessage'),
             [
-                { text: 'Cancelar', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'Eliminar',
+                    text: t('conversations.deleteConfirm'),
                     style: 'destructive',
                     onPress: () => deleteConversation(conversation.conversationId || conversation.id)
                 }
@@ -185,7 +187,7 @@ const ConversationsScreen = ({ navigation }) => {
             loadConversations();
         } catch (error) {
             console.error('Error deleting conversation:', error);
-            Alert.alert('Error', 'No se pudo eliminar el chat');
+            Alert.alert(t('common.error'), t('conversations.deleteError'));
         } finally {
             setLoading(false);
         }
@@ -225,7 +227,7 @@ const ConversationsScreen = ({ navigation }) => {
             <View style={styles.searchContainer}>
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="Buscar chat..."
+                    placeholder={t('usersList.placeholder')}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     placeholderTextColor={colors.textLight}
@@ -239,10 +241,10 @@ const ConversationsScreen = ({ navigation }) => {
             ) : filteredConversations.length === 0 ? (
                 <View style={styles.centerContainer}>
                     <Text style={styles.emptyText}>
-                        {searchQuery ? 'No se encontraron resultados' : 'No tienes conversaciones activas'}
+                        {searchQuery ? t('usersList.emptySearch') : t('conversations.emptyTitle')}
                     </Text>
                     <Text style={styles.emptySubtext}>
-                        {searchQuery ? 'Intenta con otro nombre' : 'Ve a "Usuarios" para iniciar un chat'}
+                        {searchQuery ? t('login.errors.registerError') : t('conversations.emptySubtitle')}
                     </Text>
                 </View>
             ) : (

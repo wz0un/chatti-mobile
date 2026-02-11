@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import AuthService from '../services/AuthService';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const LoginScreen = ({ navigation }) => {
     const [activeTab, setActiveTab] = useState('login'); // 'login' or 'register'
@@ -27,6 +28,7 @@ const LoginScreen = ({ navigation }) => {
     const [successInfo, setSuccessInfo] = useState('');
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
+    const { t } = useTranslation();
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
@@ -44,17 +46,17 @@ const LoginScreen = ({ navigation }) => {
         setSuccessInfo('');
 
         if (!trimmedUsername) {
-            setError('Por favor, introduce tu usuario completo (ej: nombre#1234)');
+            setError(t('login.errors.empty'));
             return;
         }
 
         if (!trimmedUsername.includes('#')) {
-            setError('Formato inválido. Usa: nombre#1234');
+            setError(t('login.errors.invalidFormat'));
             return;
         }
 
         if (!trimmedPassword) {
-            setError('Por favor, introduce tu contraseña');
+            setError(t('login.errors.emptyPassword'));
             return;
         }
 
@@ -66,7 +68,7 @@ const LoginScreen = ({ navigation }) => {
             console.log('User logged in:', user);
 
             if (!user) {
-                throw new Error('No se recibió información del usuario');
+                throw new Error(t('login.errors.noUser'));
             }
 
             // Navigate to room list
@@ -75,7 +77,7 @@ const LoginScreen = ({ navigation }) => {
             });
         } catch (err) {
             console.error('Error during login:', err);
-            setError(err.message || 'Error al iniciar sesión. Verifica tus credenciales.');
+            setError(err.message || t('login.errors.server'));
         } finally {
             setLoading(false);
         }
@@ -89,17 +91,17 @@ const LoginScreen = ({ navigation }) => {
         setSuccessInfo('');
 
         if (!trimmedUsername) {
-            setError('Por favor, elige un nombre de usuario');
+            setError(t('login.errors.nameRequired'));
             return;
         }
 
         if (!trimmedPassword) {
-            setError('Por favor, crea una contraseña');
+            setError(t('login.errors.passwordRequired'));
             return;
         }
 
         if (trimmedPassword.length < 6) {
-            setError('La contraseña debe tener al menos 6 caracteres');
+            setError(t('login.errors.passwordTooShort'));
             return;
         }
 
@@ -111,11 +113,11 @@ const LoginScreen = ({ navigation }) => {
             console.log('User registered:', user);
 
             if (!user) {
-                throw new Error('No se recibió información del usuario');
+                throw new Error(t('login.errors.noUser'));
             }
 
             // Show success message on screen
-            setSuccessInfo(`¡Registro exitoso! Tu usuario es: ${user.fullUsername}. Guárdalo para iniciar sesión.`);
+            setSuccessInfo(t('login.success.register', { username: user.fullUsername }));
 
             // Automatically log in after 3 seconds
             setTimeout(() => {
@@ -126,7 +128,7 @@ const LoginScreen = ({ navigation }) => {
 
         } catch (err) {
             console.error('Error during registration:', err);
-            setError(err.message || 'Error al registrarse. Intenta con otro nombre.');
+            setError(err.message || t('login.errors.registerError'));
         } finally {
             setLoading(false);
         }
@@ -139,8 +141,8 @@ const LoginScreen = ({ navigation }) => {
         >
             <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
                 <View style={styles.header}>
-                    <Text style={styles.title}>Chat-ti</Text>
-                    <Text style={styles.subtitle}>Comunicación segura y privada</Text>
+                    <Text style={styles.title}>{t('login.title')}</Text>
+                    <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
                 </View>
 
                 {/* Tabs */}
@@ -154,7 +156,7 @@ const LoginScreen = ({ navigation }) => {
                         }}
                     >
                         <Text style={[styles.tabText, activeTab === 'login' && styles.activeTabText]}>
-                            Entrar
+                            {t('login.tabLogin')}
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -166,7 +168,7 @@ const LoginScreen = ({ navigation }) => {
                         }}
                     >
                         <Text style={[styles.tabText, activeTab === 'register' && styles.activeTabText]}>
-                            Registrarse
+                            {t('login.tabRegister')}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -174,10 +176,10 @@ const LoginScreen = ({ navigation }) => {
                 {/* Login Form */}
                 {activeTab === 'login' && (
                     <View style={styles.form}>
-                        <Text style={styles.label}>Usuario completo</Text>
+                        <Text style={styles.label}>{t('login.usernameFullLabel')}</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="nombre#1234"
+                            placeholder={t('login.usernameFullPlaceholder')}
                             placeholderTextColor={colors.placeholder}
                             value={fullUsername}
                             onChangeText={setFullUsername}
@@ -186,10 +188,10 @@ const LoginScreen = ({ navigation }) => {
                             editable={!loading}
                         />
 
-                        <Text style={styles.label}>Contraseña</Text>
+                        <Text style={styles.label}>{t('login.passwordLabel')}</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Tu contraseña"
+                            placeholder={t('login.passwordPlaceholder')}
                             placeholderTextColor={colors.placeholder}
                             value={password}
                             onChangeText={setPassword}
@@ -212,7 +214,7 @@ const LoginScreen = ({ navigation }) => {
                             {loading ? (
                                 <ActivityIndicator color={colors.textInverse} />
                             ) : (
-                                <Text style={styles.buttonText}>Iniciar Sesión</Text>
+                                <Text style={styles.buttonText}>{t('login.join')}</Text>
                             )}
                         </TouchableOpacity>
                     </View>
@@ -221,10 +223,10 @@ const LoginScreen = ({ navigation }) => {
                 {/* Register Form */}
                 {activeTab === 'register' && (
                     <View style={styles.form}>
-                        <Text style={styles.label}>Nombre de usuario</Text>
+                        <Text style={styles.label}>{t('login.usernameLabel')}</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Elige un nombre"
+                            placeholder={t('login.usernamePlaceholder')}
                             placeholderTextColor={colors.placeholder}
                             value={username}
                             onChangeText={setUsername}
@@ -234,10 +236,10 @@ const LoginScreen = ({ navigation }) => {
                             editable={!loading}
                         />
 
-                        <Text style={styles.label}>Contraseña</Text>
+                        <Text style={styles.label}>{t('login.passwordLabel')}</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Mínimo 6 caracteres"
+                            placeholder={t('login.passwordMinPlaceholder')}
                             placeholderTextColor={colors.placeholder}
                             value={password}
                             onChangeText={setPassword}
@@ -261,7 +263,7 @@ const LoginScreen = ({ navigation }) => {
                             {loading ? (
                                 <ActivityIndicator color={colors.textInverse} />
                             ) : (
-                                <Text style={styles.buttonText}>Crear Cuenta</Text>
+                                <Text style={styles.buttonText}>{t('login.createAccount')}</Text>
                             )}
                         </TouchableOpacity>
                     </View>
@@ -270,8 +272,8 @@ const LoginScreen = ({ navigation }) => {
                 <View style={styles.footer}>
                     <Text style={styles.footerText}>
                         {activeTab === 'login'
-                            ? 'Necesitas tu nombre y el #identificador que se te asignó al registrarte.'
-                            : 'Se te asignará un identificador único (ej: usuario#1234) para que otros te agreguen.'}
+                            ? t('login.footerLogin')
+                            : t('login.footerRegister')}
                     </Text>
                 </View>
             </Animated.View>
