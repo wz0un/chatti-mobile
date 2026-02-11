@@ -18,11 +18,18 @@ import { useTranslation } from '../i18n';
 const Tab = createBottomTabNavigator();
 
 const TabIcon = ({ emoji, label, focused }) => (
-    <View style={styles.tabIconContainer}>
-        <Text style={styles.tabEmoji}>{emoji}</Text>
-        <Text style={[styles.tabLabel, focused && styles.tabLabelFocused]}>
+    <View style={[styles.tabIconWrapper, focused && styles.tabIconWrapperFocused]}>
+        <View style={[styles.tabIconContainer, focused && styles.tabIconContainerFocused]}>
+            <Text style={[styles.tabEmoji, focused && styles.tabEmojiFocused]}>{emoji}</Text>
+        </View>
+        <Text
+            style={[styles.tabLabel, focused && styles.tabLabelFocused]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+        >
             {label}
         </Text>
+        {focused && <View style={styles.activeIndicator} />}
     </View>
 );
 
@@ -113,6 +120,7 @@ const MainTabs = ({ route, navigation }) => {
                 tabBarActiveTintColor: colors.primary,
                 tabBarInactiveTintColor: colors.textSecondary,
                 tabBarShowLabel: false,
+                tabBarHideOnKeyboard: true,
             }}
         >
             <Tab.Screen
@@ -163,39 +171,75 @@ const MainTabs = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     tabBar: {
         backgroundColor: colors.surface,
-        borderTopWidth: 0.5,
-        borderTopColor: colors.border,
-        height: 65,
-        paddingBottom: 8,
-        paddingTop: 8,
-        elevation: 8,
+        borderTopWidth: 0, // Sin borde superior para look moderno
+        height: 70, // Un poco más alto
+        paddingBottom: 10,
+        paddingTop: 10,
+        elevation: 20,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
+        shadowOffset: { width: 0, height: -10 },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: 10,
+        position: 'absolute', // Flotante
+        bottom: 0,
+        left: 0,
+        right: 0,
     },
-    tabIconContainer: {
+    tabIconWrapper: {
         alignItems: 'center',
         justifyContent: 'center',
+        width: '100%',
+        minWidth: 80, // Ancho mínimo para que quepa el texto
+        paddingTop: 4,
+    },
+    tabIconWrapperFocused: {
+        // Estímulo extra si se desea
+    },
+    tabIconContainer: {
+        width: 32, // Reducido para dejar espacio al texto
+        height: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 10,
+        marginBottom: 4,
+    },
+    tabIconContainerFocused: {
+        // backgroundColor: colors.primary + '15', // Opcional: fondo suave tras el icono
     },
     tabEmoji: {
-        fontSize: 24,
-        marginBottom: 2,
+        fontSize: 22,
+        opacity: 0.7,
+    },
+    tabEmojiFocused: {
+        opacity: 1,
+        transform: [{ scale: 1.1 }], // Efecto de zoom ligero
     },
     tabLabel: {
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: '500',
-        color: colors.textSecondary,
+        color: colors.textTertiary,
+        textAlign: 'center',
+        width: '90%', // Evitar que pegue a los bordes
     },
     tabLabelFocused: {
         color: colors.primary,
-        fontWeight: '600',
+        fontWeight: '700',
+        fontSize: 11,
+    },
+    activeIndicator: {
+        position: 'absolute',
+        top: -10, // Debajo del borde superior de la barra
+        width: 20,
+        height: 3,
+        backgroundColor: colors.primary,
+        borderRadius: 2,
     },
     badge: {
-        backgroundColor: colors.badge,
-        color: colors.badgeText,
+        backgroundColor: colors.badge || '#FF3B30',
+        color: '#fff',
         fontSize: 10,
         fontWeight: 'bold',
+        marginTop: -2,
     },
 });
 
