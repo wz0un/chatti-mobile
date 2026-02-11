@@ -20,6 +20,7 @@ import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import TypingIndicator from '../components/TypingIndicator';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 // Configuration - Set to false for local development
 const isProduction = true; // Change to false to test with local backend
@@ -43,6 +44,7 @@ const DirectMessageScreen = ({ route, navigation }) => {
     const [isTyping, setIsTyping] = useState(new Set());
     const [isEncrypted, setIsEncrypted] = useState(true);
     const [connectionError, setConnectionError] = useState(null);
+    const { t } = useTranslation();
 
     const dmServiceRef = useRef(null);
     const messageListRef = useRef([]);
@@ -84,7 +86,7 @@ const DirectMessageScreen = ({ route, navigation }) => {
 
         // Set navigation header
         navigation.setOptions({
-            title: recipientUsername || `Chat con ${recipientId.substring(0, 8)}...`,
+            title: recipientUsername || t('directMessage.fallbackTitle', { id: recipientId.substring(0, 8) }),
             headerRight: () => (
                 <View style={styles.headerRight}>
                     <View style={[
@@ -92,12 +94,12 @@ const DirectMessageScreen = ({ route, navigation }) => {
                         { backgroundColor: isConnected ? colors.connected : colors.disconnected }
                     ]} />
                     <Text style={styles.headerText}>
-                        {isEncrypted ? '🔒 Cifrado' : '⚠️ No Cifrado'}
+                        {isEncrypted ? t('common.encrypted') : t('common.notEncrypted')}
                     </Text>
                 </View>
             ),
         });
-    }, [navigation, recipientUsername, recipientId, isConnected, isEncrypted]);
+    }, [navigation, recipientUsername, recipientId, isConnected, isEncrypted, t]);
 
     useEffect(() => {
         // Create DM service instance
@@ -121,7 +123,7 @@ const DirectMessageScreen = ({ route, navigation }) => {
 
         dmService.on('error', (error) => {
             console.error('DM error:', error);
-            setConnectionError(error.message || 'Connection error');
+            setConnectionError(error.message || t('directMessage.connectionError'));
             setIsConnected(false);
         });
 
@@ -228,7 +230,7 @@ const DirectMessageScreen = ({ route, navigation }) => {
                 {connectionError && (
                     <View style={styles.errorBanner}>
                         <Text style={styles.errorText}>
-                            ⚠️ {connectionError}
+                            ⚠️ {connectionError || t('directMessage.connectionError')}
                         </Text>
                     </View>
                 )}
@@ -236,7 +238,7 @@ const DirectMessageScreen = ({ route, navigation }) => {
                 {!isConnected && !connectionError && (
                     <View style={styles.warningBanner}>
                         <Text style={styles.warningText}>
-                            Conectando al chat cifrado...
+                            {t('common.connectingEncrypted')}
                         </Text>
                     </View>
                 )}

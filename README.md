@@ -1,6 +1,6 @@
-# Chat-ti Mobile
+# Chat-Ti Mobile
 
-Aplicación móvil React Native para Chat-ti, desarrollada con Expo.
+Aplicación móvil React Native para Chat-Ti, desarrollada con Expo.
 
 ## 🚀 Características
 

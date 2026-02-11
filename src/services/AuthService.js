@@ -170,6 +170,44 @@ class AuthService {
     }
 
     /**
+     * Update push token for existing user
+     */
+    static async updatePushToken() {
+        try {
+            const user = await this.getCurrentUser();
+            if (!user?.userId) return false;
+
+            const deviceId = await this.getDeviceId();
+            const notificationService = new NotificationService();
+            const expoPushToken = await notificationService.getExpoPushToken();
+
+            if (!expoPushToken || expoPushToken === 'expo-go-mock-token' || expoPushToken === 'development-mock-token') {
+                return false;
+            }
+
+            const response = await fetch(`${API_BASE_URL}/api/auth/update-push-token`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: user.userId,
+                    deviceId,
+                    expoPushToken,
+                }),
+            });
+
+            if (!response.ok) return false;
+
+            const data = await response.json();
+            return data.success || false;
+        } catch (error) {
+            console.error('Error updating push token:', error);
+            return false;
+        }
+    }
+
+    /**
      * Logout user
      */
     static async logout() {

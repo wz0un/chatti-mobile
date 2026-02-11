@@ -6,9 +6,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const ContactRequestItem = ({ request, onAccept, onReject }) => {
     const initial = request.senderUsername?.charAt(0).toUpperCase() || '?';
+    const { t } = useTranslation();
 
     const formatTimestamp = (timestamp) => {
         const date = new Date(timestamp);
@@ -20,12 +22,11 @@ const ContactRequestItem = ({ request, onAccept, onReject }) => {
         const days = Math.floor(diff / 86400000);
 
         if (minutes < 60) {
-            return `Hace ${minutes}m`;
+            return t('contactRequestItem.minutes', { value: minutes });
         } else if (hours < 24) {
-            return `Hace ${hours}h`;
-        } else {
-            return `Hace ${days}d`;
+            return t('contactRequestItem.hours', { value: hours });
         }
+        return t('contactRequestItem.days', { value: days });
     };
 
     return (

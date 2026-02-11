@@ -5,6 +5,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const TypingIndicator = ({ usernames }) => {
     if (!usernames || usernames.length === 0) {
@@ -12,12 +13,16 @@ const TypingIndicator = ({ usernames }) => {
     }
 
     const usernamesText = usernames.join(', ');
-    const verb = usernames.length > 1 ? 'están' : 'está';
+    const { t } = useTranslation();
+    const text =
+        usernames.length > 1
+            ? t('typing.plural', { users: usernamesText })
+            : t('typing.singular', { users: usernamesText });
 
     return (
         <View style={styles.container}>
             <Text style={styles.text}>
-                {usernamesText} {verb} escribiendo...
+                {text}
             </Text>
             <View style={styles.dotsContainer}>
                 <View style={styles.dot} />

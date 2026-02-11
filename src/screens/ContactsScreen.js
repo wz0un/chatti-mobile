@@ -18,6 +18,7 @@ import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import UserListItem from '../components/UserListItem';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const ContactsScreen = ({ navigation }) => {
     const [contacts, setContacts] = useState([]);
@@ -25,6 +26,7 @@ const ContactsScreen = ({ navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
     const [pendingCount, setPendingCount] = useState(0);
+    const { t } = useTranslation();
 
     useEffect(() => {
         loadCurrentUser();
@@ -63,7 +65,7 @@ const ContactsScreen = ({ navigation }) => {
             setContacts(result);
         } catch (error) {
             console.error('Error loading contacts:', error);
-            Alert.alert('Error', 'No se pudieron cargar los contactos');
+            Alert.alert(t('common.error'), t('contacts.errorLoad'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -89,7 +91,7 @@ const ContactsScreen = ({ navigation }) => {
 
     const handleContactPress = async (contact) => {
         if (!currentUser) {
-            Alert.alert('Error', 'No se pudo obtener tu usuario actual');
+            Alert.alert(t('common.error'), t('contacts.errorCurrent'));
             return;
         }
 
@@ -101,7 +103,7 @@ const ContactsScreen = ({ navigation }) => {
 
             if (!fullUser || !fullUser.publicKey) {
                 console.error('Could not retrieve public key for contact:', contact.fullUsername);
-                Alert.alert('Error', `No se pudo obtener la clave pública para ${contact.fullUsername}. No se puede iniciar el chat cifrado.`);
+                Alert.alert(t('common.error'), t('contacts.errorStart'));
                 return;
             }
 
@@ -116,7 +118,7 @@ const ContactsScreen = ({ navigation }) => {
             });
         } catch (error) {
             console.error('Error starting conversation with contact:', error);
-            Alert.alert('Error', 'No se pudo iniciar la conversación');
+            Alert.alert(t('common.error'), t('contacts.errorStart'));
         }
     };
 
@@ -139,28 +141,31 @@ const ContactsScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            {/* Header Buttons */}
-            <View style={styles.headerButtons}>
-                <TouchableOpacity
-                    style={styles.headerButton}
-                    onPress={() => navigation.navigate('ContactRequests')}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.headerButtonText}>
-                        📬 Solicitudes
-                        {pendingCount > 0 && (
-                            <Text style={styles.badge}> {pendingCount}</Text>
-                        )}
-                    </Text>
-                </TouchableOpacity>
+            {/* Header */}
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>{t('contacts.title')}</Text>
+                <View style={styles.headerButtons}>
+                    <TouchableOpacity
+                        style={styles.headerButton}
+                        onPress={() => navigation.navigate('ContactRequests')}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.headerButtonText}>
+                            📬
+                            {pendingCount > 0 && (
+                                <Text style={styles.badge}> {pendingCount}</Text>
+                            )}
+                        </Text>
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={[styles.headerButton, styles.addButton]}
-                    onPress={() => navigation.navigate('AddContact')}
-                    activeOpacity={0.7}
-                >
-                    <Text style={styles.headerButtonText}>+ Agregar</Text>
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.headerButton, styles.addButton]}
+                        onPress={() => navigation.navigate('AddContact')}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={styles.headerButtonText}>+</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {loading && contacts.length === 0 ? (
@@ -170,17 +175,17 @@ const ContactsScreen = ({ navigation }) => {
             ) : contacts.length === 0 ? (
                 <View style={styles.centerContainer}>
                     <Text style={styles.emptyText}>
-                        No tienes contactos aún
+                                {t('contacts.emptyTitle')}
                     </Text>
                     <Text style={styles.emptySubtext}>
-                        Agrega contactos para comenzar a  chatear de forma cifrada
+                                {t('contacts.emptySubtitle')}
                     </Text>
                     <TouchableOpacity
                         style={styles.emptyButton}
                         onPress={() => navigation.navigate('AddContact')}
                         activeOpacity={0.7}
                     >
-                        <Text style={styles.emptyButtonText}>+ Agregar Contacto</Text>
+                                <Text style={styles.emptyButtonText}>+ {t('contacts.addContact')}</Text>
                     </TouchableOpacity>
                 </View>
             ) : (
@@ -207,33 +212,51 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.background,
     },
-    headerButtons: {
-        flexDirection: 'row',
-        padding: 16,
-        gap: 12,
+    header: {
         backgroundColor: colors.surface,
+        paddingVertical: 16,
+        paddingHorizontal: 20,
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: colors.text,
+    },
+    headerButtons: {
+        flexDirection: 'row',
+        gap: 12,
     },
     headerButton: {
-        flex: 1,
         backgroundColor: colors.primary,
-        padding: 12,
-        borderRadius: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
         alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 44,
     },
     addButton: {
         backgroundColor: colors.secondary,
     },
     headerButtonText: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: '600',
     },
     badge: {
         backgroundColor: '#FF3B30',
         color: '#fff',
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 'bold',
         paddingHorizontal: 6,
         paddingVertical: 2,

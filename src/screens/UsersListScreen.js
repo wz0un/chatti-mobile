@@ -18,12 +18,14 @@ import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import UserListItem from '../components/UserListItem';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const UsersListScreen = ({ navigation }) => {
     const [users, setUsers] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const [currentUser, setCurrentUser] = useState(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         loadCurrentUser();
@@ -46,7 +48,7 @@ const UsersListScreen = ({ navigation }) => {
             setUsers(filtered);
         } catch (error) {
             console.error('Error loading users:', error);
-            Alert.alert('Error', 'No se pudieron cargar los usuarios');
+            Alert.alert(t('common.error'), t('usersList.errorLoad'));
         } finally {
             setLoading(false);
         }
@@ -77,7 +79,7 @@ const UsersListScreen = ({ navigation }) => {
 
     const handleUserPress = async (user) => {
         if (!currentUser) {
-            Alert.alert('Error', 'No se pudo obtener tu usuario actual');
+            Alert.alert(t('common.error'), t('usersList.errorCurrent'));
             return;
         }
 
@@ -91,7 +93,7 @@ const UsersListScreen = ({ navigation }) => {
 
             if (!fullUser || !fullUser.publicKey) {
                 console.error('Could not retrieve public key for user:', user.fullUsername);
-                Alert.alert('Error', `No se pudo obtener la clave pública para ${user.fullUsername}. No se puede iniciar el chat cifrado.`);
+                Alert.alert(t('common.error'), t('usersList.errorPublicKey'));
                 return;
             }
 
@@ -114,7 +116,7 @@ const UsersListScreen = ({ navigation }) => {
             });
         } catch (error) {
             console.error('Error starting conversation:', error);
-            Alert.alert('Error', 'No se pudo iniciar la conversación');
+            Alert.alert(t('common.error'), t('contacts.errorStart'));
         }
     };
 
@@ -130,7 +132,8 @@ const UsersListScreen = ({ navigation }) => {
             <View style={styles.searchContainer}>
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="Buscar usuarios (username#1234)..."
+                    placeholder={t('usersList.placeholder')}
+                    placeholderTextColor={colors.placeholder}
                     value={searchQuery}
                     onChangeText={handleSearch}
                     autoCapitalize="none"
@@ -145,7 +148,7 @@ const UsersListScreen = ({ navigation }) => {
             ) : users.length === 0 ? (
                 <View style={styles.centerContainer}>
                     <Text style={styles.emptyText}>
-                        {searchQuery ? 'No se encontraron usuarios' : 'No hay usuarios registrados'}
+                        {searchQuery ? t('usersList.emptySearch') : t('usersList.emptyAll')}
                     </Text>
                 </View>
             ) : (
