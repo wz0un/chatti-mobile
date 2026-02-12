@@ -4,12 +4,16 @@
 
 import React, { useState, useRef } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const ChatInput = ({ onSendMessage, onTyping, disabled }) => {
     const [message, setMessage] = useState('');
     const typingTimeoutRef = useRef(null);
+    const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
 
     const handleSend = () => {
         if (message.trim() && !disabled) {
@@ -46,10 +50,13 @@ const ChatInput = ({ onSendMessage, onTyping, disabled }) => {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[
+            styles.container,
+            { paddingBottom: Math.max(insets.bottom, 8) }
+        ]}>
             <TextInput
                 style={styles.input}
-                placeholder="Escribe un mensaje..."
+                placeholder={t('chatInput.placeholder')}
                 placeholderTextColor={colors.placeholder}
                 value={message}
                 onChangeText={handleChangeText}

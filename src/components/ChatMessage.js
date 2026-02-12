@@ -5,14 +5,16 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
 const ChatMessage = ({ message, author, username, isSystem, timestamp }) => {
     const isOwnMessage = author === username;
+    const { locale } = useTranslation();
 
     // Format timestamp
     const formatTime = (ts) => {
         const date = new Date(ts);
-        return date.toLocaleTimeString('es-ES', {
+        return date.toLocaleTimeString(locale, {
             hour: '2-digit',
             minute: '2-digit'
         });

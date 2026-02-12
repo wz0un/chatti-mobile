@@ -11,36 +11,67 @@ import {
     Platform,
     Text,
     TouchableOpacity,
+    Keyboard,
+    Dimensions,
+    StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import ChatService from '../services/ChatService';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import TypingIndicator from '../components/TypingIndicator';
 import colors from '../theme/colors';
+import { useTranslation } from '../i18n';
 
-// Configuration
-const isProduction = true; // Change based on your deployment
+// Configuration - Set to false for local development
+const isProduction = true; // Change to false to test with local backend
 const WORKER_URL = isProduction
     ? 'https://chatti-workers.wz0un.workers.dev'
-    : 'http://127.0.0.1:8787';
+    : 'http://192.168.1.100:8787'; // Replace with your computer's IP for device testing
 
 const ChatScreen = ({ route, navigation }) => {
-    const { username, roomId } = route.params;
+    const { username, roomId, roomName } = route.params;
+    const { t } = useTranslation();
+
+    // Estado para el offset
+    const [androidOffset, setAndroidOffset] = useState(30);
 
     const [messageList, setMessageList] = useState([]);
     const [isConnected, setIsConnected] = useState(false);
     const [usersOnline, setUsersOnline] = useState(0);
     const [isTyping, setIsTyping] = useState(new Set());
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const [connectionError, setConnectionError] = useState(null);
 
     const chatServiceRef = useRef(null);
     const messageListRef = useRef([]);
     const flatListRef = useRef(null);
 
+    // Detectar tipo de navegación (Botones vs Gestos) al montar
+    useEffect(() => {
+        if (Platform.OS === 'android') {
+            const screenHeight = Dimensions.get('screen').height;
+            const windowHeight = Dimensions.get('window').height;
+            const statusBarHeight = StatusBar.currentHeight || 0;
+
+            // Calculamos la altura real de la barra de navegación
+            const navbarHeight = screenHeight - windowHeight - statusBarHeight;
+
+            // Si hay una barra de navegación física/virtual (> 15px), usamos el offset de 45
+            if (navbarHeight > 15) {
+                setAndroidOffset(45);
+            } else {
+                // Para gestos, probamos con 0 para eliminar el hueco flotante
+                // Si esto queda muy pegado o tapado, lo subiremos a 30
+                setAndroidOffset(100);
+            }
+        }
+    }, []);
+
     useEffect(() => {
         // Set navigation header
         navigation.setOptions({
-            title: `Sala: ${roomId}`,
+            title: roomName || `${t('navigator.roomsBack')}: ${roomId}`,
             headerRight: () => (
                 <View style={styles.headerRight}>
                     <View style={[
@@ -48,12 +79,14 @@ const ChatScreen = ({ route, navigation }) => {
                         { backgroundColor: isConnected ? colors.connected : colors.disconnected }
                     ]} />
                     <Text style={styles.headerText}>
-                        {usersOnline} {usersOnline === 1 ? 'usuario' : 'usuarios'}
+                        {usersOnline === 1
+                            ? t('chat.userCountOne', { count: usersOnline })
+                            : t('chat.userCountOther', { count: usersOnline })}
                     </Text>
                 </View>
             ),
         });
-    }, [navigation, roomId, isConnected, usersOnline]);
+    }, [navigation, roomId, roomName, isConnected, usersOnline, t]);
 
     useEffect(() => {
         // Create chat service instance
@@ -61,7 +94,11 @@ const ChatScreen = ({ route, navigation }) => {
         chatServiceRef.current = chatService;
 
         // Initialize notifications
-        chatService.initNotifications();
+        chatService.initNotifications().then(() => {
+            console.log('🔔 Notifications initialized for chat');
+        }).catch(error => {
+            console.error('Failed to initialize notifications:', error);
+        });
 
         // Connect to chat
         chatService.connect(roomId, username, WORKER_URL);
@@ -70,6 +107,12 @@ const ChatScreen = ({ route, navigation }) => {
         chatService.on('connected', () => {
             console.log('Connected to chat');
             setIsConnected(true);
+            setConnectionError(null);
+
+            // Test notification on connect
+            if (__DEV__) {
+                chatService.notificationService.testNotification();
+            }
         });
 
         chatService.on('disconnected', () => {
@@ -79,6 +122,8 @@ const ChatScreen = ({ route, navigation }) => {
 
         chatService.on('error', (error) => {
             console.error('Chat error:', error);
+            setConnectionError(error.message || t('chat.connectionError'));
+            setIsConnected(false);
         });
 
         // Receive message history
@@ -109,8 +154,8 @@ const ChatScreen = ({ route, navigation }) => {
 
             const systemMessage = {
                 id: `system_${Date.now()}`,
-                username: 'Sistema',
-                content: `${data.username} se unió al chat`,
+                username: t('common.system'),
+                content: t('chat.joined', { username: data.username }),
                 timestamp: data.timestamp,
                 isSystem: true,
             };
@@ -125,8 +170,8 @@ const ChatScreen = ({ route, navigation }) => {
 
             const systemMessage = {
                 id: `system_${Date.now()}`,
-                username: 'Sistema',
-                content: `${data.username} salió del chat`,
+                username: t('common.system'),
+                content: t('chat.left', { username: data.username }),
                 timestamp: data.timestamp,
                 isSystem: true,
             };
@@ -191,12 +236,20 @@ const ChatScreen = ({ route, navigation }) => {
     );
 
     return (
-        <SafeAreaView style={styles.container} edges={['bottom']}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={0}
+                behavior="padding"
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : androidOffset}
             >
+                {connectionError && (
+                    <View style={styles.errorBanner}>
+                        <Text style={styles.errorText}>
+                            ⚠️ {connectionError}
+                        </Text>
+                    </View>
+                )}
+
                 <FlatList
                     ref={flatListRef}
                     data={messageList}
@@ -242,6 +295,16 @@ const styles = StyleSheet.create({
     headerText: {
         fontSize: 12,
         color: colors.textLight,
+    },
+    errorBanner: {
+        backgroundColor: '#FF3B30',
+        padding: 8,
+        alignItems: 'center',
+    },
+    errorText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '600',
     },
 });
 
