@@ -4,10 +4,8 @@
  */
 
 // Configuration - Set to false for local development
-const isProduction = true; // Change to false to test with local backend
-const API_BASE_URL = isProduction
-    ? 'https://chatti-workers.wz0un.workers.dev'
-    : 'http://192.168.1.100:8788'; // Changed port to 8788 to match new worker config
+// La URL se lee desde el archivo .env (empezando con EXPO_PUBLIC_)
+const API_BASE_URL = process.env.EXPO_PUBLIC_WORKER_URL || 'http://localhost:8788';
 
 class ApiService {
     /**

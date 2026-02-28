@@ -23,11 +23,8 @@ import TypingIndicator from '../components/TypingIndicator';
 import colors from '../theme/colors';
 import { useTranslation } from '../i18n';
 
-// Configuration - Set to false for local development
-const isProduction = true; // Change to false to test with local backend
-const WORKER_URL = isProduction
-    ? 'https://chatti-workers.wz0un.workers.dev'
-    : 'http://192.168.1.100:8788'; // Replace with your computer's IP for device testing
+// La URL se lee desde el archivo .env
+const WORKER_URL = process.env.EXPO_PUBLIC_WORKER_URL || 'http://localhost:8788';
 
 const ChatScreen = ({ route, navigation }) => {
     const { username, roomId, roomName } = route.params;
