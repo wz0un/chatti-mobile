@@ -27,7 +27,7 @@ import { useTranslation } from '../i18n';
 const isProduction = true; // Change to false to test with local backend
 const WORKER_URL = isProduction
     ? 'https://chatti-workers.wz0un.workers.dev'
-    : 'http://192.168.1.100:8787'; // Replace with your computer's IP for device testing
+    : 'http://192.168.1.100:8788'; // Replace with your computer's IP for device testing
 
 const ChatScreen = ({ route, navigation }) => {
     const { username, roomId, roomName } = route.params;

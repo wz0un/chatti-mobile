@@ -27,7 +27,7 @@ class ChatService {
     /**
      * Connect to a chat room
      */
-    connect(roomId, username, workerUrl = 'ws://localhost:8787') {
+    connect(roomId, username, workerUrl = 'ws://localhost:8788') {
         this.roomId = roomId;
         this.username = username;
         this.userId = this.generateUserId();

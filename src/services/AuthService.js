@@ -12,9 +12,33 @@ import * as Device from 'expo-device';
 const isProduction = true; // Change to false to test with local backend
 const API_BASE_URL = isProduction
     ? 'https://chatti-workers.wz0un.workers.dev'
-    : 'http://192.168.1.100:8787'; // Replace with your computer's IP for device testing
+    : 'http://192.168.1.100:8788'; // Changed port to 8788 to match new worker config
 
 class AuthService {
+    /**
+     * Robustly parse JSON from response and handle errors
+     */
+    static async parseJsonResponse(response) {
+        const text = await response.text();
+        try {
+            if (!text || text.trim() === '') {
+                if (response.ok) return { success: true };
+                throw new Error(`Empty response from server (Status: ${response.status})`);
+            }
+            const data = JSON.parse(text);
+            if (!response.ok) {
+                throw new Error(data.error || data.message || `HTTP error! status: ${response.status}`);
+            }
+            return data;
+        } catch (error) {
+            console.error('JSON Parse error:', error, 'Full response:', text);
+            if (error instanceof SyntaxError) {
+                throw new Error(`Invalid JSON from server: ${text.substring(0, 100)}... (Status: ${response.status})`);
+            }
+            throw error;
+        }
+    }
+
     /**
      * Get or create device ID using Expo Device
      */
@@ -87,12 +111,7 @@ class AuthService {
                 }),
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
 
             if (!data.success) {
                 throw new Error(data.error || 'Failed to register user');
@@ -135,12 +154,7 @@ class AuthService {
                 }),
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
 
             if (!data.success) {
                 throw new Error(data.error || 'Failed to login');
@@ -199,7 +213,7 @@ class AuthService {
 
             if (!response.ok) return false;
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return data.success || false;
         } catch (error) {
             console.error('Error updating push token:', error);
