@@ -1,18 +1,20 @@
 /**
- * Individual Chat Message Component
+ * Individual Chat Message Component - Modern Design
  */
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import colors from '../theme/colors';
+import { spacing, borderRadius, typography, shadows } from '../theme/colors';
 import { useTranslation } from '../i18n';
+import { useTheme } from '../theme/ThemeContext';
 
 const ChatMessage = ({ message, author, username, isSystem, timestamp }) => {
+    const { theme, isDark } = useTheme();
     const isOwnMessage = author === username;
     const { locale } = useTranslation();
 
-    // Format timestamp
     const formatTime = (ts) => {
+        if (!ts) return '';
         const date = new Date(ts);
         return date.toLocaleTimeString(locale, {
             hour: '2-digit',
@@ -22,8 +24,8 @@ const ChatMessage = ({ message, author, username, isSystem, timestamp }) => {
 
     if (isSystem) {
         return (
-            <View style={styles.systemMessageContainer}>
-                <Text style={styles.systemMessageText}>{message}</Text>
+            <View style={[styles.systemMessageContainer, { backgroundColor: theme.surfaceSecondary }]}>
+                <Text style={[styles.systemMessageText, { color: theme.textTertiary }]}>{message}</Text>
             </View>
         );
     }
@@ -34,21 +36,23 @@ const ChatMessage = ({ message, author, username, isSystem, timestamp }) => {
             isOwnMessage ? styles.ownMessage : styles.otherMessage
         ]}>
             {!isOwnMessage && (
-                <Text style={styles.authorName}>{author}</Text>
+                <Text style={[styles.authorName, { color: theme.textTertiary }]}>{author}</Text>
             )}
             <View style={[
                 styles.messageBubble,
-                isOwnMessage ? styles.ownBubble : styles.otherBubble
+                isOwnMessage
+                    ? [styles.ownBubble, { backgroundColor: theme.messageSent }]
+                    : [styles.otherBubble, { backgroundColor: theme.messageReceived, borderColor: theme.border }]
             ]}>
                 <Text style={[
                     styles.messageText,
-                    isOwnMessage ? styles.ownMessageText : styles.otherMessageText
+                    { color: isOwnMessage ? theme.messageText : theme.messageTextReceived }
                 ]}>
                     {message}
                 </Text>
                 <Text style={[
                     styles.timestamp,
-                    isOwnMessage ? styles.ownTimestamp : styles.otherTimestamp
+                    { color: isOwnMessage ? 'rgba(255,255,255,0.7)' : theme.textTertiary }
                 ]}>
                     {formatTime(timestamp)}
                 </Text>
@@ -60,8 +64,8 @@ const ChatMessage = ({ message, author, username, isSystem, timestamp }) => {
 const styles = StyleSheet.create({
     messageContainer: {
         marginVertical: 4,
-        marginHorizontal: 12,
-        maxWidth: '80%',
+        marginHorizontal: spacing.md,
+        maxWidth: '85%',
     },
     ownMessage: {
         alignSelf: 'flex-end',
@@ -72,59 +76,44 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
     },
     authorName: {
-        fontSize: 12,
-        color: colors.textLight,
-        marginBottom: 4,
+        fontSize: 11,
+        fontWeight: '700',
+        marginBottom: 2,
         marginLeft: 12,
-        fontWeight: '600',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     messageBubble: {
         borderRadius: 20,
         paddingHorizontal: 16,
         paddingVertical: 10,
-        maxWidth: '100%',
+        ...shadows.sm,
     },
     ownBubble: {
-        backgroundColor: colors.messageSent,
         borderBottomRightRadius: 4,
     },
     otherBubble: {
-        backgroundColor: colors.messageReceived,
         borderBottomLeftRadius: 4,
+        borderWidth: 1,
     },
     messageText: {
         fontSize: 16,
-        lineHeight: 20,
-    },
-    ownMessageText: {
-        color: colors.messageText,
-    },
-    otherMessageText: {
-        color: colors.messageTextReceived,
+        lineHeight: 22,
     },
     timestamp: {
         fontSize: 10,
         marginTop: 4,
-    },
-    ownTimestamp: {
-        color: 'rgba(255, 255, 255, 0.7)',
-        textAlign: 'right',
-    },
-    otherTimestamp: {
-        color: colors.textLight,
         textAlign: 'right',
     },
     systemMessageContainer: {
         alignSelf: 'center',
-        backgroundColor: colors.systemBackground,
         paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingVertical: 4,
         borderRadius: 12,
         marginVertical: 8,
     },
     systemMessageText: {
         fontSize: 12,
-        color: colors.systemMessage,
         fontStyle: 'italic',
     },
 });

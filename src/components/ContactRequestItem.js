@@ -1,16 +1,18 @@
 /**
- * Contact Request Item Component
- * Displays a contact request with accept/reject buttons
+ * Contact Request Item Component - Modern Design
  */
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import colors from '../theme/colors';
+import { LinearGradient } from 'expo-linear-gradient';
+import { spacing, borderRadius, typography, shadows } from '../theme/colors';
 import { useTranslation } from '../i18n';
+import { useTheme } from '../theme/ThemeContext';
 
 const ContactRequestItem = ({ request, onAccept, onReject }) => {
+    const { theme } = useTheme();
+    const { t, locale } = useTranslation();
     const initial = request.senderUsername?.charAt(0).toUpperCase() || '?';
-    const { t } = useTranslation();
 
     const formatTimestamp = (timestamp) => {
         const date = new Date(timestamp);
@@ -21,40 +23,38 @@ const ContactRequestItem = ({ request, onAccept, onReject }) => {
         const hours = Math.floor(diff / 3600000);
         const days = Math.floor(diff / 86400000);
 
-        if (minutes < 60) {
-            return t('contactRequestItem.minutes', { value: minutes });
-        } else if (hours < 24) {
-            return t('contactRequestItem.hours', { value: hours });
-        }
+        if (minutes < 60) return t('contactRequestItem.minutes', { value: minutes });
+        if (hours < 24) return t('contactRequestItem.hours', { value: hours });
         return t('contactRequestItem.days', { value: days });
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.avatar}>
+        <View style={[styles.container, { backgroundColor: theme.surface, borderBottomColor: theme.divider }]}>
+            <LinearGradient
+                colors={['#4ECDC4', '#55EFC4']}
+                style={[styles.avatar, shadows.sm]}
+            >
                 <Text style={styles.avatarText}>{initial}</Text>
-            </View>
+            </LinearGradient>
 
             <View style={styles.info}>
-                <Text style={styles.username}>{request.senderUsername}</Text>
-                <Text style={styles.timestamp}>{formatTimestamp(request.createdAt)}</Text>
+                <Text style={[styles.username, { color: theme.text }]}>{request.senderUsername}</Text>
+                <Text style={[styles.timestamp, { color: theme.textTertiary }]}>{formatTimestamp(request.createdAt)}</Text>
             </View>
 
             <View style={styles.actions}>
                 <TouchableOpacity
-                    style={[styles.button, styles.acceptButton]}
+                    style={[styles.button, { backgroundColor: theme.success + '20' }]}
                     onPress={() => onAccept(request)}
-                    activeOpacity={0.7}
                 >
-                    <Text style={styles.acceptText}>✓</Text>
+                    <Text style={[styles.buttonIcon, { color: theme.success }]}>✓</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={[styles.button, styles.rejectButton]}
+                    style={[styles.button, { backgroundColor: theme.error + '20' }]}
                     onPress={() => onReject(request)}
-                    activeOpacity={0.7}
                 >
-                    <Text style={styles.rejectText}>✗</Text>
+                    <Text style={[styles.buttonIcon, { color: theme.error }]}>✕</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -65,64 +65,48 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        backgroundColor: colors.surface,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: colors.border,
     },
     avatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: colors.secondary,
+        width: 52,
+        height: 52,
+        borderRadius: 26,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: spacing.md,
     },
     avatarText: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
-        color: '#fff',
+        color: '#FFFFFF',
     },
     info: {
         flex: 1,
     },
     username: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.text,
-        marginBottom: 4,
+        ...typography.body,
+        fontWeight: '700',
+        marginBottom: 2,
     },
     timestamp: {
-        fontSize: 12,
-        color: colors.textLight,
+        ...typography.caption,
     },
     actions: {
         flexDirection: 'row',
-        gap: 8,
+        gap: spacing.sm,
     },
     button: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    acceptButton: {
-        backgroundColor: '#4CAF50',
-    },
-    rejectButton: {
-        backgroundColor: '#FF3B30',
-    },
-    acceptText: {
+    buttonIcon: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#fff',
-    },
-    rejectText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#fff',
     },
 });
 

@@ -213,6 +213,13 @@ const translations = {
         ar: 'Arabic',
         fr: 'French',
         select: 'Select Language',
+      },
+      theme: {
+        title: 'Theme',
+        light: 'Light',
+        dark: 'Dark',
+        system: 'System Default',
+        select: 'Select Theme',
       }
     },
     rooms: {
@@ -451,6 +458,13 @@ const translations = {
         ar: 'Árabe',
         fr: 'Francés',
         select: 'Seleccionar Idioma',
+      },
+      theme: {
+        title: 'Tema',
+        light: 'Claro',
+        dark: 'Oscuro',
+        system: 'Predeterminado del sistema',
+        select: 'Seleccionar Tema',
       }
     },
     rooms: {
@@ -912,6 +926,26 @@ const translations = {
         nameRequired: 'Veuillez saisir un nom de salon',
       },
     },
+    usersList: {
+      errorLoad: 'Impossible de charger les utilisateurs',
+      errorCurrent: 'Impossible d\'obtenir votre utilisateur actuel',
+      errorPublicKey: 'Impossible de récupérer la clé publique de cet utilisateur. Chat chiffré impossible.',
+      placeholder: 'Rechercher des utilisateurs (nom#1234)...',
+      emptySearch: 'Aucun utilisateur trouvé',
+      emptyAll: 'Aucun utilisateur inscrit pour l\'instant',
+    },
+    contactRequestItem: {
+      minutes: 'Il y a {{value}}m',
+      hours: 'Il y a {{value}}h',
+      days: 'Il y a {{value}}j',
+    },
+    theme: {
+      title: 'Thème',
+      light: 'Clair',
+      dark: 'Sombre',
+      system: 'Défaut du système',
+      select: 'Choisir le thème',
+    }
   },
 };
 
