@@ -1,12 +1,38 @@
 /**
  * Modern Color System - Chat-ti Mobile
- * Orange/Green Theme (Web Inspired)
+ * Deep Orange & Vibrant Green Theme
  */
 
-// Define constants first
+const baseColors = {
+    orange: {
+        50: '#FFF7ED',
+        100: '#FFEDD5',
+        200: '#FED7AA',
+        300: '#FDBA74',
+        400: '#FB923C',
+        500: '#FF6B35', // Main Orange
+        600: '#EA580C',
+        700: '#C2410C',
+        800: '#9A3412',
+        900: '#7C2D12',
+    },
+    green: {
+        50: '#F0FDFA',
+        100: '#CCFBF1',
+        200: '#99F6E4',
+        300: '#5EEAD4',
+        400: '#2DD4BF',
+        500: '#4ECDC4', // Main Green
+        600: '#0D9488',
+        700: '#0F766E',
+        800: '#115E59',
+        900: '#134E4A',
+    }
+};
+
 const shadows = {
     sm: {
-        shadowColor: 'rgba(255, 107, 53, 0.2)', // Orange tinted shadow
+        shadowColor: 'rgba(255, 107, 53, 0.2)',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 3,
@@ -26,13 +52,6 @@ const shadows = {
         shadowRadius: 12,
         elevation: 8,
     },
-    xl: {
-        shadowColor: 'rgba(255, 107, 53, 0.5)',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
-        elevation: 12,
-    },
 };
 
 const spacing = {
@@ -45,135 +64,133 @@ const spacing = {
 };
 
 const typography = {
-    h1: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        lineHeight: 40,
-    },
-    h2: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        lineHeight: 32,
-    },
-    h3: {
-        fontSize: 20,
-        fontWeight: '600',
-        lineHeight: 28,
-    },
-    body: {
-        fontSize: 16,
-        lineHeight: 24,
-    },
-    bodySmall: {
-        fontSize: 14,
-        lineHeight: 20,
-    },
-    caption: {
-        fontSize: 12,
-        lineHeight: 16,
-    },
+    h1: { fontSize: 32, fontWeight: '800', lineHeight: 40 },
+    h2: { fontSize: 24, fontWeight: '700', lineHeight: 32 },
+    h3: { fontSize: 20, fontWeight: '600', lineHeight: 28 },
+    body: { fontSize: 16, lineHeight: 24 },
+    bodySmall: { fontSize: 14, lineHeight: 20 },
+    caption: { fontSize: 12, lineHeight: 16 },
 };
 
 const borderRadius = {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
-    xxl: 24,
-    xxxl: 32,
+    xs: 8,
+    sm: 12,
+    md: 16,
+    lg: 20,
+    xl: 24,
+    xxl: 32,
+    full: 9999,
 };
 
-const gradients = {
-    primary: ['#FF6B35', '#FFB84D'],
-    secondary: ['#4ECDC4', '#81C784'],
-    accent: ['#FFB84D', '#FFD180'],
-    dark: ['#2C2C2C', '#1A1A1A'],
-    light: ['#FFFFFF', '#FFF8F0'],
-    orangeToGreen: ['#FF6B35', '#4ECDC4'], // Web desktop gradient style
-};
+export const lightColors = {
+    primary: baseColors.orange[500],
+    primaryDark: baseColors.orange[700],
+    primaryLight: baseColors.orange[300],
+    secondary: baseColors.green[500],
+    accent: baseColors.orange[200],
 
-const colors = {
-    // Primary Brand Colors (Orange Theme)
-    primary: '#FF6B35', // Primary Orange
-    primaryDark: '#E55A2B',
-    primaryLight: '#FFB84D',
-    primaryGradient: ['#FF6B35', '#FFB84D'],
-
-    // Secondary Colors (Green Accent)
-    secondary: '#4ECDC4', // Primary Green
-    secondaryDark: '#3DBDB4',
-    secondaryLight: '#81C784',
-    secondaryGradient: ['#4ECDC4', '#81C784'],
-
-    // Accent Colors
-    accent: '#FFB84D',
-    accentDark: '#FFA033',
-    accentLight: '#FFD180',
-
-    // Background Colors
-    background: '#FFF8F0', // Cream background
-    backgroundDark: '#1A1A1A',
-    backgroundSecondary: '#FFFFFF',
-    backgroundTertiary: '#F7F2EB',
-
-    // Surface Colors
+    background: '#FDFCFB',
     surface: '#FFFFFF',
-    surfaceDark: '#2C2C2C',
-    surfaceElevated: '#FFFFFF',
+    surfaceSecondary: '#F7F2EB',
     surfaceHover: '#FFF5EB',
 
-    // Text Colors
-    text: '#333333', // Dark text
-    textSecondary: '#666666', // Light text
-    textTertiary: '#999999',
+    text: '#1F2937',
+    textSecondary: '#4B5563',
+    textTertiary: '#9CA3AF',
     textInverse: '#FFFFFF',
-    textMuted: '#B0B0B0',
 
-    // Message Bubble Colors
-    messageSent: '#FF6B35',
-    messageSentGradient: ['#FF6B35', '#FF8F66'],
+    messageSent: baseColors.orange[500],
     messageReceived: '#FFFFFF',
-    messageReceivedDark: '#2C2C2C',
     messageText: '#FFFFFF',
-    messageTextReceived: '#333333',
+    messageTextReceived: '#1F2937',
 
-    // Status Colors
-    success: '#4ECDC4',
-    warning: '#FFB84D',
-    error: '#FF4D4D',
-    info: '#4ECDC4',
-    connected: '#4ECDC4',
-    disconnected: '#FF4D4D',
-    online: '#4ECDC4',
-    offline: '#B0B0B0',
+    border: '#E5E7EB',
+    divider: '#F3F4F6',
 
-    // UI Elements
-    border: '#E0E0E0',
-    divider: '#F0F0F0',
+    tabBarActive: baseColors.orange[500],
+    tabBarInactive: '#9CA3AF',
+
+    success: baseColors.green[500],
+    error: '#EF4444',
+    warning: '#F59E0B',
+    info: '#3B82F6',
+
+    status: {
+        online: baseColors.green[500],
+        offline: '#9CA3AF',
+    },
+
     inputBackground: '#FFFFFF',
-    inputBorder: '#E0E0E0',
-    placeholder: '#A0A0A0',
+    inputBorder: '#D1D5DB',
+    placeholder: '#9CA3AF',
 
-    // Tab Bar
-    tabBarActive: '#FF6B35',
-    tabBarInactive: '#999999',
-
-    // Notifications
-    badge: '#FF4D4D',
-    badgeText: '#FFFFFF',
+    gradients: {
+        primary: [baseColors.orange[500], baseColors.orange[300]],
+        secondary: [baseColors.green[500], baseColors.green[300]],
+        premium: [baseColors.orange[600], baseColors.green[500]],
+    }
 };
 
-// Also attach sub-objects to default export for backward compatibility
-// but avoid circular references by creating a new object for default export
-const defaultExport = {
-    ...colors,
+export const darkColors = {
+    primary: baseColors.orange[500],
+    primaryDark: baseColors.orange[800],
+    primaryLight: baseColors.orange[400],
+    secondary: baseColors.green[500],
+    accent: baseColors.orange[900],
+
+    background: '#111827',
+    surface: '#1F2937',
+    surfaceSecondary: '#374151',
+    surfaceHover: '#1F2937',
+
+    text: '#F9FAFB',
+    textSecondary: '#D1D5DB',
+    textTertiary: '#9CA3AF',
+    textInverse: '#FFFFFF',
+
+    messageSent: baseColors.orange[600],
+    messageReceived: '#374151',
+    messageText: '#FFFFFF',
+    messageTextReceived: '#F9FAFB',
+
+    border: '#374151',
+    divider: '#1F2937',
+
+    tabBarActive: baseColors.orange[500],
+    tabBarInactive: '#9CA3AF',
+
+    success: baseColors.green[500],
+    error: '#F87171',
+    warning: '#FBBF24',
+    info: '#60A5FA',
+
+    status: {
+        online: baseColors.green[500],
+        offline: '#6B7280',
+    },
+
+    inputBackground: '#1F2937',
+    inputBorder: '#374151',
+    placeholder: '#6B7280',
+
+    gradients: {
+        primary: [baseColors.orange[700], baseColors.orange[400]],
+        secondary: [baseColors.green[600], baseColors.green[400]],
+        premium: [baseColors.orange[800], baseColors.green[600]],
+    }
+};
+
+// Export all objects
+export { shadows, spacing, typography, borderRadius };
+
+// Backward compatibility (default to light)
+const colors = {
+    ...lightColors,
     shadows,
     spacing,
     typography,
     borderRadius,
-    gradients
+    gradients: lightColors.gradients,
 };
 
-export { colors, shadows, spacing, typography, borderRadius, gradients };
-export default defaultExport;
+export default colors;

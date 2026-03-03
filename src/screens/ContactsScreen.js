@@ -9,18 +9,22 @@ import {
     StyleSheet,
     ActivityIndicator,
     Text,
-    Alert,
     RefreshControl,
     TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import UserListItem from '../components/UserListItem';
-import colors from '../theme/colors';
 import { useTranslation } from '../i18n';
+import { useTheme } from '../theme/ThemeContext';
+import { useAlert } from '../theme/AlertContext';
+import { spacing, borderRadius, shadows, typography } from '../theme/colors';
 
 const ContactsScreen = ({ navigation }) => {
+    const { theme, isDark } = useTheme();
+    const { alert } = useAlert();
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -39,7 +43,6 @@ const ContactsScreen = ({ navigation }) => {
         }
     }, [currentUser]);
 
-    // Refresh when screen comes into focus
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             if (currentUser) {
@@ -47,7 +50,6 @@ const ContactsScreen = ({ navigation }) => {
                 loadPendingCount();
             }
         });
-
         return unsubscribe;
     }, [navigation, currentUser]);
 
@@ -58,14 +60,12 @@ const ContactsScreen = ({ navigation }) => {
 
     const loadContacts = async () => {
         if (!currentUser) return;
-
         try {
             setLoading(true);
             const result = await ApiService.getContactsList(currentUser.userId);
-            setContacts(result);
+            setContacts(result || []);
         } catch (error) {
             console.error('Error loading contacts:', error);
-            Alert.alert(t('common.error'), t('contacts.errorLoad'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -74,131 +74,105 @@ const ContactsScreen = ({ navigation }) => {
 
     const loadPendingCount = async () => {
         if (!currentUser) return;
-
         try {
             const requests = await ApiService.getContactRequests(currentUser.userId);
-            setPendingCount(requests.length);
+            setPendingCount(requests?.length || 0);
         } catch (error) {
             console.error('Error loading pending count:', error);
         }
     };
 
-    const handleRefresh = () => {
-        setRefreshing(true);
-        loadContacts();
-        loadPendingCount();
-    };
-
     const handleContactPress = async (contact) => {
         if (!currentUser) {
-            Alert.alert(t('common.error'), t('contacts.errorCurrent'));
+            alert({ title: t('common.error'), message: t('contacts.errorCurrent'), type: 'error' });
             return;
         }
 
         try {
-            // WORKAROUND: The contact object from getContactsList may not have the public key.
-            // Fetch the full user object to ensure we have the key and avoid calling the broken worker endpoint.
-            console.log(`Fetching full user object for ${contact.fullUsername} to get public key.`);
             const fullUser = await ApiService.findUserByUsername(contact.fullUsername);
-
             if (!fullUser || !fullUser.publicKey) {
-                console.error('Could not retrieve public key for contact:', contact.fullUsername);
-                Alert.alert(t('common.error'), t('contacts.errorStart'));
+                alert({ title: t('common.error'), message: t('contacts.errorStart'), type: 'error' });
                 return;
             }
 
-            // Navigate to direct message
             navigation.navigate('DirectMessage', {
                 conversationId: contact.conversationId,
                 recipientId: contact.userId,
                 recipientUsername: contact.fullUsername,
-                recipientPublicKey: fullUser.publicKey, // Use the key we just fetched
+                recipientPublicKey: fullUser.publicKey,
                 userId: currentUser.userId,
                 username: currentUser.fullUsername,
             });
         } catch (error) {
-            console.error('Error starting conversation with contact:', error);
-            Alert.alert(t('common.error'), t('contacts.errorStart'));
+            console.error('Error starting conversation:', error);
+            alert({ title: t('common.error'), message: t('contacts.errorStart'), type: 'error' });
         }
     };
 
-    const renderContact = ({ item }) => (
-        <UserListItem
-            user={item}
-            onPress={() => handleContactPress(item)}
-        />
-    );
-
-    if (!currentUser) {
-        return (
-            <SafeAreaView style={styles.container} edges={['top']}>
-                <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                </View>
-            </SafeAreaView>
-        );
-    }
-
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            {/* Header */}
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>{t('contacts.title')}</Text>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+            <View style={[styles.header, { backgroundColor: theme.surface }]}>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>{t('contacts.title')}</Text>
                 <View style={styles.headerButtons}>
                     <TouchableOpacity
-                        style={styles.headerButton}
+                        style={[styles.headerButton, { backgroundColor: theme.primary + '15' }]}
                         onPress={() => navigation.navigate('ContactRequests')}
-                        activeOpacity={0.7}
                     >
-                        <Text style={styles.headerButtonText}>
-                            📬
-                            {pendingCount > 0 && (
-                                <Text style={styles.badge}> {pendingCount}</Text>
-                            )}
-                        </Text>
+                        <Text style={styles.headerButtonIcon}>📬</Text>
+                        {pendingCount > 0 && (
+                            <View style={[styles.badge, { backgroundColor: theme.error }]}>
+                                <Text style={styles.badgeText}>{pendingCount}</Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={[styles.headerButton, styles.addButton]}
-                        onPress={() => navigation.navigate('AddContact')}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={styles.headerButtonText}>+</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('AddContact')}>
+                        <LinearGradient
+                            colors={theme.gradients.primary}
+                            style={styles.addButton}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                        >
+                            <Text style={styles.addButtonText}>+</Text>
+                        </LinearGradient>
                     </TouchableOpacity>
                 </View>
             </View>
 
             {loading && contacts.length === 0 ? (
                 <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
+                    <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : contacts.length === 0 ? (
                 <View style={styles.centerContainer}>
-                    <Text style={styles.emptyText}>
-                        {t('contacts.emptyTitle')}
-                    </Text>
-                    <Text style={styles.emptySubtext}>
-                        {t('contacts.emptySubtitle')}
-                    </Text>
+                    <Text style={[styles.emptyIcon, { color: theme.primary + '30' }]}>👥</Text>
+                    <Text style={[styles.emptyText, { color: theme.text }]}>{t('contacts.emptyTitle')}</Text>
+                    <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>{t('contacts.emptySubtitle')}</Text>
                     <TouchableOpacity
-                        style={styles.emptyButton}
+                        style={styles.emptyButtonWrapper}
                         onPress={() => navigation.navigate('AddContact')}
-                        activeOpacity={0.7}
                     >
-                        <Text style={styles.emptyButtonText}>+ {t('contacts.addContact')}</Text>
+                        <LinearGradient
+                            colors={theme.gradients.primary}
+                            style={styles.emptyButton}
+                        >
+                            <Text style={styles.emptyButtonText}>+ {t('contacts.addContact')}</Text>
+                        </LinearGradient>
                     </TouchableOpacity>
                 </View>
             ) : (
                 <FlatList
                     data={contacts}
-                    renderItem={renderContact}
+                    renderItem={({ item }) => <UserListItem user={item} onPress={() => handleContactPress(item)} />}
                     keyExtractor={(item) => item.userId}
                     contentContainerStyle={styles.list}
+                    showsVerticalScrollIndicator={false}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
-                            onRefresh={handleRefresh}
-                            colors={[colors.primary]}
+                            onRefresh={() => { setRefreshing(true); loadContacts(); loadPendingCount(); }}
+                            colors={[theme.primary]}
+                            tintColor={theme.primary}
                         />
                     }
                 />
@@ -210,91 +184,102 @@ const ContactsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
     },
     header: {
-        backgroundColor: colors.surface,
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
     },
     headerTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: colors.text,
+        ...typography.h2,
+        fontWeight: '900',
     },
     headerButtons: {
         flexDirection: 'row',
-        gap: 12,
+        alignItems: 'center',
+        gap: spacing.sm,
     },
     headerButton: {
-        backgroundColor: colors.primary,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        alignItems: 'center',
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         justifyContent: 'center',
-        minWidth: 44,
+        alignItems: 'center',
+        position: 'relative',
+    },
+    headerButtonIcon: {
+        fontSize: 20,
     },
     addButton: {
-        backgroundColor: colors.secondary,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        ...shadows.sm,
     },
-    headerButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
+    addButtonText: {
+        color: '#FFFFFF',
+        fontSize: 24,
+        fontWeight: '700',
     },
     badge: {
-        backgroundColor: '#FF3B30',
-        color: '#fff',
-        fontSize: 11,
-        fontWeight: 'bold',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 10,
+        position: 'absolute',
+        top: -2,
+        right: -2,
+        minWidth: 18,
+        height: 18,
+        borderRadius: 9,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 4,
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
+    },
+    badgeText: {
+        color: '#FFFFFF',
+        fontSize: 10,
+        fontWeight: '900',
     },
     centerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: spacing.xl,
+    },
+    emptyIcon: {
+        fontSize: 80,
+        marginBottom: spacing.lg,
     },
     emptyText: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.text,
-        marginBottom: 8,
+        ...typography.h3,
+        marginBottom: spacing.xs,
         textAlign: 'center',
     },
     emptySubtext: {
-        fontSize: 14,
-        color: colors.textLight,
+        ...typography.body,
         textAlign: 'center',
-        marginBottom: 20,
+        marginBottom: spacing.xl,
+    },
+    emptyButtonWrapper: {
+        borderRadius: borderRadius.md,
+        overflow: 'hidden',
+        ...shadows.md,
     },
     emptyButton: {
-        backgroundColor: colors.primary,
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        borderRadius: 8,
+        paddingHorizontal: spacing.xl,
+        paddingVertical: spacing.md,
+        alignItems: 'center',
     },
     emptyButtonText: {
-        color: '#fff',
+        color: '#FFFFFF',
+        fontWeight: '700',
         fontSize: 16,
-        fontWeight: '600',
     },
     list: {
-        flexGrow: 1,
-        paddingBottom: 80,
+        paddingBottom: 100,
     },
 });
 

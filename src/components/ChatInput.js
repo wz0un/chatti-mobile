@@ -1,15 +1,17 @@
 /**
- * Chat Input Component
+ * Chat Input Component - Modern Design
  */
 
 import React, { useState, useRef } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, Platform, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import colors from '../theme/colors';
+import { LinearGradient } from 'expo-linear-gradient';
+import { spacing, borderRadius, shadows, typography } from '../theme/colors';
 import { useTranslation } from '../i18n';
+import { useTheme } from '../theme/ThemeContext';
 
 const ChatInput = ({ onSendMessage, onTyping, disabled }) => {
+    const { theme, isDark } = useTheme();
     const [message, setMessage] = useState('');
     const typingTimeoutRef = useRef(null);
     const insets = useSafeAreaInsets();
@@ -19,30 +21,16 @@ const ChatInput = ({ onSendMessage, onTyping, disabled }) => {
         if (message.trim() && !disabled) {
             onSendMessage(message);
             setMessage('');
-
-            // Stop typing indicator
-            if (onTyping) {
-                onTyping(false);
-            }
-            if (typingTimeoutRef.current) {
-                clearTimeout(typingTimeoutRef.current);
-            }
+            if (onTyping) onTyping(false);
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         }
     };
 
     const handleChangeText = (text) => {
         setMessage(text);
-
-        // Send typing indicator
         if (onTyping && text.length > 0) {
             onTyping(true);
-
-            // Clear previous timeout
-            if (typingTimeoutRef.current) {
-                clearTimeout(typingTimeoutRef.current);
-            }
-
-            // Stop typing after 2 seconds of inactivity
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
             typingTimeoutRef.current = setTimeout(() => {
                 onTyping(false);
             }, 2000);
@@ -52,31 +40,38 @@ const ChatInput = ({ onSendMessage, onTyping, disabled }) => {
     return (
         <View style={[
             styles.container,
-            { paddingBottom: Math.max(insets.bottom, 8) }
+            {
+                backgroundColor: theme.surface,
+                borderTopColor: theme.border,
+                paddingBottom: Math.max(insets.bottom, 12)
+            }
         ]}>
-            <TextInput
-                style={styles.input}
-                placeholder={t('chatInput.placeholder')}
-                placeholderTextColor={colors.placeholder}
-                value={message}
-                onChangeText={handleChangeText}
-                multiline
-                maxLength={500}
-                editable={!disabled}
-            />
+            <View style={[styles.inputContainer, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border }]}>
+                <TextInput
+                    style={[styles.input, { color: theme.text }]}
+                    placeholder={t('chatInput.placeholder')}
+                    placeholderTextColor={theme.textTertiary}
+                    value={message}
+                    onChangeText={handleChangeText}
+                    multiline
+                    maxLength={1000}
+                    editable={!disabled}
+                />
+            </View>
+
             <TouchableOpacity
-                style={[
-                    styles.sendButton,
-                    (!message.trim() || disabled) && styles.sendButtonDisabled
-                ]}
                 onPress={handleSend}
                 disabled={!message.trim() || disabled}
+                style={[styles.sendButtonWrapper, { opacity: !message.trim() || disabled ? 0.5 : 1 }]}
             >
-                <Ionicons
-                    name="send"
-                    size={20}
-                    color={!message.trim() || disabled ? colors.placeholder : colors.textInverse}
-                />
+                <LinearGradient
+                    colors={theme.gradients.primary}
+                    style={styles.sendButton}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <Text style={styles.sendIcon}>➔</Text>
+                </LinearGradient>
             </TouchableOpacity>
         </View>
     );
@@ -86,33 +81,38 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'flex-end',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        backgroundColor: colors.surface,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
         borderTopWidth: 1,
-        borderTopColor: colors.border,
+    },
+    inputContainer: {
+        flex: 1,
+        borderRadius: 24,
+        paddingHorizontal: 16,
+        paddingVertical: Platform.OS === 'ios' ? 10 : 4,
+        borderWidth: 1,
+        maxHeight: 120,
     },
     input: {
-        flex: 1,
-        backgroundColor: colors.inputBackground,
-        borderRadius: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
         fontSize: 16,
-        maxHeight: 100,
-        color: colors.text,
+        lineHeight: 20,
+        paddingTop: 0,
+    },
+    sendButtonWrapper: {
+        marginLeft: spacing.sm,
+        ...shadows.sm,
     },
     sendButton: {
-        backgroundColor: colors.primary,
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
-        marginLeft: 8,
     },
-    sendButtonDisabled: {
-        backgroundColor: colors.inputBackground,
+    sendIcon: {
+        color: '#FFFFFF',
+        fontSize: 18,
+        fontWeight: '900',
     },
 });
 
