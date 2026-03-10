@@ -95,6 +95,22 @@ class NotificationService {
                 if (!granted) return null;
             }
 
+            let isExpoGo = false;
+            try {
+                const Constants = require('expo-constants').default;
+                if (Constants) {
+                    isExpoGo = Constants.executionEnvironment === 'storeClient';
+                }
+            } catch (e) {
+                if (__DEV__) {
+                    isExpoGo = true;
+                }
+            }
+            
+            if (isExpoGo) {
+                return 'expo-go-mock-token';
+            }
+
             const tokenData = await Notifications.getExpoPushTokenAsync({
                 projectId: 'bba1628d-3c75-4e56-ac00-fc572407c45b'
             });
