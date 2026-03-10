@@ -4,6 +4,7 @@
  */
 
 import NotificationService from './NotificationService';
+import ChatHistoryService from './ChatHistoryService';
 
 class ChatService {
     constructor() {
@@ -15,6 +16,8 @@ class ChatService {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.notificationService = new NotificationService();
+        this.messageCache = []; // Track messages for saving
+        this.messageIds = new Set();
     }
 
     /**
@@ -27,10 +30,16 @@ class ChatService {
     /**
      * Connect to a chat room
      */
-    connect(roomId, username, workerUrl = 'ws://localhost:8788') {
+    connect(roomId, username, workerUrl = 'ws://localhost:8788', userId = null) {
         this.roomId = roomId;
         this.username = username;
-        this.userId = this.generateUserId();
+        this.userId = userId || this.generateUserId();
+
+        // Initialize chat history for rooms
+        if (userId) {
+            ChatHistoryService.setUserId(userId);
+            this._loadSavedRoomHistory(roomId);
+        }
 
         // Determine WebSocket URL
         const wsUrl = workerUrl.replace('http://', 'ws://').replace('https://', 'wss://');
@@ -72,6 +81,15 @@ class ChatService {
                         data.username,
                         this.roomId
                     );
+                }
+
+                // Save non-system messages for history
+                if (data.type === 'message' && data.content && data.id) {
+                    if (!this.messageIds.has(data.id)) {
+                        this.messageIds.add(data.id);
+                        this.messageCache.push(data);
+                        ChatHistoryService.appendRoomMessages(this.roomId, [data]);
+                    }
                 }
 
                 this.emit(data.type, data);
@@ -184,10 +202,16 @@ class ChatService {
      * Disconnect from chat
      */
     disconnect() {
+        // Save room messages before disconnecting
+        if (this.roomId && this.messageCache.length > 0) {
+            ChatHistoryService.saveRoomMessages(this.roomId, this.messageCache);
+        }
         if (this.ws) {
             this.ws.close();
             this.ws = null;
         }
+        this.messageCache = [];
+        this.messageIds = new Set();
         this.listeners.clear();
     }
 
@@ -203,6 +227,25 @@ class ChatService {
      */
     isConnected() {
         return this.ws && this.ws.readyState === WebSocket.OPEN;
+    }
+
+    /**
+     * Load saved room history from local storage
+     */
+    async _loadSavedRoomHistory(roomId) {
+        try {
+            const enabled = await ChatHistoryService.isHistoryEnabled();
+            if (!enabled) return;
+
+            const savedMessages = await ChatHistoryService.loadRoomMessages(roomId);
+            if (savedMessages.length > 0) {
+                this.messageCache = savedMessages;
+                savedMessages.forEach(m => this.messageIds.add(m.id));
+                this.emit('saved_history', { messages: savedMessages });
+            }
+        } catch (error) {
+            console.error('Error loading room history:', error);
+        }
     }
 }
 

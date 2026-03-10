@@ -6,6 +6,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationService from './NotificationService';
 import EncryptionService from './EncryptionService';
+import ChatHistoryService from './ChatHistoryService';
 import * as Device from 'expo-device';
 
 // Configuration - Set to false for local development
@@ -224,6 +225,8 @@ class AuthService {
      */
     static async logout() {
         try {
+            // Clear all chat history from local storage
+            await ChatHistoryService.clearAllHistory();
             await AsyncStorage.removeItem('userData');
             // Keep deviceId for future logins
         } catch (error) {

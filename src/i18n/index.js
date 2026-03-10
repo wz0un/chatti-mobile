@@ -256,6 +256,18 @@ const translations = {
       leftTitle: '👋 {{username}} left',
       leftBody: '{{username}} has left the chat',
     },
+    chatHistory: {
+      title: 'Chat History',
+      enable: 'Save Chat History',
+      enableDescription: 'Messages are saved locally on this device only',
+      disable: 'Messages are not saved',
+      temporaryMode: 'Temporary Conversation',
+      temporaryBanner: 'Messages won\'t be saved',
+      deleteAll: 'Delete All History',
+      deleteAllConfirm: 'Delete all saved messages? This cannot be undone.',
+      deleteAllSuccess: 'All chat history deleted',
+      disablePrompt: 'Do you also want to delete existing saved messages?',
+    },
   },
   es: {
     common: {
@@ -501,6 +513,18 @@ const translations = {
       leftTitle: '👋 {{username}} salió',
       leftBody: '{{username}} salió del chat',
     },
+    chatHistory: {
+      title: 'Historial de Chat',
+      enable: 'Guardar Historial',
+      enableDescription: 'Los mensajes se guardan solo en este dispositivo',
+      disable: 'Los mensajes no se guardan',
+      temporaryMode: 'Conversación Temporal',
+      temporaryBanner: 'Los mensajes no se guardarán',
+      deleteAll: 'Eliminar Todo el Historial',
+      deleteAllConfirm: '¿Eliminar todos los mensajes guardados? Esta acción no se puede deshacer.',
+      deleteAllSuccess: 'Todo el historial ha sido eliminado',
+      disablePrompt: '¿También deseas eliminar los mensajes guardados?',
+    },
   },
   ar: {
     common: {
@@ -720,6 +744,18 @@ const translations = {
       joinBody: '{{username}} انضم إلى الدردشة',
       leftTitle: '👋 {{username}} غادر',
       leftBody: '{{username}} غادر الدردشة',
+    },
+    chatHistory: {
+      title: 'سجل المحادثات',
+      enable: 'حفظ سجل المحادثات',
+      enableDescription: 'يتم حفظ الرسائل محلياً على هذا الجهاز فقط',
+      disable: 'لا يتم حفظ الرسائل',
+      temporaryMode: 'محادثة مؤقتة',
+      temporaryBanner: 'لن يتم حفظ الرسائل',
+      deleteAll: 'حذف كل السجل',
+      deleteAllConfirm: 'حذف جميع الرسائل المحفوظة؟ هذا الإجراء لا يمكن التراجع عنه.',
+      deleteAllSuccess: 'تم حذف كل سجل المحادثات',
+      disablePrompt: 'هل تريد أيضاً حذف الرسائل المحفوظة؟',
     },
   },
   fr: {
@@ -945,7 +981,19 @@ const translations = {
       dark: 'Sombre',
       system: 'Défaut du système',
       select: 'Choisir le thème',
-    }
+    },
+    chatHistory: {
+      title: 'Historique des Chats',
+      enable: 'Sauvegarder l\'historique',
+      enableDescription: 'Les messages sont sauvegardés localement sur cet appareil uniquement',
+      disable: 'Les messages ne sont pas sauvegardés',
+      temporaryMode: 'Conversation Temporaire',
+      temporaryBanner: 'Les messages ne seront pas sauvegardés',
+      deleteAll: 'Supprimer tout l\'historique',
+      deleteAllConfirm: 'Supprimer tous les messages sauvegardés ? Cette action est irréversible.',
+      deleteAllSuccess: 'Tout l\'historique a été supprimé',
+      disablePrompt: 'Voulez-vous également supprimer les messages sauvegardés ?',
+    },
   },
 };
 

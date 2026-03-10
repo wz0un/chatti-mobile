@@ -6,6 +6,7 @@
 
 import EncryptionService from './EncryptionService';
 import NotificationService from './NotificationService';
+import ChatHistoryService from './ChatHistoryService';
 
 class DirectMessageService {
     constructor() {
@@ -21,6 +22,7 @@ class DirectMessageService {
         this.messageCache = []; // Decrypted messages (RAM only, lost on close)
         this.messageIds = new Set(); // Track IDs to prevent duplicates
         this.notificationService = new NotificationService();
+        this.isTemporary = false; // Per-conversation temporary mode
     }
 
     /**
@@ -34,6 +36,21 @@ class DirectMessageService {
         this.userId = userId;
         this.username = username;
         this.recipientId = recipientId;
+
+        // Initialize chat history service for this user
+        ChatHistoryService.setUserId(userId);
+        this.isTemporary = await ChatHistoryService.isConversationTemporary(conversationId);
+
+        // Load saved messages from local storage (if history is enabled)
+        const shouldPersist = await ChatHistoryService.shouldPersist(conversationId);
+        if (shouldPersist) {
+            const savedMessages = await ChatHistoryService.loadDmMessages(conversationId);
+            if (savedMessages.length > 0) {
+                this.messageCache = savedMessages;
+                savedMessages.forEach(m => this.messageIds.add(m.id));
+                this.emit('history', { messages: this.messageCache });
+            }
+        }
 
         try {
             // Initialize encryption and notifications
@@ -134,18 +151,29 @@ class DirectMessageService {
     /**
      * Disconnect from conversation
      */
-    disconnect() {
+    async disconnect() {
         this.isDisconnected = true;
+
+        // Save messages to local storage before clearing (if enabled)
+        if (this.conversationId && this.messageCache.length > 0) {
+            try {
+                await ChatHistoryService.saveDmMessages(this.conversationId, this.messageCache);
+            } catch (error) {
+                console.error('Error saving chat history on disconnect:', error);
+            }
+        }
+
         if (this.ws) {
             this.ws.onclose = null;
             this.ws.close();
             this.ws = null;
         }
-        // EPHEMERAL: Clear all messages from RAM
+        // Clear all messages from RAM
         this.messageCache = [];
         this.messageIds = new Set();
         this.listeners.clear();
         this.recipientPublicKey = null;
+        this.isTemporary = false;
     }
 
     /**
@@ -212,6 +240,9 @@ class DirectMessageService {
         // Append to existing cache (don't replace, we may already have messages)
         this.messageCache = [...this.messageCache, ...decryptedMessages];
         this.emit('history', { messages: this.messageCache });
+
+        // Persist newly received messages
+        ChatHistoryService.appendDmMessages(this.conversationId, decryptedMessages);
     }
 
     /**
@@ -227,6 +258,9 @@ class DirectMessageService {
                 this.messageIds.add(data.id);
                 this.messageCache.push(decrypted);
                 this.emit('message', decrypted);
+
+                // Persist new message
+                ChatHistoryService.appendDmMessages(this.conversationId, [decrypted]);
 
                 if (decrypted.senderId !== this.userId) {
                     const senderUsername = this.participants?.get(decrypted.senderId)?.username || decrypted.senderId;
@@ -456,6 +490,24 @@ class DirectMessageService {
      */
     isConnected() {
         return this.ws && this.ws.readyState === WebSocket.OPEN;
+    }
+
+    /**
+     * Toggle temporary mode for the current conversation
+     */
+    async setTemporary(isTemp) {
+        this.isTemporary = isTemp;
+        if (this.conversationId) {
+            await ChatHistoryService.setConversationTemporary(this.conversationId, isTemp);
+        }
+        return isTemp;
+    }
+
+    /**
+     * Check if current conversation is in temporary mode
+     */
+    getIsTemporary() {
+        return this.isTemporary;
     }
 }
 
