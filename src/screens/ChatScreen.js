@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ChatService from '../services/ChatService';
+import AuthService from '../services/AuthService';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import TypingIndicator from '../components/TypingIndicator';
@@ -72,8 +73,22 @@ const ChatScreen = ({ route, navigation }) => {
         const chatService = new ChatService();
         chatServiceRef.current = chatService;
 
-        chatService.initNotifications().catch(error => console.error('Failed to init notifications:', error));
-        chatService.connect(roomId, username, WORKER_URL);
+        // Load user ID for history
+        const initChat = async () => {
+            const currentUser = await AuthService.getCurrentUser();
+            const userId = currentUser?.userId || null;
+
+            chatService.initNotifications().catch(error => console.error('Failed to init notifications:', error));
+            chatService.connect(roomId, username, WORKER_URL, userId);
+        };
+
+        // Handle saved history from local storage
+        chatService.on('saved_history', (data) => {
+            setMessageList(prev => {
+                if (prev.length === 0) return data.messages;
+                return prev;
+            });
+        });
 
         chatService.on('connected', () => { setIsConnected(true); setConnectionError(null); });
         chatService.on('disconnected', () => { setIsConnected(false); });
@@ -121,6 +136,8 @@ const ChatScreen = ({ route, navigation }) => {
                 });
             }
         });
+
+        initChat();
 
         return () => chatService.disconnect();
     }, [roomId, username, t]);

@@ -12,10 +12,12 @@ import {
     Text,
     Dimensions,
     StatusBar,
+    TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DirectMessageService from '../services/DirectMessageService';
+import ChatHistoryService from '../services/ChatHistoryService';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import TypingIndicator from '../components/TypingIndicator';
@@ -42,6 +44,8 @@ const DirectMessageScreen = ({ route, navigation }) => {
     const [isTyping, setIsTyping] = useState(new Set());
     const [isEncrypted, setIsEncrypted] = useState(true);
     const [connectionError, setConnectionError] = useState(null);
+    const [isTemporary, setIsTemporary] = useState(false);
+    const [historyEnabled, setHistoryEnabled] = useState(false);
     const { t } = useTranslation();
 
     const dmServiceRef = useRef(null);
@@ -69,11 +73,42 @@ const DirectMessageScreen = ({ route, navigation }) => {
     }, []);
 
     useEffect(() => {
+        // Check chat history settings
+        const checkSettings = async () => {
+            ChatHistoryService.setUserId(userId);
+            const enabled = await ChatHistoryService.isHistoryEnabled();
+            setHistoryEnabled(enabled);
+            const temp = await ChatHistoryService.isConversationTemporary(conversationId);
+            setIsTemporary(temp);
+        };
+        checkSettings();
+    }, [conversationId, userId]);
+
+    const handleToggleTemporary = async () => {
+        if (dmServiceRef.current) {
+            const newValue = !isTemporary;
+            await dmServiceRef.current.setTemporary(newValue);
+            setIsTemporary(newValue);
+        }
+    };
+
+    useEffect(() => {
         updateLastSeen();
         navigation.setOptions({
             title: recipientUsername || t('directMessage.fallbackTitle', { id: recipientId.substring(0, 8) }),
             headerRight: () => (
                 <View style={styles.headerRight}>
+                    {historyEnabled && (
+                        <TouchableOpacity
+                            onPress={handleToggleTemporary}
+                            style={styles.tempToggle}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <Text style={styles.tempToggleIcon}>
+                                {isTemporary ? '🕐' : '💾'}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
                     <View style={[
                         styles.statusIndicator,
                         { backgroundColor: isConnected ? theme.success : theme.error }
@@ -84,7 +119,7 @@ const DirectMessageScreen = ({ route, navigation }) => {
                 </View>
             ),
         });
-    }, [navigation, recipientUsername, recipientId, isConnected, isEncrypted, t, theme, updateLastSeen]);
+    }, [navigation, recipientUsername, recipientId, isConnected, isEncrypted, isTemporary, historyEnabled, t, theme, updateLastSeen]);
 
     useEffect(() => {
         const dmService = new DirectMessageService();
@@ -169,6 +204,14 @@ const DirectMessageScreen = ({ route, navigation }) => {
                     </View>
                 )}
 
+                {historyEnabled && isTemporary && (
+                    <View style={[styles.tempBanner, { backgroundColor: theme.surfaceSecondary || theme.surface }]}>
+                        <Text style={[styles.tempBannerText, { color: theme.textSecondary }]}>
+                            🕐 {t('chatHistory.temporaryBanner')}
+                        </Text>
+                    </View>
+                )}
+
                 <FlatList
                     ref={flatListRef}
                     data={messageList}
@@ -240,7 +283,23 @@ const styles = StyleSheet.create({
     typingContainer: {
         paddingLeft: spacing.lg,
         paddingBottom: spacing.xs,
-    }
+    },
+    tempToggle: {
+        marginRight: 8,
+        padding: 2,
+    },
+    tempToggleIcon: {
+        fontSize: 16,
+    },
+    tempBanner: {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        alignItems: 'center',
+    },
+    tempBannerText: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
 });
 
 export default DirectMessageScreen;

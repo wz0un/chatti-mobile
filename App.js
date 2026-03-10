@@ -11,6 +11,7 @@ import GlobalNotificationService from './src/services/GlobalNotificationService'
 import { LanguageProvider } from './src/i18n';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { AlertProvider } from './src/theme/AlertContext';
+import AuthService from './src/services/AuthService';
 
 function AppContent() {
   const { isDark } = useTheme();
@@ -20,6 +21,9 @@ function AppContent() {
   useEffect(() => {
     // Initialize global notification service
     GlobalNotificationService.initialize();
+
+    // Update push token with the server
+    AuthService.updatePushToken();
 
     // Listen for incoming notifications
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {

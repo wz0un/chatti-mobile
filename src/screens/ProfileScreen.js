@@ -11,13 +11,15 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     ScrollView,
-    Modal
+    Modal,
+    Switch
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
 import AuthService from '../services/AuthService';
 import ApiService from '../services/ApiService';
+import ChatHistoryService from '../services/ChatHistoryService';
 import { spacing, borderRadius, typography, shadows } from '../theme/colors';
 import { useTranslation } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
@@ -52,6 +54,7 @@ const ProfileScreen = ({ navigation }) => {
 
     const [languageModalVisible, setLanguageModalVisible] = useState(false);
     const [themeModalVisible, setThemeModalVisible] = useState(false);
+    const [chatHistoryEnabled, setChatHistoryEnabled] = useState(false);
 
     const languages = [
         { code: 'en', label: 'English', flag: '🇺🇸' },
@@ -89,6 +92,11 @@ const ProfileScreen = ({ navigation }) => {
 
             setUser(currentUser);
             setDeviceId(currentDeviceId);
+
+            // Load chat history setting
+            ChatHistoryService.setUserId(currentUser.userId);
+            const historyEnabled = await ChatHistoryService.isHistoryEnabled();
+            setChatHistoryEnabled(historyEnabled);
         } catch (error) {
             console.error('Error loading profile:', error);
         } finally {
@@ -153,6 +161,47 @@ const ProfileScreen = ({ navigation }) => {
         });
     };
 
+    const handleToggleChatHistory = async (enabled) => {
+        if (enabled) {
+            await ChatHistoryService.setHistoryEnabled(true);
+            setChatHistoryEnabled(true);
+        } else {
+            alert({
+                title: t('chatHistory.title'),
+                message: t('chatHistory.disablePrompt'),
+                confirmText: t('common.delete'),
+                cancelText: t('common.cancel'),
+                type: 'warning',
+                onConfirm: async () => {
+                    await ChatHistoryService.clearAllHistory();
+                    await ChatHistoryService.setHistoryEnabled(false);
+                    setChatHistoryEnabled(false);
+                },
+                onCancel: async () => {
+                    await ChatHistoryService.setHistoryEnabled(false);
+                    setChatHistoryEnabled(false);
+                }
+            });
+        }
+    };
+
+    const handleDeleteAllHistory = () => {
+        alert({
+            title: t('chatHistory.deleteAll'),
+            message: t('chatHistory.deleteAllConfirm'),
+            confirmText: t('common.delete'),
+            cancelText: t('common.cancel'),
+            type: 'error',
+            onConfirm: async () => {
+                await ChatHistoryService.clearAllHistory();
+                alert({
+                    title: t('chatHistory.deleteAllSuccess'),
+                    type: 'success'
+                });
+            }
+        });
+    };
+
     if (loading) {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
@@ -204,6 +253,41 @@ const ProfileScreen = ({ navigation }) => {
                         onPress={() => { }}
                         theme={theme}
                     />
+                </View>
+
+                {/* Chat Settings */}
+                <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>{t('chatHistory.title')}</Text>
+                <View style={[styles.section, { backgroundColor: theme.surface, ...shadows.sm }]}>
+                    <View style={[styles.settingsItem, { borderBottomColor: theme.divider }]}>
+                        <View style={[styles.settingsIconContainer, { backgroundColor: theme.surfaceSecondary }]}>
+                            <Text style={styles.settingsIcon}>💬</Text>
+                        </View>
+                        <View style={styles.settingsContent}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.settingsLabel, { color: theme.text }]}>
+                                    {t('chatHistory.enable')}
+                                </Text>
+                                <Text style={[styles.historyDescription, { color: theme.textTertiary }]}>
+                                    {chatHistoryEnabled ? t('chatHistory.enableDescription') : t('chatHistory.disable')}
+                                </Text>
+                            </View>
+                            <Switch
+                                value={chatHistoryEnabled}
+                                onValueChange={handleToggleChatHistory}
+                                trackColor={{ false: theme.border, true: theme.primary + '60' }}
+                                thumbColor={chatHistoryEnabled ? theme.primary : theme.textTertiary}
+                            />
+                        </View>
+                    </View>
+                    {chatHistoryEnabled && (
+                        <SettingsItem
+                            icon="🗑️"
+                            label={t('chatHistory.deleteAll')}
+                            isDestructive
+                            onPress={handleDeleteAllHistory}
+                            theme={theme}
+                        />
+                    )}
                 </View>
 
                 {/* App Settings */}
@@ -452,6 +536,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         ...typography.caption,
         marginTop: spacing.md,
+    },
+    historyDescription: {
+        fontSize: 11,
+        marginTop: 2,
     },
     modalOverlay: {
         flex: 1,

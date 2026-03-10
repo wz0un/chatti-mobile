@@ -15,6 +15,7 @@ import AuthService from '../services/AuthService';
 import { useTranslation } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, borderRadius } from '../theme/colors';
+import * as Notifications from 'expo-notifications';
 
 const Tab = createBottomTabNavigator();
 
@@ -65,6 +66,11 @@ const MainTabs = ({ route, navigation }) => {
             checkPendingRequests();
         }, 30000);
 
+        const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+            checkUnreadChats();
+            checkPendingRequests();
+        });
+
         const unsubscribe = navigation.addListener('focus', () => {
             checkUnreadChats();
             checkPendingRequests();
@@ -73,6 +79,7 @@ const MainTabs = ({ route, navigation }) => {
         return () => {
             clearInterval(interval);
             unsubscribe();
+            Notifications.removeNotificationSubscription(notificationListener);
         };
     }, [currentUser, navigation]);
 

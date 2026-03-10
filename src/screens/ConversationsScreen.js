@@ -21,6 +21,7 @@ import { useTranslation } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
 import { useAlert } from '../theme/AlertContext';
 import { spacing, borderRadius, shadows, typography } from '../theme/colors';
+import * as Notifications from 'expo-notifications';
 
 const ConversationsScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -47,12 +48,24 @@ const ConversationsScreen = ({ navigation }) => {
 
     useEffect(() => {
         let interval;
+        let notificationListener;
         if (currentUser) {
             interval = setInterval(() => {
                 loadConversations(false);
             }, 30000);
+
+            // Listen for foreground push notifications to refresh immediately
+            notificationListener = Notifications.addNotificationReceivedListener(notification => {
+                loadConversations(false);
+                loadLastSeen();
+            });
         }
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            if (notificationListener) {
+                Notifications.removeNotificationSubscription(notificationListener);
+            }
+        };
     }, [currentUser]);
 
     useEffect(() => {
