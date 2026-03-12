@@ -11,6 +11,7 @@ import {
     Text,
     RefreshControl,
     TextInput,
+    Notifications as NativeNotifications,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -71,9 +72,9 @@ const ConversationsScreen = ({ navigation }) => {
             });
         }
         return () => {
-            clearInterval(interval);
+            if (interval) clearInterval(interval);
             if (notificationListener) {
-                Notifications.removeNotificationSubscription(notificationListener);
+                notificationListener.remove();
             }
         };
     }, [currentUser]);

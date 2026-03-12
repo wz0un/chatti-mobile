@@ -1,8 +1,8 @@
 /**
- * Chat Screen - Main chat interface
+ * Chat Screen - Public Group Chat
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     FlatList,
@@ -10,12 +10,12 @@ import {
     KeyboardAvoidingView,
     Platform,
     Text,
+    ActivityIndicator,
     Dimensions,
     StatusBar,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import ChatService from '../services/ChatService';
-import AuthService from '../services/AuthService';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import TypingIndicator from '../components/TypingIndicator';
@@ -26,23 +26,32 @@ import { useTheme } from '../theme/ThemeContext';
 const WORKER_URL = process.env.EXPO_PUBLIC_WORKER_URL || 'http://localhost:8788';
 
 const ChatScreen = ({ route, navigation }) => {
-    const { theme, isDark } = useTheme();
-    const { username, roomId, roomName } = route.params;
-    const { t } = useTranslation();
+    const { theme } = useTheme();
     const insets = useSafeAreaInsets();
-
+    const { username, roomId, roomName, userId } = route.params;
     const [messageList, setMessageList] = useState([]);
     const [isConnected, setIsConnected] = useState(false);
-    const [usersOnline, setUsersOnline] = useState(0);
     const [isTyping, setIsTyping] = useState(new Set());
-    const [connectionError, setConnectionError] = useState(null);
+    const [androidOffset, setAndroidOffset] = useState(30);
+    const { t } = useTranslation();
 
     const chatServiceRef = useRef(null);
     const flatListRef = useRef(null);
 
     useEffect(() => {
+        if (Platform.OS === 'android') {
+            const screenHeight = Dimensions.get('screen').height;
+            const windowHeight = Dimensions.get('window').height;
+            const statusBarHeight = StatusBar.currentHeight || 0;
+            const navbarHeight = screenHeight - windowHeight - statusBarHeight;
+            // Restaurando la lógica exacta de la rama feature/chat-one-emote
+            setAndroidOffset(navbarHeight > 15 ? 45 : 100);
+        }
+    }, []);
+
+    useEffect(() => {
         navigation.setOptions({
-            title: roomName || `${t('navigator.roomsBack')}: ${roomId}`,
+            title: roomName || t('chat.defaultTitle'),
             headerRight: () => (
                 <View style={styles.headerRight}>
                     <View style={[
@@ -50,70 +59,32 @@ const ChatScreen = ({ route, navigation }) => {
                         { backgroundColor: isConnected ? theme.success : theme.error }
                     ]} />
                     <Text style={[styles.headerText, { color: theme.textTertiary }]}>
-                        {usersOnline === 1
-                            ? t('chat.userCountOne', { count: usersOnline })
-                            : t('chat.userCountOther', { count: usersOnline })}
+                        {isConnected ? t('common.online') : t('common.offline')}
                     </Text>
                 </View>
             ),
         });
-    }, [navigation, roomId, roomName, isConnected, usersOnline, t, theme]);
+    }, [navigation, roomName, isConnected, theme, t]);
 
     useEffect(() => {
         const chatService = new ChatService();
         chatServiceRef.current = chatService;
 
-        // Load user ID for history
-        const initChat = async () => {
-            const currentUser = await AuthService.getCurrentUser();
-            const userId = currentUser?.userId || null;
+        chatService.connect(roomId, username, WORKER_URL);
 
-            chatService.initNotifications().catch(error => console.error('Failed to init notifications:', error));
-            chatService.connect(roomId, username, WORKER_URL, userId);
-        };
+        chatService.on('connected', () => setIsConnected(true));
+        chatService.on('disconnected', () => setIsConnected(false));
 
-        // Handle saved history from local storage
-        chatService.on('saved_history', (data) => {
-            setMessageList(prev => {
-                if (prev.length === 0) return data.messages;
-                return prev;
+        chatService.on('history', (data) => {
+            setMessageList(data.messages);
+        });
+
+        chatService.on('message', (data) => {
+            setMessageList(currentList => {
+                if (currentList.some(m => m.id === data.id)) return currentList;
+                return [...currentList, data];
             });
         });
-
-        chatService.on('connected', () => { setIsConnected(true); setConnectionError(null); });
-        chatService.on('disconnected', () => { setIsConnected(false); });
-        chatService.on('error', (error) => { setConnectionError(error.message || t('chat.connectionError')); setIsConnected(false); });
-
-        chatService.on('history', (data) => setMessageList(data.messages || []));
-        chatService.on('message', (data) => {
-            if (data && data.content) {
-                setMessageList(currentList => [...currentList, data]);
-            }
-        });
-
-        chatService.on('user_joined', (data) => {
-            setUsersOnline(data.totalUsers);
-            setMessageList(currentList => [...currentList, {
-                id: `system_join_${Date.now()}`,
-                username: t('common.system'),
-                content: t('chat.joined', { username: data.username }),
-                timestamp: data.timestamp,
-                isSystem: true,
-            }]);
-        });
-
-        chatService.on('user_left', (data) => {
-            setUsersOnline(data.totalUsers);
-            setMessageList(currentList => [...currentList, {
-                id: `system_left_${Date.now()}`,
-                username: t('common.system'),
-                content: t('chat.left', { username: data.username }),
-                timestamp: data.timestamp,
-                isSystem: true,
-            }]);
-        });
-
-        chatService.on('user_list', (data) => setUsersOnline(data.totalUsers));
 
         chatService.on('typing', (data) => {
             if (data.isTyping) {
@@ -127,60 +98,66 @@ const ChatScreen = ({ route, navigation }) => {
             }
         });
 
-        initChat();
-
-        return () => chatService.disconnect();
-    }, [roomId, username, t]);
+        return () => {
+            chatService.disconnect();
+        };
+    }, [roomId, username]);
 
     useEffect(() => {
         if (messageList.length > 0) {
-            setTimeout(() => { flatListRef.current?.scrollToEnd({ animated: true }); }, 100);
+            setTimeout(() => {
+                flatListRef.current?.scrollToEnd({ animated: true });
+            }, 100);
         }
     }, [messageList]);
 
     const handleSendMessage = (message) => {
-        if (chatServiceRef.current) chatServiceRef.current.sendMessage(message);
+        if (chatServiceRef.current) {
+            chatServiceRef.current.sendMessage(message);
+        }
     };
 
     const handleTyping = (typing) => {
-        if (chatServiceRef.current) chatServiceRef.current.sendTypingIndicator(typing);
+        if (chatServiceRef.current) {
+            chatServiceRef.current.sendTypingIndicator(typing);
+        }
     };
 
+    const renderMessage = ({ item }) => (
+        <ChatMessage
+            message={item.content}
+            author={item.username}
+            username={username}
+            isSystem={item.isSystem}
+            timestamp={item.timestamp}
+        />
+    );
+
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                behavior="padding"
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : androidOffset}
             >
-                {connectionError && (
-                    <View style={[styles.errorBanner, { backgroundColor: theme.error }]}>
-                        <Text style={styles.bannerText}>⚠️ {connectionError}</Text>
+                {!isConnected && (
+                    <View style={[styles.connectingBanner, { backgroundColor: theme.warning }]}>
+                        <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                        <Text style={styles.connectingText}>{t('common.connecting')}</Text>
                     </View>
                 )}
 
                 <FlatList
                     ref={flatListRef}
                     data={messageList}
-                    renderItem={({ item }) => (
-                        <ChatMessage
-                            message={item.content}
-                            author={item.username}
-                            username={username}
-                            isSystem={item.isSystem}
-                            timestamp={item.timestamp}
-                        />
-                    )}
+                    renderItem={renderMessage}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={[
-                        styles.messageList,
-                        { paddingBottom: spacing.xl + insets.bottom }
-                    ]}
+                    contentContainerStyle={styles.messageList}
                     onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
                     showsVerticalScrollIndicator={false}
                 />
 
-                <View style={[styles.inputArea, { paddingBottom: 0 }]}>
+                <View style={styles.inputArea}>
                     {isTyping.size > 0 && (
                         <View style={styles.typingContainer}>
                             <TypingIndicator usernames={Array.from(isTyping)} />
@@ -204,7 +181,13 @@ const styles = StyleSheet.create({
     },
     messageList: {
         paddingVertical: spacing.md,
-        paddingBottom: spacing.xl,
+    },
+    inputArea: {
+        width: '100%',
+    },
+    typingContainer: {
+        paddingLeft: spacing.lg,
+        paddingBottom: spacing.xs,
     },
     headerRight: {
         flexDirection: 'row',
@@ -218,26 +201,21 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     headerText: {
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: '700',
         textTransform: 'uppercase',
     },
-    errorBanner: {
-        padding: 8,
+    connectingBanner: {
+        flexDirection: 'row',
+        padding: 6,
+        justifyContent: 'center',
         alignItems: 'center',
     },
-    bannerText: {
-        color: '#FFFFFF',
+    connectingText: {
+        color: '#fff',
         fontSize: 12,
-        fontWeight: '700',
+        fontWeight: '600',
     },
-    inputArea: {
-        width: '100%',
-    },
-    typingContainer: {
-        paddingLeft: spacing.lg,
-        paddingBottom: spacing.xs,
-    }
 });
 
 export default ChatScreen;
