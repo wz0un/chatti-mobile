@@ -22,6 +22,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { useAlert } from '../theme/AlertContext';
 import { spacing, borderRadius, shadows, typography } from '../theme/colors';
 import * as Notifications from 'expo-notifications';
+import GlobalNotificationService from '../services/GlobalNotificationService';
 
 const ConversationsScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -33,7 +34,15 @@ const ConversationsScreen = ({ navigation }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [lastSeenData, setLastSeenData] = useState({});
     const [searchQuery, setSearchQuery] = useState('');
+    const [isOnline, setIsOnline] = useState(true);
     const { t } = useTranslation();
+
+    useEffect(() => {
+        const unsubscribe = GlobalNotificationService.addConnectionListener(setIsOnline);
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    }, []);
 
     useEffect(() => {
         loadCurrentUser();
@@ -204,7 +213,10 @@ const ConversationsScreen = ({ navigation }) => {
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
             <View style={[styles.header, { backgroundColor: theme.surface }]}>
-                <Text style={[styles.headerTitle, { color: theme.text }]}>{t('conversations.headerTitle')}</Text>
+                <View style={styles.headerTitleContainer}>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>{t('conversations.headerTitle')}</Text>
+                    <View style={[styles.onlineIndicator, { backgroundColor: isOnline ? theme.success : theme.error }]} />
+                </View>
             </View>
 
             <View style={[styles.searchContainer, { backgroundColor: theme.background }]}>
@@ -266,6 +278,16 @@ const styles = StyleSheet.create({
     headerTitle: {
         ...typography.h2,
         fontWeight: '900',
+    },
+    headerTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    onlineIndicator: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        marginLeft: spacing.sm,
     },
     searchContainer: {
         paddingHorizontal: spacing.lg,

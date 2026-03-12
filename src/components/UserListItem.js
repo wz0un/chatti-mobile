@@ -18,18 +18,23 @@ const UserListItem = ({ user, onPress }) => {
         return palettes[index];
     };
 
+    const isUserOnline = user.isOnline === true;
+
     return (
         <TouchableOpacity
             style={[styles.container, { backgroundColor: theme.surface, borderBottomColor: theme.divider }]}
             onPress={onPress}
             activeOpacity={0.7}
         >
-            <LinearGradient
-                colors={getAvatarColors(user.username)}
-                style={[styles.avatar, shadows.sm]}
-            >
-                <Text style={styles.avatarText}>{initial}</Text>
-            </LinearGradient>
+            <View style={styles.avatarContainer}>
+                <LinearGradient
+                    colors={getAvatarColors(user.username)}
+                    style={[styles.avatar, shadows.sm]}
+                >
+                    <Text style={styles.avatarText}>{initial}</Text>
+                </LinearGradient>
+                <View style={[styles.statusDot, { backgroundColor: isUserOnline ? theme.success : theme.status?.offline || theme.textTertiary, borderColor: theme.surface }]} />
+            </View>
 
             <View style={styles.info}>
                 <Text style={[styles.username, { color: theme.text }]}>{user.fullUsername}</Text>
@@ -51,18 +56,30 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.md,
         borderBottomWidth: 1,
     },
+    avatarContainer: {
+        position: 'relative',
+        marginRight: spacing.md,
+    },
     avatar: {
         width: 52,
         height: 52,
         borderRadius: 26,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: spacing.md,
     },
     avatarText: {
         fontSize: 22,
         fontWeight: 'bold',
         color: '#FFFFFF',
+    },
+    statusDot: {
+        position: 'absolute',
+        bottom: 2,
+        right: 2,
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        borderWidth: 2,
     },
     info: {
         flex: 1,
