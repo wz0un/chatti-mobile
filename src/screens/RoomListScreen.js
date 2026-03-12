@@ -14,7 +14,7 @@ import {
     ActivityIndicator,
     RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
@@ -26,6 +26,7 @@ import { spacing, borderRadius, shadows, typography } from '../theme/colors';
 const RoomListScreen = ({ navigation, route }) => {
     const { theme, isDark } = useTheme();
     const { alert } = useAlert();
+    const insets = useSafeAreaInsets();
     const [username, setUsername] = useState(route.params?.username || null);
     const [currentUser, setCurrentUser] = useState(null);
     const { t, locale } = useTranslation();
@@ -160,7 +161,10 @@ const RoomListScreen = ({ navigation, route }) => {
                 data={rooms}
                 renderItem={renderRoom}
                 keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={[
+                    styles.listContent,
+                    { paddingBottom: 120 + insets.bottom }
+                ]}
                 ListEmptyComponent={() => (
                     <View style={styles.emptyContainer}>
                         <Text style={[styles.emptyIcon, { color: theme.primary + '30' }]}>🏠</Text>
@@ -183,7 +187,7 @@ const RoomListScreen = ({ navigation, route }) => {
             />
 
             <TouchableOpacity
-                style={styles.fabWrapper}
+                style={[styles.fabWrapper, { bottom: 90 + insets.bottom }]}
                 onPress={() => setModalVisible(true)}
                 activeOpacity={0.9}
             >
@@ -304,6 +308,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: 0,
     },
     roomOwner: {
         fontSize: 12,

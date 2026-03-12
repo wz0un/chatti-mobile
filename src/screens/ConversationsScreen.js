@@ -12,7 +12,7 @@ import {
     RefreshControl,
     TextInput,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
@@ -27,6 +27,7 @@ import GlobalNotificationService from '../services/GlobalNotificationService';
 const ConversationsScreen = ({ navigation }) => {
     const { theme } = useTheme();
     const { alert } = useAlert();
+    const insets = useSafeAreaInsets();
     const [conversations, setConversations] = useState([]);
     const [filteredConversations, setFilteredConversations] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -251,7 +252,7 @@ const ConversationsScreen = ({ navigation }) => {
                     data={filteredConversations}
                     renderItem={renderConversation}
                     keyExtractor={(item) => (item.id || item.conversationId) + '-' + item.normalizedRecipientId}
-                    contentContainerStyle={styles.list}
+                    contentContainerStyle={[styles.list, { paddingBottom: 100 + insets.bottom }]}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
                         <RefreshControl

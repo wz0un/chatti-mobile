@@ -14,7 +14,7 @@ import {
     Modal,
     Switch
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
 import AuthService from '../services/AuthService';
@@ -47,6 +47,7 @@ const SettingsItem = ({ icon, label, value, onPress, isDestructive, theme }) => 
 const ProfileScreen = ({ navigation }) => {
     const { theme, themeMode, setThemeMode, isDark } = useTheme();
     const { alert } = useAlert();
+    const insets = useSafeAreaInsets();
     const [user, setUser] = useState(null);
     const [deviceId, setDeviceId] = useState('');
     const [loading, setLoading] = useState(true);
@@ -217,7 +218,10 @@ const ProfileScreen = ({ navigation }) => {
                 <Text style={[styles.headerTitle, { color: theme.text }]}>{t('profile.title')}</Text>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={[
+                styles.scrollContent,
+                { paddingBottom: 100 + insets.bottom }
+            ]} showsVerticalScrollIndicator={false}>
                 {/* User Profile Card */}
                 <View style={[styles.profileCard, { backgroundColor: theme.surface, ...shadows.md }]}>
                     <LinearGradient

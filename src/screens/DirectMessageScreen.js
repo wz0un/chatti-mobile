@@ -14,7 +14,7 @@ import {
     StatusBar,
     TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ApiService from '../services/ApiService';
 import DirectMessageService from '../services/DirectMessageService';
@@ -32,6 +32,7 @@ const WORKER_URL = process.env.EXPO_PUBLIC_WORKER_URL || 'http://localhost:8788'
 const DirectMessageScreen = ({ route, navigation }) => {
     const { theme, isDark } = useTheme();
     const { alert } = useAlert();
+    const insets = useSafeAreaInsets();
     const {
         conversationId,
         recipientId,
@@ -41,7 +42,6 @@ const DirectMessageScreen = ({ route, navigation }) => {
         username
     } = route.params;
 
-    const [androidOffset, setAndroidOffset] = useState(30);
     const [messageList, setMessageList] = useState([]);
     const [isConnected, setIsConnected] = useState(false);
     const [isTyping, setIsTyping] = useState(new Set());
@@ -64,16 +64,6 @@ const DirectMessageScreen = ({ route, navigation }) => {
             console.error('Error updating lastSeen:', error);
         }
     }, [userId, recipientId]);
-
-    useEffect(() => {
-        if (Platform.OS === 'android') {
-            const screenHeight = Dimensions.get('screen').height;
-            const windowHeight = Dimensions.get('window').height;
-            const statusBarHeight = StatusBar.currentHeight || 0;
-            const navbarHeight = screenHeight - windowHeight - statusBarHeight;
-            setAndroidOffset(navbarHeight > 15 ? 45 : 100);
-        }
-    }, []);
 
     useEffect(() => {
         // Check chat history settings
@@ -213,11 +203,11 @@ const DirectMessageScreen = ({ route, navigation }) => {
     );
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior="padding"
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : androidOffset}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
                 {connectionError && (
                     <View style={[styles.errorBanner, { backgroundColor: theme.error }]}>
@@ -244,12 +234,15 @@ const DirectMessageScreen = ({ route, navigation }) => {
                     data={messageList}
                     renderItem={renderMessage}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.messageList}
+                    contentContainerStyle={[
+                        styles.messageList,
+                        { paddingBottom: spacing.xl + insets.bottom }
+                    ]}
                     onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
                     showsVerticalScrollIndicator={false}
                 />
 
-                <View style={styles.inputArea}>
+                <View style={[styles.inputArea, { paddingBottom: 0 }]}>
                     {isTyping.size > 0 && (
                         <View style={styles.typingContainer}>
                             <TypingIndicator usernames={Array.from(isTyping)} />
