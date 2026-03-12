@@ -8,10 +8,30 @@ import { spacing, borderRadius, typography, shadows } from '../theme/colors';
 import { useTranslation } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
 
+const isSingleEmoji = (text) => {
+    if (!text) return false;
+    const trimmed = text.trim();
+    const pictographicRegex = /\p{Extended_Pictographic}/u;
+
+    let segmentCount = 0;
+    try {
+        // Use Intl.Segmenter for accurate grapheme counting (supported in modern Hermes)
+        const segmenter = new Intl.Segmenter();
+        segmentCount = [...segmenter.segment(trimmed)].length;
+    } catch (e) {
+        // Fallback for older environments
+        segmentCount = [...trimmed].length;
+    }
+
+    // Return true if it's exactly one segment and that segment is a pictographic (emoji)
+    return segmentCount === 1 && pictographicRegex.test(trimmed);
+};
+
 const ChatMessage = ({ message, author, username, isSystem, timestamp }) => {
     const { theme, isDark } = useTheme();
     const isOwnMessage = author === username;
     const { locale } = useTranslation();
+    const isEmojiOnly = isSingleEmoji(message);
 
     const formatTime = (ts) => {
         if (!ts) return '';
@@ -42,17 +62,19 @@ const ChatMessage = ({ message, author, username, isSystem, timestamp }) => {
                 styles.messageBubble,
                 isOwnMessage
                     ? [styles.ownBubble, { backgroundColor: theme.messageSent }]
-                    : [styles.otherBubble, { backgroundColor: theme.messageReceived, borderColor: theme.border }]
+                    : [styles.otherBubble, { backgroundColor: theme.messageReceived, borderColor: theme.border }],
+                isEmojiOnly && styles.emojiBubble
             ]}>
                 <Text style={[
                     styles.messageText,
-                    { color: isOwnMessage ? theme.messageText : theme.messageTextReceived }
+                    { color: isOwnMessage ? theme.messageText : theme.messageTextReceived },
+                    isEmojiOnly && styles.emojiText
                 ]}>
                     {message}
                 </Text>
                 <Text style={[
                     styles.timestamp,
-                    { color: isOwnMessage ? 'rgba(255,255,255,0.7)' : theme.textTertiary }
+                    { color: isEmojiOnly ? theme.textTertiary : (isOwnMessage ? 'rgba(255,255,255,0.7)' : theme.textTertiary) }
                 ]}>
                     {formatTime(timestamp)}
                 </Text>
@@ -96,9 +118,21 @@ const styles = StyleSheet.create({
         borderBottomLeftRadius: 4,
         borderWidth: 1,
     },
+    emojiBubble: {
+        backgroundColor: 'transparent',
+        shadowOpacity: 0,
+        elevation: 0,
+        borderWidth: 0,
+        paddingHorizontal: 0,
+        paddingVertical: 0,
+    },
     messageText: {
         fontSize: 16,
         lineHeight: 22,
+    },
+    emojiText: {
+        fontSize: 60,
+        lineHeight: 70,
     },
     timestamp: {
         fontSize: 10,
