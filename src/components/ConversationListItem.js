@@ -62,6 +62,8 @@ const ConversationListItem = ({ conversation, currentUserId, isUnread, onPress, 
         return palettes[index];
     };
 
+    const isUserOnline = conversation.recipient?.isOnline === true;
+
     return (
         <TouchableOpacity
             style={[styles.container, { backgroundColor: theme.surface, borderBottomColor: theme.divider }, isUnread && { backgroundColor: theme.surfaceSecondary }]}
@@ -80,7 +82,7 @@ const ConversationListItem = ({ conversation, currentUserId, isUnread, onPress, 
                     <Text style={styles.avatarText}>{initial}</Text>
                 </LinearGradient>
                 {/* Status Dot */}
-                <View style={[styles.statusDot, { backgroundColor: theme.success, borderColor: theme.surface }]} />
+                <View style={[styles.statusDot, { backgroundColor: isUserOnline ? theme.success : theme.status?.offline || theme.textTertiary, borderColor: theme.surface }]} />
             </View>
 
             <View style={styles.content}>

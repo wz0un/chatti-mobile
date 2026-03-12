@@ -16,6 +16,52 @@ class GlobalNotificationService {
         this.appStateSubscription = null;
         this.notificationSubscription = null;
         this.isInitialized = false;
+        this.isOnline = true;
+        this.pollingInterval = null;
+        this.connectionListeners = new Set();
+    }
+
+    /**
+     * Add listener for connection status changes
+     */
+    addConnectionListener(callback) {
+        this.connectionListeners.add(callback);
+        callback(this.isOnline);
+        return () => this.connectionListeners.delete(callback);
+    }
+
+    /**
+     * Update online status and notify listeners
+     */
+    setOnlineStatus(status) {
+        if (this.isOnline !== status) {
+            this.isOnline = status;
+            this.connectionListeners.forEach(cb => cb(status));
+        }
+    }
+
+    /**
+     * Start continuous polling while app is active
+     */
+    startPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+        }
+        
+        // Poll every 15 seconds while app is active
+        this.pollingInterval = setInterval(() => {
+            this.checkPendingNotifications();
+        }, 15000);
+    }
+
+    /**
+     * Stop continuous polling
+     */
+    stopPolling() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+            this.pollingInterval = null;
+        }
     }
 
     /**
@@ -52,11 +98,13 @@ class GlobalNotificationService {
         if (nextAppState === 'background' || nextAppState === 'inactive') {
             // App went to background - notifications will now show
             console.log('📱 App in background - notifications enabled');
+            this.stopPolling();
         } else if (nextAppState === 'active') {
             // App became active - clear any pending notifications
             console.log('📱 App active - clearing notifications');
             this.clearAllNotifications();
             this.checkPendingNotifications();
+            this.startPolling();
         }
     }
 
@@ -87,9 +135,16 @@ class GlobalNotificationService {
     async checkPendingNotifications() {
         try {
             const user = await AuthService.getCurrentUser();
-            if (!user) return;
+            if (!user) {
+                this.setOnlineStatus(false);
+                return;
+            }
 
             const convos = await ApiService.getUserConversations(user.userId);
+            
+            // Si la llamada fue exitosa establecemos estado online a true
+            this.setOnlineStatus(true);
+            
             if (!convos || !Array.isArray(convos)) return;
 
             const lastSeenDataStr = await AsyncStorage.getItem(`lastSeen_${user.userId}`);
@@ -123,6 +178,8 @@ class GlobalNotificationService {
             }
         } catch (error) {
             console.error('Error checking pending notifications:', error);
+            // Si hay un error asumiendo que es problema de red
+            this.setOnlineStatus(false);
         }
     }
 
@@ -167,6 +224,8 @@ class GlobalNotificationService {
         if (this.notificationSubscription) {
             this.notificationSubscription.remove();
         }
+        this.stopPolling();
+        this.connectionListeners.clear();
         this.isInitialized = false;
     }
 }
