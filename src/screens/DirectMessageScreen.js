@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ApiService from '../services/ApiService';
 import DirectMessageService from '../services/DirectMessageService';
 import ChatHistoryService from '../services/ChatHistoryService';
 import ChatMessage from '../components/ChatMessage';
@@ -24,11 +25,13 @@ import TypingIndicator from '../components/TypingIndicator';
 import { spacing, borderRadius, typography, shadows } from '../theme/colors';
 import { useTranslation } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
+import { useAlert } from '../theme/AlertContext';
 
 const WORKER_URL = process.env.EXPO_PUBLIC_WORKER_URL || 'http://localhost:8788';
 
 const DirectMessageScreen = ({ route, navigation }) => {
     const { theme, isDark } = useTheme();
+    const { alert } = useAlert();
     const {
         conversationId,
         recipientId,
@@ -84,6 +87,23 @@ const DirectMessageScreen = ({ route, navigation }) => {
         checkSettings();
     }, [conversationId, userId]);
 
+    const handleDeleteConversation = () => {
+        alert({
+            title: t('conversations.deleteTitle'),
+            message: t('conversations.deleteMessage'),
+            confirmText: t('conversations.deleteConfirm'),
+            type: 'error',
+            onConfirm: async () => {
+                try {
+                    await ApiService.deleteConversation(userId, conversationId);
+                    navigation.goBack();
+                } catch (error) {
+                    console.error('Error deleting conversation:', error);
+                }
+            }
+        });
+    };
+
     const handleToggleTemporary = async () => {
         if (dmServiceRef.current) {
             const newValue = !isTemporary;
@@ -109,6 +129,13 @@ const DirectMessageScreen = ({ route, navigation }) => {
                             </Text>
                         </TouchableOpacity>
                     )}
+                    <TouchableOpacity
+                        onPress={handleDeleteConversation}
+                        style={styles.deleteButton}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <Text style={styles.deleteIcon}>🗑️</Text>
+                    </TouchableOpacity>
                     <View style={[
                         styles.statusIndicator,
                         { backgroundColor: isConnected ? theme.success : theme.error }
@@ -299,6 +326,13 @@ const styles = StyleSheet.create({
     tempBannerText: {
         fontSize: 12,
         fontWeight: '600',
+    },
+    deleteButton: {
+        marginRight: 12,
+        padding: 2,
+    },
+    deleteIcon: {
+        fontSize: 18,
     },
 });
 
