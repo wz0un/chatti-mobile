@@ -5,7 +5,10 @@
 
 import { AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import NotificationService from './NotificationService';
+import ApiService from './ApiService';
+import AuthService from './AuthService';
 
 class GlobalNotificationService {
     constructor() {
@@ -53,6 +56,7 @@ class GlobalNotificationService {
             // App became active - clear any pending notifications
             console.log('📱 App active - clearing notifications');
             this.clearAllNotifications();
+            this.checkPendingNotifications();
         }
     }
 
@@ -74,6 +78,51 @@ class GlobalNotificationService {
             // Navigate to requests list
             console.log('Navigate to contact requests');
             // Assuming we have access to navigation here or through a ref
+        }
+    }
+
+    /**
+     * Check for unread conversations and show a grouped notification
+     */
+    async checkPendingNotifications() {
+        try {
+            const user = await AuthService.getCurrentUser();
+            if (!user) return;
+
+            const convos = await ApiService.getUserConversations(user.userId);
+            if (!convos || !Array.isArray(convos)) return;
+
+            const lastSeenDataStr = await AsyncStorage.getItem(`lastSeen_${user.userId}`);
+            const lastSeenData = lastSeenDataStr ? JSON.parse(lastSeenDataStr) : {};
+
+            let unreadCount = 0;
+            let lastUnreadSender = '';
+
+            for (const convo of convos) {
+                const msgTime = convo.lastMessage?.timestamp || convo.lastMessageTime || convo.createdAt;
+                const timestamp = msgTime ? new Date(msgTime).getTime() : 0;
+                
+                const otherParticipant = convo.participants?.find(p => String(p).toLowerCase() !== String(user.userId).toLowerCase());
+                const rId = convo.recipient?.userId || convo.recipientId || otherParticipant || convo.id;
+                const recipientId = String(rId).toLowerCase();
+
+                const lastSeenTime = Number(lastSeenData[recipientId]) || 0;
+                
+                if (timestamp > lastSeenTime && timestamp > 0) {
+                    unreadCount++;
+                    lastUnreadSender = convo.recipient?.username || convo.recipientUsername || 'Alguien';
+                }
+            }
+
+            if (unreadCount > 0) {
+                await this.showNotification(
+                    unreadCount === 1 ? `💬 Nuevo mensaje de ${lastUnreadSender}` : `💬 Tienes mensajes en ${unreadCount} chats`,
+                    'Toca para abrir y leer tus mensajes nuevos.',
+                    { type: 'pending_messages' }
+                );
+            }
+        } catch (error) {
+            console.error('Error checking pending notifications:', error);
         }
     }
 

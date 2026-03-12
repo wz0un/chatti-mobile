@@ -261,11 +261,6 @@ class DirectMessageService {
 
                 // Persist new message
                 ChatHistoryService.appendDmMessages(this.conversationId, [decrypted]);
-
-                if (decrypted.senderId !== this.userId) {
-                    const senderUsername = this.participants?.get(decrypted.senderId)?.username || decrypted.senderId;
-                    this.notificationService.notifyEncryptedMessage(senderUsername, this.conversationId);
-                }
             }
         } catch (error) {
             console.error('Error handling encrypted message:', error);
