@@ -4,7 +4,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RoomListScreen from '../screens/RoomListScreen';
 import ConversationsScreen from '../screens/ConversationsScreen';
@@ -41,6 +42,7 @@ const TabIcon = ({ emoji, label, focused, theme, isDark }) => (
 
 const MainTabs = ({ route, navigation }) => {
     const { theme, isDark } = useTheme();
+    const insets = useSafeAreaInsets();
     const username = route.params?.username;
     const [currentUser, setCurrentUser] = useState(null);
     const [unreadChatsCount, setUnreadChatsCount] = useState(0);
@@ -125,7 +127,14 @@ const MainTabs = ({ route, navigation }) => {
         <Tab.Navigator
             screenOptions={{
                 headerShown: false,
-                tabBarStyle: [styles.tabBar, { backgroundColor: theme.surface }],
+                tabBarStyle: [
+                    styles.tabBar, 
+                    { 
+                        backgroundColor: theme.surface,
+                        height: Platform.OS === 'ios' ? 88 : 70 + Math.max(insets.bottom, 0),
+                        paddingBottom: Platform.OS === 'ios' ? insets.bottom : Math.max(insets.bottom, 10),
+                    }
+                ],
                 tabBarActiveTintColor: theme.primary,
                 tabBarInactiveTintColor: theme.textTertiary,
                 tabBarShowLabel: false,

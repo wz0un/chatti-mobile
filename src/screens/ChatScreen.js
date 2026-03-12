@@ -13,7 +13,7 @@ import {
     Dimensions,
     StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import ChatService from '../services/ChatService';
 import AuthService from '../services/AuthService';
 import ChatMessage from '../components/ChatMessage';
@@ -29,8 +29,8 @@ const ChatScreen = ({ route, navigation }) => {
     const { theme, isDark } = useTheme();
     const { username, roomId, roomName } = route.params;
     const { t } = useTranslation();
+    const insets = useSafeAreaInsets();
 
-    const [androidOffset, setAndroidOffset] = useState(30);
     const [messageList, setMessageList] = useState([]);
     const [isConnected, setIsConnected] = useState(false);
     const [usersOnline, setUsersOnline] = useState(0);
@@ -39,16 +39,6 @@ const ChatScreen = ({ route, navigation }) => {
 
     const chatServiceRef = useRef(null);
     const flatListRef = useRef(null);
-
-    useEffect(() => {
-        if (Platform.OS === 'android') {
-            const screenHeight = Dimensions.get('screen').height;
-            const windowHeight = Dimensions.get('window').height;
-            const statusBarHeight = StatusBar.currentHeight || 0;
-            const navbarHeight = screenHeight - windowHeight - statusBarHeight;
-            setAndroidOffset(navbarHeight > 15 ? 45 : 100);
-        }
-    }, []);
 
     useEffect(() => {
         navigation.setOptions({
@@ -157,11 +147,11 @@ const ChatScreen = ({ route, navigation }) => {
     };
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior="padding"
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : androidOffset}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
                 {connectionError && (
                     <View style={[styles.errorBanner, { backgroundColor: theme.error }]}>
@@ -182,12 +172,15 @@ const ChatScreen = ({ route, navigation }) => {
                         />
                     )}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.messageList}
+                    contentContainerStyle={[
+                        styles.messageList,
+                        { paddingBottom: spacing.xl + insets.bottom }
+                    ]}
                     onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
                     showsVerticalScrollIndicator={false}
                 />
 
-                <View style={styles.inputArea}>
+                <View style={[styles.inputArea, { paddingBottom: 0 }]}>
                     {isTyping.size > 0 && (
                         <View style={styles.typingContainer}>
                             <TypingIndicator usernames={Array.from(isTyping)} />
@@ -197,6 +190,7 @@ const ChatScreen = ({ route, navigation }) => {
                         onSendMessage={handleSendMessage}
                         onTyping={handleTyping}
                         disabled={!isConnected}
+                        theme={theme}
                     />
                 </View>
             </KeyboardAvoidingView>

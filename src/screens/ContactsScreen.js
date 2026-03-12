@@ -12,7 +12,7 @@ import {
     RefreshControl,
     TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
@@ -25,6 +25,7 @@ import { spacing, borderRadius, shadows, typography } from '../theme/colors';
 const ContactsScreen = ({ navigation }) => {
     const { theme, isDark } = useTheme();
     const { alert } = useAlert();
+    const insets = useSafeAreaInsets();
     const [contacts, setContacts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -165,7 +166,10 @@ const ContactsScreen = ({ navigation }) => {
                     data={contacts}
                     renderItem={({ item }) => <UserListItem user={item} onPress={() => handleContactPress(item)} />}
                     keyExtractor={(item) => item.userId}
-                    contentContainerStyle={styles.list}
+                    contentContainerStyle={[
+                        styles.list,
+                        { paddingBottom: 100 + insets.bottom }
+                    ]}
                     showsVerticalScrollIndicator={false}
                     refreshControl={
                         <RefreshControl
