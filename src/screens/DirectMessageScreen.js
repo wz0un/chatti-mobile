@@ -10,9 +10,9 @@ import {
     KeyboardAvoidingView,
     Platform,
     Text,
+    TouchableOpacity,
     Dimensions,
     StatusBar,
-    TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -22,7 +22,7 @@ import ChatHistoryService from '../services/ChatHistoryService';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import TypingIndicator from '../components/TypingIndicator';
-import { spacing, borderRadius, typography, shadows } from '../theme/colors';
+import { spacing, typography } from '../theme/colors';
 import { useTranslation } from '../i18n';
 import { useTheme } from '../theme/ThemeContext';
 import { useAlert } from '../theme/AlertContext';
@@ -30,7 +30,7 @@ import { useAlert } from '../theme/AlertContext';
 const WORKER_URL = process.env.EXPO_PUBLIC_WORKER_URL || 'http://localhost:8788';
 
 const DirectMessageScreen = ({ route, navigation }) => {
-    const { theme, isDark } = useTheme();
+    const { theme } = useTheme();
     const { alert } = useAlert();
     const insets = useSafeAreaInsets();
     const {
@@ -42,6 +42,7 @@ const DirectMessageScreen = ({ route, navigation }) => {
         username
     } = route.params;
 
+    const [androidOffset, setAndroidOffset] = useState(30);
     const [messageList, setMessageList] = useState([]);
     const [isConnected, setIsConnected] = useState(false);
     const [isTyping, setIsTyping] = useState(new Set());
@@ -66,7 +67,17 @@ const DirectMessageScreen = ({ route, navigation }) => {
     }, [userId, recipientId]);
 
     useEffect(() => {
-        // Check chat history settings
+        if (Platform.OS === 'android') {
+            const screenHeight = Dimensions.get('screen').height;
+            const windowHeight = Dimensions.get('window').height;
+            const statusBarHeight = StatusBar.currentHeight || 0;
+            const navbarHeight = screenHeight - windowHeight - statusBarHeight;
+            // Restaurando la lógica exacta de la rama feature/chat-one-emote
+            setAndroidOffset(navbarHeight > 15 ? 45 : 100);
+        }
+    }, []);
+
+    useEffect(() => {
         const checkSettings = async () => {
             ChatHistoryService.setUserId(userId);
             const enabled = await ChatHistoryService.isHistoryEnabled();
@@ -203,11 +214,11 @@ const DirectMessageScreen = ({ route, navigation }) => {
     );
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
             <KeyboardAvoidingView
                 style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+                behavior="padding"
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : androidOffset}
             >
                 {connectionError && (
                     <View style={[styles.errorBanner, { backgroundColor: theme.error }]}>
@@ -234,15 +245,12 @@ const DirectMessageScreen = ({ route, navigation }) => {
                     data={messageList}
                     renderItem={renderMessage}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={[
-                        styles.messageList,
-                        { paddingBottom: spacing.xl + insets.bottom }
-                    ]}
+                    contentContainerStyle={styles.messageList}
                     onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
                     showsVerticalScrollIndicator={false}
                 />
 
-                <View style={[styles.inputArea, { paddingBottom: 0 }]}>
+                <View style={styles.inputArea}>
                     {isTyping.size > 0 && (
                         <View style={styles.typingContainer}>
                             <TypingIndicator usernames={Array.from(isTyping)} />
@@ -266,7 +274,6 @@ const styles = StyleSheet.create({
     },
     messageList: {
         paddingVertical: spacing.md,
-        paddingBottom: spacing.xl,
     },
     headerRight: {
         flexDirection: 'row',

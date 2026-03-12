@@ -2,8 +2,8 @@
  * Chat Input Component - Modern Design
  */
 
-import React, { useState, useRef } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, Platform, Text } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, TextInput, TouchableOpacity, StyleSheet, Platform, Text, Keyboard } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { spacing, borderRadius, shadows, typography } from '../theme/colors';
@@ -37,13 +37,18 @@ const ChatInput = ({ onSendMessage, onTyping, disabled }) => {
         }
     };
 
+    // Usamos el mismo margen del menú para que siempre haya espacio debajo
+    const adaptivePaddingBottom = Platform.OS === 'ios' 
+        ? Math.max(insets.bottom, spacing.sm) 
+        : Math.max(insets.bottom, 12);
+
     return (
         <View style={[
             styles.container,
             {
                 backgroundColor: theme.surface,
                 borderTopColor: theme.border,
-                paddingBottom: Math.max(insets.bottom, 12)
+                paddingBottom: adaptivePaddingBottom
             }
         ]}>
             <View style={[styles.inputContainer, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border }]}>
@@ -56,6 +61,7 @@ const ChatInput = ({ onSendMessage, onTyping, disabled }) => {
                     multiline
                     maxLength={1000}
                     editable={!disabled}
+                    blurOnSubmit={false}
                 />
             </View>
 
@@ -89,7 +95,7 @@ const styles = StyleSheet.create({
         flex: 1,
         borderRadius: 24,
         paddingHorizontal: 16,
-        paddingVertical: Platform.OS === 'ios' ? 10 : 4,
+        paddingVertical: Platform.OS === 'ios' ? 10 : 6,
         borderWidth: 1,
         maxHeight: 120,
     },
@@ -97,6 +103,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         lineHeight: 20,
         paddingTop: 0,
+        paddingBottom: 0,
     },
     sendButtonWrapper: {
         marginLeft: spacing.sm,
