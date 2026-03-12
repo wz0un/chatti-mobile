@@ -22,6 +22,9 @@ function AppContent() {
     // Initialize global notification service
     GlobalNotificationService.initialize();
 
+    // Check for pending initially
+    GlobalNotificationService.checkPendingNotifications();
+
     // Update push token with the server
     AuthService.updatePushToken();
 

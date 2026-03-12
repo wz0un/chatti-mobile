@@ -69,19 +69,7 @@ class ChatService {
                 const data = JSON.parse(event.data);
                 console.log('📨 Received:', data.type, data);
 
-                // Trigger notifications for messages from other users
-                if (data.type === 'message' && data.username !== this.username) {
-                    this.notificationService.notifyNewMessage(
-                        data.username,
-                        data.content,
-                        this.roomId
-                    );
-                } else if (data.type === 'user_joined' && data.username !== this.username) {
-                    this.notificationService.notifyUserJoined(
-                        data.username,
-                        this.roomId
-                    );
-                }
+                // (Redundant local notifications removed as they fire on connection)
 
                 // Save non-system messages for history
                 if (data.type === 'message' && data.content && data.id) {
