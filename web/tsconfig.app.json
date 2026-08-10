@@ -23,7 +23,8 @@
     "baseUrl": ".",
     "paths": {
       "@shared/*": ["../shared/*"]
-    }
+    },
+    "types": ["vite/client", "vitest/globals"]
   },
   "include": ["src", "../shared"]
 }
