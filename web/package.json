@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",
-    "smoke": "vitest run scripts/smoke.test.ts --test-timeout 30000"
+    "smoke": "vitest run --config vitest.smoke.config.ts"
   },
   "dependencies": {
     "react": "^19.2.8",
