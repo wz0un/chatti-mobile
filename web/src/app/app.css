@@ -13,14 +13,3 @@
   font-weight: bold;
   color: var(--color-text-inverse);
 }
-
-.app-placeholder__logout {
-  margin-top: var(--space-lg);
-  padding: 12px 24px;
-  border: none;
-  border-radius: var(--radius-md);
-  background-color: var(--color-text-inverse);
-  color: var(--color-primary);
-  font-weight: 700;
-  cursor: pointer;
-}

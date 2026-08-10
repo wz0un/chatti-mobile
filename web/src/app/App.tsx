@@ -10,6 +10,11 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 import type { User } from '@shared/types';
 import authService from '@shared/auth/AuthService';
 import LoginPage from '../features/auth/LoginPage';
+import AppShell from '../layout/AppShell';
+import ConversationsPage from '../features/conversations/ConversationsPage';
+import ContactsPage from '../features/contacts/ContactsPage';
+import RoomsPage from '../features/rooms/RoomsPage';
+import ProfilePage from '../features/profile/ProfilePage';
 
 import './app.css';
 
@@ -49,43 +54,32 @@ export default function App() {
     setSession({ status: 'logged-out' });
   };
 
+  if (session.status === 'logged-out') {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage onAuthenticated={onAuthenticated} />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  const user = session.user;
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route
-          path="/login"
-          element={
-            session.status === 'logged-in' ? (
-              <Navigate to="/" replace />
-            ) : (
-              <LoginPage onAuthenticated={onAuthenticated} />
-            )
-          }
-        />
-        <Route
-          path="*"
-          element={
-            session.status === 'logged-out' ? (
-              <Navigate to="/login" replace />
-            ) : (
-              // Task 8 replaces this placeholder with the app shell
-              <HomePlaceholder user={session.user} onLogout={onLogout} />
-            )
-          }
-        />
+        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<AppShell user={user} />}>
+          <Route index element={<Navigate to="/rooms" replace />} />
+          <Route path="rooms" element={<RoomsPage />} />
+          <Route path="chats" element={<ConversationsPage />} />
+          <Route path="contacts" element={<ContactsPage />} />
+          <Route path="profile" element={<ProfilePage user={user} onLogout={onLogout} />} />
+          {/* Task 10 adds /dm/:conversationId here */}
+        </Route>
       </Routes>
     </BrowserRouter>
-  );
-}
-
-function HomePlaceholder({ user, onLogout }: { user: User; onLogout: () => void }) {
-  return (
-    <div className="app-splash">
-      <h1 className="app-splash__title">Chat-Ti</h1>
-      <p className="app-splash__subtitle">Logged in as {user.fullUsername}</p>
-      <button type="button" className="app-placeholder__logout" onClick={onLogout}>
-        Log out
-      </button>
-    </div>
   );
 }
