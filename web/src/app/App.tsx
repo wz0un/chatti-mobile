@@ -74,7 +74,7 @@ export default function App() {
         <Route path="*" element={<AppShell user={user} />}>
           <Route index element={<Navigate to="/rooms" replace />} />
           <Route path="rooms" element={<RoomsPage />} />
-          <Route path="chats" element={<ConversationsPage />} />
+          <Route path="chats" element={<ConversationsPage user={user} />} />
           <Route path="contacts" element={<ContactsPage />} />
           <Route path="profile" element={<ProfilePage user={user} onLogout={onLogout} />} />
           {/* Task 10 adds /dm/:conversationId here */}
