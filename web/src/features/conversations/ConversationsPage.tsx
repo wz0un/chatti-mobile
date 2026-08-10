@@ -12,6 +12,7 @@ import type { Conversation, NormalizedConversation, User } from '@shared/types';
 import { ApiService } from '@shared/api/ApiService';
 import { LocalStorageAdapter, lastSeenKey } from '@shared/storage/StorageAdapter';
 import { useI18n } from '../../lib/useI18n';
+import StartConversation from '../dm/StartConversation';
 import ConversationListItem from './ConversationListItem';
 
 import './conversations.css';
@@ -198,6 +199,8 @@ export default function ConversationsPage({ user }: ConversationsPageProps) {
           ⟳
         </button>
       </div>
+
+      <StartConversation user={user} />
 
       {loading && conversations.length === 0 ? (
         <div className="convs__center">

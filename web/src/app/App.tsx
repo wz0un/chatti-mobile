@@ -15,6 +15,7 @@ import ConversationsPage from '../features/conversations/ConversationsPage';
 import ContactsPage from '../features/contacts/ContactsPage';
 import RoomsPage from '../features/rooms/RoomsPage';
 import ProfilePage from '../features/profile/ProfilePage';
+import DirectMessagePage from '../features/dm/DirectMessagePage';
 
 import './app.css';
 
@@ -77,7 +78,7 @@ export default function App() {
           <Route path="chats" element={<ConversationsPage user={user} />} />
           <Route path="contacts" element={<ContactsPage />} />
           <Route path="profile" element={<ProfilePage user={user} onLogout={onLogout} />} />
-          {/* Task 10 adds /dm/:conversationId here */}
+          <Route path="dm/:conversationId" element={<DirectMessagePage user={user} />} />
         </Route>
       </Routes>
     </BrowserRouter>

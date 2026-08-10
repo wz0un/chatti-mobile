@@ -38,6 +38,8 @@
   --color-error: #ff4d4d;
   --color-online: #4ecdc4;
   --color-offline: #b0b0b0;
+  --color-connected: #4ecdc4;
+  --color-disconnected: #ff4d4d;
 
   /* UI elements */
   --color-border: #e0e0e0;
