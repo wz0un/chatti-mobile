@@ -1,0 +1,271 @@
+/* App shell — responsive layout (Task 8 spec) */
+
+.shell {
+  height: 100%;
+  display: flex;
+}
+
+/* ---------- Sidebar ---------- */
+
+.shell__sidebar {
+  display: none;
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  flex-direction: column;
+  background-color: var(--color-background-secondary);
+  border-right: 1px solid var(--color-divider);
+  padding: var(--space-md) 0 var(--space-md) var(--space-sm);
+}
+
+.shell__brand {
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
+  font-size: var(--font-h3);
+  font-weight: bold;
+  color: var(--color-primary);
+}
+
+.shell__nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  overflow-y: auto;
+}
+
+.shell__navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 12px var(--space-lg);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.shell__navItem:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.shell__navItem--active {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-sm);
+}
+
+.shell__navEmoji {
+  font-size: 22px;
+}
+
+.shell__navLabel {
+  flex: 1;
+}
+
+.shell__sidebarFooter {
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--color-divider);
+}
+
+.shell__sidebarUser {
+  font-size: var(--font-body-small);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Badges ---------- */
+
+.shell__badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-badge);
+  color: var(--color-badge-text);
+  font-size: 11px;
+  font-weight: bold;
+  line-height: 20px;
+  text-align: center;
+}
+
+/* ---------- Main pane ---------- */
+
+.shell__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: var(--color-background);
+}
+
+.shell__menuButton {
+  display: none;
+  position: absolute;
+  top: var(--space-sm);
+  left: var(--space-sm);
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  font-size: 20px;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.shell__backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  border: none;
+  background: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+/* ---------- Bottom nav (mobile) ---------- */
+
+.shell__bottomNav {
+  display: flex;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+  height: 70px;
+  padding: 10px 0;
+  background-color: var(--color-surface);
+  box-shadow: 0 -10px 10px rgba(0, 0, 0, 0.1);
+}
+
+.shell__bottomItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.shell__bottomItem--active {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.shell__bottomItem--active::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+  background-color: var(--color-primary);
+}
+
+.shell__bottomEmojiWrap {
+  position: relative;
+}
+
+.shell__bottomEmoji {
+  font-size: 22px;
+  opacity: 0.7;
+}
+
+.shell__bottomItem--active .shell__bottomEmoji {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.shell__bottomItem .shell__badge {
+  position: absolute;
+  top: -6px;
+  right: -14px;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  font-size: 10px;
+  padding: 0 4px;
+}
+
+/* ---------- Tablet (768–1024px): collapsible sidebar ---------- */
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .shell__sidebar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 30;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .shell__sidebar--open {
+    transform: translateX(0);
+  }
+
+  .shell__backdrop {
+    display: block;
+  }
+
+  .shell__menuButton {
+    display: block;
+  }
+
+  .shell__main {
+    padding-top: 56px;
+  }
+}
+
+/* ---------- Mobile (<768px): single pane + bottom nav ---------- */
+
+@media (max-width: 767px) {
+  .shell__bottomNav {
+    display: flex;
+  }
+
+  .shell__main {
+    padding-bottom: 70px;
+  }
+
+  .shell__main--chat {
+    padding-bottom: 0;
+  }
+
+  .shell__menuButton {
+    display: none;
+  }
+
+  /* Chat opens full-screen: hide bottom nav */
+  .shell__main--chat + .shell__bottomNav {
+    display: none;
+  }
+}
+
+/* ---------- Desktop (≥1024px): fixed sidebar, master-detail ---------- */
+
+@media (min-width: 1024px) {
+  .shell__sidebar {
+    display: flex;
+  }
+
+  .shell__bottomNav {
+    display: none;
+  }
+
+  .shell__menuButton {
+    display: none;
+  }
+}
