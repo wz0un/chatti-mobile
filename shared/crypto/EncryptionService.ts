@@ -291,4 +291,6 @@ export class EncryptionService {
   }
 }
 
-export default new EncryptionService();
+export const defaultEncryptionService = new EncryptionService();
+
+export default defaultEncryptionService;
