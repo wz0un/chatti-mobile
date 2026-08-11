@@ -1,28 +1,34 @@
 /**
  * Conversations Screen
- * List active direct message conversations
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     FlatList,
     StyleSheet,
     ActivityIndicator,
     Text,
-    Alert,
     RefreshControl,
     TextInput,
+    Notifications as NativeNotifications,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
 import ConversationListItem from '../components/ConversationListItem';
-import colors from '../theme/colors';
 import { useTranslation } from '../i18n';
+import { useTheme } from '../theme/ThemeContext';
+import { useAlert } from '../theme/AlertContext';
+import { spacing, borderRadius, shadows, typography } from '../theme/colors';
+import * as Notifications from 'expo-notifications';
+import GlobalNotificationService from '../services/GlobalNotificationService';
 
 const ConversationsScreen = ({ navigation }) => {
+    const { theme } = useTheme();
+    const { alert } = useAlert();
+    const insets = useSafeAreaInsets();
     const [conversations, setConversations] = useState([]);
     const [filteredConversations, setFilteredConversations] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -30,7 +36,15 @@ const ConversationsScreen = ({ navigation }) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [lastSeenData, setLastSeenData] = useState({});
     const [searchQuery, setSearchQuery] = useState('');
+    const [isOnline, setIsOnline] = useState(true);
     const { t } = useTranslation();
+
+    useEffect(() => {
+        const unsubscribe = GlobalNotificationService.addConnectionListener(setIsOnline);
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    }, []);
 
     useEffect(() => {
         loadCurrentUser();
@@ -43,18 +57,28 @@ const ConversationsScreen = ({ navigation }) => {
         }
     }, [currentUser]);
 
-    // Intervalo de actualización automática (cada 30 segundos) como en la web
     useEffect(() => {
         let interval;
+        let notificationListener;
         if (currentUser) {
             interval = setInterval(() => {
                 loadConversations(false);
             }, 30000);
+
+            // Listen for foreground push notifications to refresh immediately
+            notificationListener = Notifications.addNotificationReceivedListener(notification => {
+                loadConversations(false);
+                loadLastSeen();
+            });
         }
-        return () => clearInterval(interval);
+        return () => {
+            if (interval) clearInterval(interval);
+            if (notificationListener) {
+                notificationListener.remove();
+            }
+        };
     }, [currentUser]);
 
-    // Refrescar al volver a la pantalla
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             if (currentUser) {
@@ -65,7 +89,6 @@ const ConversationsScreen = ({ navigation }) => {
         return unsubscribe;
     }, [navigation, currentUser]);
 
-    // Filtrar conversaciones cuando cambia la búsqueda o la lista
     useEffect(() => {
         if (searchQuery.trim() === '') {
             setFilteredConversations(conversations);
@@ -98,7 +121,6 @@ const ConversationsScreen = ({ navigation }) => {
 
     const loadConversations = async (showLoading = true) => {
         if (!currentUser) return;
-
         try {
             if (showLoading) setLoading(true);
             const convos = await ApiService.getUserConversations(currentUser.userId);
@@ -108,9 +130,9 @@ const ConversationsScreen = ({ navigation }) => {
                 return;
             }
 
-            // Lógica de deduplicación y ordenación (Misma que en la web)
             const uniqueConvos = [];
             const seenRecipients = new Set();
+            const currentUserId = String(currentUser.userId).toLowerCase();
 
             const sortedConvos = [...convos].sort((a, b) => {
                 const timeA = new Date(a.lastMessage?.timestamp || a.lastMessageTime || a.createdAt || 0).getTime();
@@ -118,11 +140,8 @@ const ConversationsScreen = ({ navigation }) => {
                 return timeB - timeA;
             });
 
-            const currentUserId = String(currentUser.userId).toLowerCase();
-
             for (const convo of sortedConvos) {
                 const otherParticipant = convo.participants?.find(p => String(p).toLowerCase() !== currentUserId);
-
                 const rId = convo.recipient?.userId || convo.recipientId || otherParticipant || convo.id;
                 const normalizedRecipientId = String(rId).toLowerCase();
 
@@ -135,49 +154,23 @@ const ConversationsScreen = ({ navigation }) => {
                     seenRecipients.add(normalizedRecipientId);
                 }
             }
-
             setConversations(uniqueConvos);
         } catch (error) {
             console.error('Error loading conversations:', error);
-            if (showLoading) Alert.alert(t('common.error'), t('conversations.errorLoad'));
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
     };
 
-    const handleRefresh = () => {
-        setRefreshing(true);
-        loadConversations(false);
-        loadLastSeen();
-    };
-
-    const handleConversationPress = (conversation) => {
-        const recipientId = conversation.normalizedRecipientId;
-
-        navigation.navigate('DirectMessage', {
-            conversationId: conversation.conversationId || conversation.id,
-            recipientId: recipientId,
-            recipientUsername: conversation.recipient?.fullUsername || conversation.recipientUsername || recipientId,
-            recipientPublicKey: conversation.recipient?.publicKey,
-            userId: currentUser.userId,
-            username: currentUser.fullUsername,
-        });
-    };
-
     const handleLongPress = (conversation) => {
-        Alert.alert(
-            t('conversations.deleteTitle'),
-            t('conversations.deleteMessage'),
-            [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                    text: t('conversations.deleteConfirm'),
-                    style: 'destructive',
-                    onPress: () => deleteConversation(conversation.conversationId || conversation.id)
-                }
-            ]
-        );
+        alert({
+            title: t('conversations.deleteTitle'),
+            message: t('conversations.deleteMessage'),
+            confirmText: t('conversations.deleteConfirm'),
+            type: 'error',
+            onConfirm: () => deleteConversation(conversation.conversationId || conversation.id)
+        });
     };
 
     const deleteConversation = async (conversationId) => {
@@ -187,7 +180,6 @@ const ConversationsScreen = ({ navigation }) => {
             loadConversations();
         } catch (error) {
             console.error('Error deleting conversation:', error);
-            Alert.alert(t('common.error'), t('conversations.deleteError'));
         } finally {
             setLoading(false);
         }
@@ -197,7 +189,6 @@ const ConversationsScreen = ({ navigation }) => {
         const recipientId = item.normalizedRecipientId;
         const msgTime = item.lastMessage?.timestamp || item.lastMessageTime || item.createdAt;
         const timestamp = msgTime ? new Date(msgTime).getTime() : 0;
-
         const lastSeenTime = Number(lastSeenData[recipientId]) || 0;
         const isUnread = timestamp > lastSeenTime && timestamp > 0;
 
@@ -206,45 +197,55 @@ const ConversationsScreen = ({ navigation }) => {
                 conversation={item}
                 currentUserId={currentUser?.userId}
                 isUnread={isUnread}
-                onPress={() => handleConversationPress(item)}
+                onPress={() => {
+                    navigation.navigate('DirectMessage', {
+                        conversationId: item.conversationId || item.id,
+                        recipientId: recipientId,
+                        recipientUsername: item.recipient?.fullUsername || item.recipientUsername || recipientId,
+                        recipientPublicKey: item.recipient?.publicKey,
+                        userId: currentUser.userId,
+                        username: currentUser.fullUsername,
+                    });
+                }}
                 onLongPress={() => handleLongPress(item)}
             />
         );
     };
 
-    if (!currentUser) {
-        return (
-            <SafeAreaView style={styles.container} edges={['top']}>
-                <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
-                </View>
-            </SafeAreaView>
-        );
-    }
-
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <View style={styles.searchContainer}>
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder={t('usersList.placeholder')}
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    placeholderTextColor={colors.textLight}
-                />
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+            <View style={[styles.header, { backgroundColor: theme.surface }]}>
+                <View style={styles.headerTitleContainer}>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>{t('conversations.headerTitle')}</Text>
+                    <View style={[styles.onlineIndicator, { backgroundColor: isOnline ? theme.success : theme.error }]} />
+                </View>
+            </View>
+
+            <View style={[styles.searchContainer, { backgroundColor: theme.background }]}>
+                <View style={[styles.searchWrapper, { backgroundColor: theme.surfaceSecondary, borderColor: theme.border }]}>
+                    <Text style={styles.searchIcon}>🔍</Text>
+                    <TextInput
+                        style={[styles.searchInput, { color: theme.text }]}
+                        placeholder={t('usersList.placeholder')}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        placeholderTextColor={theme.textTertiary}
+                    />
+                </View>
             </View>
 
             {loading && conversations.length === 0 ? (
                 <View style={styles.centerContainer}>
-                    <ActivityIndicator size="large" color={colors.primary} />
+                    <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : filteredConversations.length === 0 ? (
                 <View style={styles.centerContainer}>
-                    <Text style={styles.emptyText}>
+                    <Text style={[styles.emptyIcon, { color: theme.primary + '40' }]}>💬</Text>
+                    <Text style={[styles.emptyText, { color: theme.text }]}>
                         {searchQuery ? t('usersList.emptySearch') : t('conversations.emptyTitle')}
                     </Text>
-                    <Text style={styles.emptySubtext}>
-                        {searchQuery ? t('login.errors.registerError') : t('conversations.emptySubtitle')}
+                    <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>
+                        {searchQuery ? t('common.error') : t('conversations.emptySubtitle')}
                     </Text>
                 </View>
             ) : (
@@ -252,12 +253,14 @@ const ConversationsScreen = ({ navigation }) => {
                     data={filteredConversations}
                     renderItem={renderConversation}
                     keyExtractor={(item) => (item.id || item.conversationId) + '-' + item.normalizedRecipientId}
-                    contentContainerStyle={styles.list}
+                    contentContainerStyle={[styles.list, { paddingBottom: 100 + insets.bottom }]}
+                    showsVerticalScrollIndicator={false}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
-                            onRefresh={handleRefresh}
-                            colors={[colors.primary]}
+                            onRefresh={() => { setRefreshing(true); loadConversations(false); loadLastSeen(); }}
+                            colors={[theme.primary]}
+                            tintColor={theme.primary}
                         />
                     }
                 />
@@ -269,49 +272,68 @@ const ConversationsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
+    },
+    header: {
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
+    },
+    headerTitle: {
+        ...typography.h2,
+        fontWeight: '900',
+    },
+    headerTitleContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    onlineIndicator: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        marginLeft: spacing.sm,
     },
     searchContainer: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        backgroundColor: colors.surface,
-        borderBottomWidth: 0.5,
-        borderBottomColor: colors.border,
+        paddingHorizontal: spacing.lg,
+        paddingBottom: spacing.md,
+    },
+    searchWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: spacing.md,
+        borderRadius: borderRadius.md,
+        height: 48,
+        borderWidth: 1,
+    },
+    searchIcon: {
+        fontSize: 16,
+        marginRight: spacing.sm,
+        opacity: 0.7,
     },
     searchInput: {
-        backgroundColor: colors.inputBackground,
-        borderRadius: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
+        flex: 1,
         fontSize: 15,
-        color: colors.text,
-        borderWidth: 0,
     },
     list: {
-        flexGrow: 1,
-        paddingBottom: 80,
+        paddingBottom: 100,
     },
     centerContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 32,
-        backgroundColor: colors.background,
+        padding: spacing.xl,
+    },
+    emptyIcon: {
+        fontSize: 80,
+        marginBottom: spacing.lg,
     },
     emptyText: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.text,
-        marginBottom: 8,
+        ...typography.h3,
+        marginBottom: spacing.xs,
         textAlign: 'center',
     },
     emptySubtext: {
-        fontSize: 14,
-        color: colors.textSecondary,
+        ...typography.body,
         textAlign: 'center',
-        lineHeight: 20,
     },
 });
 
 export default ConversationsScreen;
-

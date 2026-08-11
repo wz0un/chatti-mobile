@@ -2,7 +2,7 @@
  * Direct Message Screen - Encrypted 1-to-1 Chat
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View,
     FlatList,
@@ -10,25 +10,29 @@ import {
     KeyboardAvoidingView,
     Platform,
     Text,
+    TouchableOpacity,
     Dimensions,
     StatusBar,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ApiService from '../services/ApiService';
 import DirectMessageService from '../services/DirectMessageService';
+import ChatHistoryService from '../services/ChatHistoryService';
 import ChatMessage from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import TypingIndicator from '../components/TypingIndicator';
-import colors from '../theme/colors';
+import { spacing, typography } from '../theme/colors';
 import { useTranslation } from '../i18n';
+import { useTheme } from '../theme/ThemeContext';
+import { useAlert } from '../theme/AlertContext';
 
-// Configuration - Set to false for local development
-const isProduction = true; // Change to false to test with local backend
-const WORKER_URL = isProduction
-    ? 'https://chatti-workers.wz0un.workers.dev'
-    : 'http://192.168.1.100:8787'; // Replace with your computer's IP for device testing
+const WORKER_URL = process.env.EXPO_PUBLIC_WORKER_URL || 'http://localhost:8788';
 
 const DirectMessageScreen = ({ route, navigation }) => {
+    const { theme } = useTheme();
+    const { alert } = useAlert();
+    const insets = useSafeAreaInsets();
     const {
         conversationId,
         recipientId,
@@ -44,127 +48,130 @@ const DirectMessageScreen = ({ route, navigation }) => {
     const [isTyping, setIsTyping] = useState(new Set());
     const [isEncrypted, setIsEncrypted] = useState(true);
     const [connectionError, setConnectionError] = useState(null);
+    const [isTemporary, setIsTemporary] = useState(false);
+    const [historyEnabled, setHistoryEnabled] = useState(false);
     const { t } = useTranslation();
 
     const dmServiceRef = useRef(null);
-    const messageListRef = useRef([]);
     const flatListRef = useRef(null);
 
-    // Actualizar "Visto por última vez" para este destinatario
-    const updateLastSeen = async () => {
+    const updateLastSeen = useCallback(async () => {
         try {
             const lastSeenStr = await AsyncStorage.getItem(`lastSeen_${userId}`) || '{}';
             const lastSeen = JSON.parse(lastSeenStr);
             lastSeen[recipientId] = Date.now();
             await AsyncStorage.setItem(`lastSeen_${userId}`, JSON.stringify(lastSeen));
-            console.log('✅ Last seen updated for:', recipientId);
         } catch (error) {
             console.error('Error updating lastSeen:', error);
         }
-    };
+    }, [userId, recipientId]);
 
-    // Detect navigation type (buttons vs gestures)
     useEffect(() => {
         if (Platform.OS === 'android') {
             const screenHeight = Dimensions.get('screen').height;
             const windowHeight = Dimensions.get('window').height;
             const statusBarHeight = StatusBar.currentHeight || 0;
-
             const navbarHeight = screenHeight - windowHeight - statusBarHeight;
-
-            if (navbarHeight > 15) {
-                setAndroidOffset(45);
-            } else {
-                setAndroidOffset(100);
-            }
+            // Restaurando la lógica exacta de la rama feature/chat-one-emote
+            setAndroidOffset(navbarHeight > 15 ? 45 : 100);
         }
     }, []);
 
     useEffect(() => {
-        // Marcamos como visto al entrar
-        updateLastSeen();
+        const checkSettings = async () => {
+            ChatHistoryService.setUserId(userId);
+            const enabled = await ChatHistoryService.isHistoryEnabled();
+            setHistoryEnabled(enabled);
+            const temp = await ChatHistoryService.isConversationTemporary(conversationId);
+            setIsTemporary(temp);
+        };
+        checkSettings();
+    }, [conversationId, userId]);
 
-        // Set navigation header
+    const handleDeleteConversation = () => {
+        alert({
+            title: t('conversations.deleteTitle'),
+            message: t('conversations.deleteMessage'),
+            confirmText: t('conversations.deleteConfirm'),
+            type: 'error',
+            onConfirm: async () => {
+                try {
+                    await ApiService.deleteConversation(userId, conversationId);
+                    navigation.goBack();
+                } catch (error) {
+                    console.error('Error deleting conversation:', error);
+                }
+            }
+        });
+    };
+
+    const handleToggleTemporary = async () => {
+        if (dmServiceRef.current) {
+            const newValue = !isTemporary;
+            await dmServiceRef.current.setTemporary(newValue);
+            setIsTemporary(newValue);
+        }
+    };
+
+    useEffect(() => {
+        updateLastSeen();
         navigation.setOptions({
             title: recipientUsername || t('directMessage.fallbackTitle', { id: recipientId.substring(0, 8) }),
             headerRight: () => (
                 <View style={styles.headerRight}>
+                    {historyEnabled && (
+                        <TouchableOpacity
+                            onPress={handleToggleTemporary}
+                            style={styles.tempToggle}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <Text style={styles.tempToggleIcon}>
+                                {isTemporary ? '🕐' : '💾'}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                        onPress={handleDeleteConversation}
+                        style={styles.deleteButton}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                        <Text style={styles.deleteIcon}>🗑️</Text>
+                    </TouchableOpacity>
                     <View style={[
                         styles.statusIndicator,
-                        { backgroundColor: isConnected ? colors.connected : colors.disconnected }
+                        { backgroundColor: isConnected ? theme.success : theme.error }
                     ]} />
-                    <Text style={styles.headerText}>
+                    <Text style={[styles.headerText, { color: theme.textTertiary }]}>
                         {isEncrypted ? t('common.encrypted') : t('common.notEncrypted')}
                     </Text>
                 </View>
             ),
         });
-    }, [navigation, recipientUsername, recipientId, isConnected, isEncrypted, t]);
+    }, [navigation, recipientUsername, recipientId, isConnected, isEncrypted, isTemporary, historyEnabled, t, theme, updateLastSeen]);
 
     useEffect(() => {
-        // Create DM service instance
         const dmService = new DirectMessageService();
         dmServiceRef.current = dmService;
 
-        // Connect to conversation
         dmService.connect(conversationId, userId, username, recipientId, WORKER_URL, recipientPublicKey);
 
-        // Event listeners
-        dmService.on('connected', () => {
-            console.log('Connected to DM conversation');
-            setIsConnected(true);
-            setConnectionError(null);
-        });
+        dmService.on('connected', () => { setIsConnected(true); setConnectionError(null); });
+        dmService.on('disconnected', () => { setIsConnected(false); });
+        dmService.on('error', (error) => { setConnectionError(error.message || t('directMessage.connectionError')); setIsConnected(false); });
 
-        dmService.on('disconnected', () => {
-            console.log('Disconnected from DM conversation');
-            setIsConnected(false);
-        });
-
-        dmService.on('error', (error) => {
-            console.error('DM error:', error);
-            setConnectionError(error.message || t('directMessage.connectionError'));
-            setIsConnected(false);
-        });
-
-        // Receive message history
         dmService.on('history', (data) => {
-            console.log('Received DM history:', data.messages.length, 'messages');
             setMessageList(data.messages);
-            messageListRef.current = data.messages;
-            updateLastSeen(); // Actualizar visto al recibir el historial
+            updateLastSeen();
         });
 
-        // Receive new message
         dmService.on('message', (data) => {
-            console.log('New DM:', data);
-            // Use functional update to ensure we have latest state and avoid dupes
             setMessageList(currentList => {
-                if (currentList.some(m => m.id === data.id)) {
-                    console.log('Duplicate message ignored:', data.id);
-                    return currentList;
-                }
-                const newList = [...currentList, data];
-                messageListRef.current = newList;
-
-                // Si el mensaje es para nosotros o somos parte de la sala activa, actualizamos visto
+                if (currentList.some(m => m.id === data.id)) return currentList;
                 updateLastSeen();
-
-                return newList;
+                return [...currentList, data];
             });
         });
 
-        // User joined
-        dmService.on('user_joined', (data) => {
-            console.log('User joined DM:', data.username);
-        });
-
-        // User left
-        dmService.on('user_left', (data) => {
-            console.log('User left DM:', data.username);
-        });
-
-        // Typing indicator
         dmService.on('typing', (data) => {
             if (data.isTyping) {
                 setIsTyping((prev) => new Set(prev).add(data.username));
@@ -177,37 +184,23 @@ const DirectMessageScreen = ({ route, navigation }) => {
             }
         });
 
-        // Key exchanged
-        dmService.on('key_exchanged', (data) => {
-            console.log('Key exchanged with:', data.userId);
-            setIsEncrypted(true);
-        });
+        dmService.on('key_exchanged', () => { setIsEncrypted(true); });
 
-        // Cleanup
-        return () => {
-            dmService.disconnect();
-        };
-    }, [conversationId, userId, username, recipientId]);
+        return () => { dmService.disconnect(); };
+    }, [conversationId, userId, username, recipientId, recipientPublicKey, t, updateLastSeen]);
 
-    // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
         if (messageList.length > 0) {
-            setTimeout(() => {
-                flatListRef.current?.scrollToEnd({ animated: true });
-            }, 100);
+            setTimeout(() => { flatListRef.current?.scrollToEnd({ animated: true }); }, 100);
         }
     }, [messageList]);
 
     const handleSendMessage = (message) => {
-        if (dmServiceRef.current) {
-            dmServiceRef.current.sendMessage(message);
-        }
+        if (dmServiceRef.current) dmServiceRef.current.sendMessage(message);
     };
 
-    const handleTyping = (isTyping) => {
-        if (dmServiceRef.current) {
-            dmServiceRef.current.sendTypingIndicator(isTyping);
-        }
+    const handleTyping = (typing) => {
+        if (dmServiceRef.current) dmServiceRef.current.sendTypingIndicator(typing);
     };
 
     const renderMessage = ({ item }) => (
@@ -221,24 +214,28 @@ const DirectMessageScreen = ({ route, navigation }) => {
     );
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
             <KeyboardAvoidingView
                 style={styles.container}
                 behavior="padding"
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : androidOffset}
             >
                 {connectionError && (
-                    <View style={styles.errorBanner}>
-                        <Text style={styles.errorText}>
-                            ⚠️ {connectionError || t('directMessage.connectionError')}
-                        </Text>
+                    <View style={[styles.errorBanner, { backgroundColor: theme.error }]}>
+                        <Text style={styles.bannerText}>⚠️ {connectionError}</Text>
                     </View>
                 )}
 
                 {!isConnected && !connectionError && (
-                    <View style={styles.warningBanner}>
-                        <Text style={styles.warningText}>
-                            {t('common.connectingEncrypted')}
+                    <View style={[styles.warningBanner, { backgroundColor: theme.warning }]}>
+                        <Text style={styles.bannerText}>{t('common.connectingEncrypted')}</Text>
+                    </View>
+                )}
+
+                {historyEnabled && isTemporary && (
+                    <View style={[styles.tempBanner, { backgroundColor: theme.surfaceSecondary || theme.surface }]}>
+                        <Text style={[styles.tempBannerText, { color: theme.textSecondary }]}>
+                            🕐 {t('chatHistory.temporaryBanner')}
                         </Text>
                     </View>
                 )}
@@ -250,17 +247,22 @@ const DirectMessageScreen = ({ route, navigation }) => {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.messageList}
                     onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+                    showsVerticalScrollIndicator={false}
                 />
 
-                {isTyping.size > 0 && (
-                    <TypingIndicator usernames={Array.from(isTyping)} />
-                )}
-
-                <ChatInput
-                    onSendMessage={handleSendMessage}
-                    onTyping={handleTyping}
-                    disabled={!isConnected}
-                />
+                <View style={styles.inputArea}>
+                    {isTyping.size > 0 && (
+                        <View style={styles.typingContainer}>
+                            <TypingIndicator usernames={Array.from(isTyping)} />
+                        </View>
+                    )}
+                    <ChatInput
+                        onSendMessage={handleSendMessage}
+                        onTyping={handleTyping}
+                        disabled={!isConnected}
+                        theme={theme}
+                    />
+                </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -269,15 +271,14 @@ const DirectMessageScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
     },
     messageList: {
-        paddingVertical: 8,
+        paddingVertical: spacing.md,
     },
     headerRight: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginRight: 16,
+        marginRight: spacing.md,
     },
     statusIndicator: {
         width: 8,
@@ -286,28 +287,52 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     headerText: {
-        fontSize: 12,
-        color: colors.textLight,
+        fontSize: 11,
+        fontWeight: '700',
+        textTransform: 'uppercase',
     },
     warningBanner: {
-        backgroundColor: '#FFA500',
         padding: 8,
         alignItems: 'center',
-    },
-    warningText: {
-        color: '#fff',
-        fontSize: 12,
-        fontWeight: '600',
     },
     errorBanner: {
-        backgroundColor: '#FF3B30',
         padding: 8,
         alignItems: 'center',
     },
-    errorText: {
+    bannerText: {
         color: '#fff',
         fontSize: 12,
+        fontWeight: '700',
+    },
+    inputArea: {
+        width: '100%',
+    },
+    typingContainer: {
+        paddingLeft: spacing.lg,
+        paddingBottom: spacing.xs,
+    },
+    tempToggle: {
+        marginRight: 8,
+        padding: 2,
+    },
+    tempToggleIcon: {
+        fontSize: 16,
+    },
+    tempBanner: {
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        alignItems: 'center',
+    },
+    tempBannerText: {
+        fontSize: 12,
         fontWeight: '600',
+    },
+    deleteButton: {
+        marginRight: 12,
+        padding: 2,
+    },
+    deleteIcon: {
+        fontSize: 18,
     },
 });
 

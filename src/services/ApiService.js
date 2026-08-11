@@ -4,12 +4,36 @@
  */
 
 // Configuration - Set to false for local development
-const isProduction = true; // Change to false to test with local backend
-const API_BASE_URL = isProduction
-    ? 'https://chatti-workers.wz0un.workers.dev'
-    : 'http://192.168.1.100:8787'; // Replace with your computer's IP for device testing
+// La URL se lee desde el archivo .env (empezando con EXPO_PUBLIC_)
+const API_BASE_URL = process.env.EXPO_PUBLIC_WORKER_URL || 'http://localhost:8788';
 
 class ApiService {
+    /**
+     * Robustly parse JSON from response and handle errors
+     */
+    static async parseJsonResponse(response) {
+        const text = await response.text();
+        try {
+            if (!text || text.trim() === '') {
+                if (response.ok) return { success: true };
+                throw new Error(`Empty response from server (Status: ${response.status})`);
+            }
+
+            const data = JSON.parse(text);
+
+            if (!response.ok) {
+                throw new Error(data.error || data.message || `HTTP error! status: ${response.status}`);
+            }
+
+            return data;
+        } catch (error) {
+            console.error('JSON Parse error:', error, 'Full response:', text);
+            if (error instanceof SyntaxError) {
+                throw new Error(`Invalid JSON from server: ${text.substring(0, 100)}... (Status: ${response.status})`);
+            }
+            throw error;
+        }
+    }
     /**
      * Fetch list of available rooms
      */
@@ -26,7 +50,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return {
                 rooms: data.rooms || [],
                 cursor: data.cursor,
@@ -60,7 +84,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             if (!data.success) {
                 throw new Error(data.error || 'Failed to create room');
             }
@@ -83,7 +107,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            return await response.json();
+            return await this.parseJsonResponse(response);
         } catch (error) {
             console.error('Error fetching room info:', error);
             throw error;
@@ -106,7 +130,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return {
                 messages: data.messages || [],
                 nextCursor: data.nextCursor,
@@ -139,7 +163,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             if (!data.success) {
                 throw new Error('Failed to post message');
             }
@@ -164,7 +188,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return data.users || [];
         } catch (error) {
             console.error('Error searching users:', error);
@@ -188,7 +212,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return {
                 users: data.users || [],
                 cursor: data.cursor,
@@ -216,7 +240,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return data.success ? data.user : null;
         } catch (error) {
             console.error('Error finding user:', error);
@@ -244,7 +268,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             if (!data.success) {
                 throw new Error(data.error || 'Failed to start conversation');
             }
@@ -272,7 +296,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return data.conversations || [];
         } catch (error) {
             console.error('Error getting conversations:', error);
@@ -300,7 +324,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return data.success;
         } catch (error) {
             console.error('Error deleting conversation:', error);
@@ -324,7 +348,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return data.success ? data.user : null;
         } catch (error) {
             console.error('Error getting user by device ID:', error);
@@ -350,11 +374,11 @@ class ApiService {
             });
 
             if (!response.ok) {
-                const data = await response.json();
+                const data = await this.parseJsonResponse(response);
                 throw new Error(data.error || 'Failed to send contact request');
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return data;
         } catch (error) {
             console.error('Error sending contact request:', error);
@@ -375,7 +399,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return data.requests || [];
         } catch (error) {
             console.error('Error getting contact requests:', error);
@@ -400,11 +424,11 @@ class ApiService {
             });
 
             if (!response.ok) {
-                const data = await response.json();
+                const data = await this.parseJsonResponse(response);
                 throw new Error(data.error || 'Failed to accept contact request');
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return data;
         } catch (error) {
             console.error('Error accepting contact request:', error);
@@ -429,11 +453,11 @@ class ApiService {
             });
 
             if (!response.ok) {
-                const data = await response.json();
+                const data = await this.parseJsonResponse(response);
                 throw new Error(data.error || 'Failed to reject contact request');
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return data;
         } catch (error) {
             console.error('Error rejecting contact request:', error);
@@ -454,7 +478,7 @@ class ApiService {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return data.contacts || [];
         } catch (error) {
             console.error('Error getting contacts list:', error);
@@ -478,11 +502,11 @@ class ApiService {
             });
 
             if (!response.ok) {
-                const data = await response.json();
+                const data = await this.parseJsonResponse(response);
                 throw new Error(data.error || 'Failed to delete account');
             }
 
-            const data = await response.json();
+            const data = await this.parseJsonResponse(response);
             return data.success;
         } catch (error) {
             console.error('Error deleting account:', error);

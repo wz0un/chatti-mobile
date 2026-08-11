@@ -9,14 +9,24 @@ import * as Notifications from 'expo-notifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import GlobalNotificationService from './src/services/GlobalNotificationService';
 import { LanguageProvider } from './src/i18n';
+import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { AlertProvider } from './src/theme/AlertContext';
+import AuthService from './src/services/AuthService';
 
-export default function App() {
+function AppContent() {
+  const { isDark } = useTheme();
   const notificationListener = useRef();
   const responseListener = useRef();
 
   useEffect(() => {
     // Initialize global notification service
     GlobalNotificationService.initialize();
+
+    // Check for pending initially
+    GlobalNotificationService.checkPendingNotifications();
+
+    // Update push token with the server
+    AuthService.updatePushToken();
 
     // Listen for incoming notifications
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
@@ -41,10 +51,22 @@ export default function App() {
   }, []);
 
   return (
-    <LanguageProvider>
+    <>
       <AppNavigator />
-      <StatusBar style="light" />
-    </LanguageProvider>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AlertProvider>
+        <LanguageProvider>
+          <AppContent />
+        </LanguageProvider>
+      </AlertProvider>
+    </ThemeProvider>
   );
 }
 

@@ -1,0 +1,146 @@
+:root {
+  /* Primary brand colors (from src/theme/colors.js) */
+  --color-primary: #ff6b35;
+  --color-primary-dark: #e55a2b;
+  --color-primary-light: #ffb84d;
+  --color-secondary: #4ecdc4;
+  --color-secondary-dark: #3dbdb4;
+  --color-secondary-light: #81c784;
+  --color-accent: #ffb84d;
+  --color-accent-dark: #ffa033;
+  --color-accent-light: #ffd180;
+
+  /* Backgrounds */
+  --color-background: #fff8f0;
+  --color-background-secondary: #ffffff;
+  --color-background-tertiary: #f7f2eb;
+
+  /* Surfaces */
+  --color-surface: #ffffff;
+  --color-surface-hover: #fff5eb;
+
+  /* Text */
+  --color-text: #333333;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --color-text-inverse: #ffffff;
+  --color-text-muted: #b0b0b0;
+
+  /* Message bubbles */
+  --color-message-sent: #ff6b35;
+  --color-message-received: #ffffff;
+  --color-message-text: #ffffff;
+  --color-message-text-received: #333333;
+
+  /* Status */
+  --color-success: #4ecdc4;
+  --color-warning: #ffb84d;
+  --color-error: #ff4d4d;
+  --color-online: #4ecdc4;
+  --color-offline: #b0b0b0;
+  --color-connected: #4ecdc4;
+  --color-disconnected: #ff4d4d;
+
+  /* UI elements */
+  --color-border: #e0e0e0;
+  --color-divider: #f0f0f0;
+  --color-input-background: #ffffff;
+  --color-input-border: #e0e0e0;
+  --color-placeholder: #a0a0a0;
+  --color-tab-active: #ff6b35;
+  --color-tab-inactive: #999999;
+  --color-badge: #ff4d4d;
+  --color-badge-text: #ffffff;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #ff6b35, #ffb84d);
+  --gradient-secondary: linear-gradient(135deg, #4ecdc4, #81c784);
+  --gradient-orange-to-green: linear-gradient(135deg, #ff6b35, #4ecdc4);
+
+  /* Typography */
+  --font-h1: 32px;
+  --font-h2: 24px;
+  --font-h3: 20px;
+  --font-body: 16px;
+  --font-body-small: 14px;
+  --font-caption: 12px;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 3px rgba(255, 107, 53, 0.1);
+  --shadow-md: 0 4px 6px rgba(255, 107, 53, 0.15);
+  --shadow-lg: 0 8px 12px rgba(255, 107, 53, 0.2);
+
+  /* Layout */
+  --sidebar-width: 320px;
+  --sidebar-width-collapsed: 0px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  font-size: var(--font-body);
+  line-height: 24px;
+  color: var(--color-text);
+  background-color: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+/* Accessibility: visible focus rings */
+:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.app-splash {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-orange-to-green);
+}
+
+.app-splash__title {
+  margin: 0;
+  font-size: 56px;
+  font-weight: bold;
+  color: var(--color-text-inverse);
+}
+
+.app-splash__subtitle {
+  color: rgba(255, 255, 255, 0.9);
+}
