@@ -1,0 +1,106 @@
+/* Profile section */
+
+.profile {
+  gap: var(--space-lg);
+}
+
+.section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-lg);
+  overflow-y: auto;
+}
+
+.section__title {
+  margin: 0 0 var(--space-lg);
+  font-size: var(--font-h2);
+  color: var(--color-text);
+}
+
+.section__hint {
+  color: var(--color-text-tertiary);
+}
+
+.profile__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl);
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.profile__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-full);
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  font-size: 32px;
+  font-weight: bold;
+  line-height: 72px;
+  text-align: center;
+}
+
+.profile__name {
+  margin: 0;
+  font-size: var(--font-h3);
+}
+
+.profile__username {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-body-small);
+}
+
+.profile__device {
+  width: 100%;
+  margin-top: var(--space-md);
+  text-align: center;
+}
+
+.profile__deviceLabel {
+  margin: 0 0 var(--space-xs);
+  font-weight: 600;
+  font-size: var(--font-body-small);
+}
+
+.profile__deviceId {
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.profile__deviceHint {
+  margin: var(--space-xs) 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-caption);
+}
+
+.profile__copied {
+  margin: var(--space-xs) 0 0;
+  color: var(--color-success);
+  font-size: var(--font-caption);
+  font-weight: 600;
+}
+
+.profile__logout {
+  padding: 14px;
+  border: 2px solid var(--color-error);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-error);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.profile__logout:hover {
+  background-color: var(--color-error);
+  color: var(--color-text-inverse);
+}

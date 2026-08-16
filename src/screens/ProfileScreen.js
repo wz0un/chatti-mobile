@@ -9,67 +9,69 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    TextInput,
-    Modal,
     ActivityIndicator,
-    Image,
-    Switch,
-    ScrollView
+    ScrollView,
+    Modal,
+    Switch
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
 import AuthService from '../services/AuthService';
 import ApiService from '../services/ApiService';
-import NotificationService from '../services/NotificationService';
-import colors, { spacing, borderRadius } from '../theme/colors';
+import ChatHistoryService from '../services/ChatHistoryService';
+import { spacing, borderRadius, typography, shadows } from '../theme/colors';
 import { useTranslation } from '../i18n';
+import { useTheme } from '../theme/ThemeContext';
+import { useAlert } from '../theme/AlertContext';
 
-const SettingsItem = ({ icon, label, value, onPress, isDestructive, hasToggle, isToggled, onToggle }) => (
+const SettingsItem = ({ icon, label, value, onPress, isDestructive, theme }) => (
     <TouchableOpacity
-        style={styles.settingsItem}
+        style={[styles.settingsItem, { borderBottomColor: theme.divider }]}
         onPress={onPress}
-        disabled={hasToggle}
         activeOpacity={0.7}
     >
-        <View style={styles.settingsIconContainer}>
+        <View style={[styles.settingsIconContainer, { backgroundColor: isDestructive ? theme.error + '15' : theme.surfaceSecondary }]}>
             <Text style={styles.settingsIcon}>{icon}</Text>
         </View>
         <View style={styles.settingsContent}>
-            <Text style={[styles.settingsLabel, isDestructive && styles.destructiveLabel]}>
+            <Text style={[styles.settingsLabel, { color: isDestructive ? theme.error : theme.text }]}>
                 {label}
             </Text>
-            {value && <Text style={styles.settingsValue}>{value}</Text>}
+            {value && <Text style={[styles.settingsValue, { color: theme.textSecondary }]}>{value}</Text>}
         </View>
-        {hasToggle ? (
-            <Switch
-                value={isToggled}
-                onValueChange={onToggle}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor={'#fff'}
-            />
-        ) : (
-            <Text style={styles.settingsArrow}>›</Text>
-        )}
+        <Text style={[styles.settingsArrow, { color: theme.textTertiary }]}>›</Text>
     </TouchableOpacity>
 );
 
 const ProfileScreen = ({ navigation }) => {
+    const { theme, themeMode, setThemeMode, isDark } = useTheme();
+    const { alert } = useAlert();
+    const insets = useSafeAreaInsets();
     const [user, setUser] = useState(null);
     const [deviceId, setDeviceId] = useState('');
     const [loading, setLoading] = useState(true);
-    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-    const [darkModeEnabled, setDarkModeEnabled] = useState(false);
     const { t, language, setLanguage } = useTranslation();
 
+    const [languageModalVisible, setLanguageModalVisible] = useState(false);
+    const [themeModalVisible, setThemeModalVisible] = useState(false);
+    const [chatHistoryEnabled, setChatHistoryEnabled] = useState(false);
+
     const languages = [
-        { code: 'en', label: 'English' },
-        { code: 'es', label: 'Español' },
-        { code: 'ar', label: 'العربية' },
-        { code: 'fr', label: 'Français' },
+        { code: 'en', label: 'English', flag: '🇺🇸' },
+        { code: 'es', label: 'Español', flag: '🇪🇸' },
+        { code: 'ar', label: 'العربية', flag: '🇸🇦' },
+        { code: 'fr', label: 'Français', flag: '🇫🇷' },
+    ];
+
+    const themes = [
+        { code: 'light', label: t('profile.theme.light'), icon: '☀️' },
+        { code: 'dark', label: t('profile.theme.dark'), icon: '🌙' },
+        { code: 'system', label: t('profile.theme.system'), icon: '📱' },
     ];
 
     const currentLanguageLabel = languages.find(l => l.code === language)?.label || 'Español';
+    const currentThemeLabel = themes.find(th => th.code === themeMode)?.label || t('profile.theme.system');
 
     useEffect(() => {
         loadUserProfile();
@@ -91,6 +93,11 @@ const ProfileScreen = ({ navigation }) => {
 
             setUser(currentUser);
             setDeviceId(currentDeviceId);
+
+            // Load chat history setting
+            ChatHistoryService.setUserId(currentUser.userId);
+            const historyEnabled = await ChatHistoryService.isHistoryEnabled();
+            setChatHistoryEnabled(historyEnabled);
         } catch (error) {
             console.error('Error loading profile:', error);
         } finally {
@@ -101,92 +108,124 @@ const ProfileScreen = ({ navigation }) => {
     const copyDeviceId = async () => {
         if (deviceId) {
             await Clipboard.setStringAsync(deviceId);
-            Alert.alert(t('profile.copied'), t('profile.copiedText'));
+            alert({
+                title: t('profile.copied'),
+                message: t('profile.copiedText'),
+                type: 'success'
+            });
         }
     };
 
-    const [languageModalVisible, setLanguageModalVisible] = useState(false);
-
-    const showLanguageSelector = () => {
-        setLanguageModalVisible(true);
-    };
-
-    const handleSelectLanguage = (langCode) => {
-        setLanguage(langCode);
-        setLanguageModalVisible(false);
-    };
-
     const handleDeleteAccount = async () => {
-        Alert.alert(
-            t('profile.deleteTitle'),
-            t('profile.deleteMessage'),
-            [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                    text: t('profile.deleteConfirm'),
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            setLoading(true);
-                            if (user && user.userId) {
-                                await ApiService.deleteAccount(user.userId, deviceId);
-                            }
-                            await AuthService.logout();
-                            navigation.reset({
-                                index: 0,
-                                routes: [{ name: 'Login' }],
-                            });
-                        } catch (error) {
-                            Alert.alert(t('common.error'), t('profile.deleteError'));
-                            setLoading(false);
-                        }
+        alert({
+            title: t('profile.deleteTitle'),
+            message: t('profile.deleteMessage'),
+            type: 'error',
+            confirmText: t('profile.deleteConfirm'),
+            cancelText: t('common.cancel'),
+            onConfirm: async () => {
+                try {
+                    setLoading(true);
+                    if (user && user.userId) {
+                        await ApiService.deleteAccount(user.userId, deviceId);
                     }
+                    await AuthService.logout();
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'Login' }],
+                    });
+                } catch (error) {
+                    alert({
+                        title: t('common.error'),
+                        message: t('profile.deleteError'),
+                        type: 'error'
+                    });
+                    setLoading(false);
                 }
-            ]
-        );
+            }
+        });
     };
 
     const handleLogout = async () => {
-        Alert.alert(
-            t('profile.logoutTitle'),
-            t('profile.logoutMessage'),
-            [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                    text: t('profile.logoutConfirm'),
-                    style: 'destructive',
-                    onPress: async () => {
-                        await AuthService.logout();
-                        navigation.reset({
-                            index: 0,
-                            routes: [{ name: 'Login' }],
-                        });
-                    }
+        alert({
+            title: t('profile.logoutTitle'),
+            message: t('profile.logoutMessage'),
+            confirmText: t('profile.logoutConfirm'),
+            cancelText: t('common.cancel'),
+            onConfirm: async () => {
+                await AuthService.logout();
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                });
+            }
+        });
+    };
+
+    const handleToggleChatHistory = async (enabled) => {
+        if (enabled) {
+            await ChatHistoryService.setHistoryEnabled(true);
+            setChatHistoryEnabled(true);
+        } else {
+            alert({
+                title: t('chatHistory.title'),
+                message: t('chatHistory.disablePrompt'),
+                confirmText: t('common.delete'),
+                cancelText: t('common.cancel'),
+                type: 'warning',
+                onConfirm: async () => {
+                    await ChatHistoryService.clearAllHistory();
+                    await ChatHistoryService.setHistoryEnabled(false);
+                    setChatHistoryEnabled(false);
+                },
+                onCancel: async () => {
+                    await ChatHistoryService.setHistoryEnabled(false);
+                    setChatHistoryEnabled(false);
                 }
-            ]
-        );
+            });
+        }
+    };
+
+    const handleDeleteAllHistory = () => {
+        alert({
+            title: t('chatHistory.deleteAll'),
+            message: t('chatHistory.deleteAllConfirm'),
+            confirmText: t('common.delete'),
+            cancelText: t('common.cancel'),
+            type: 'error',
+            onConfirm: async () => {
+                await ChatHistoryService.clearAllHistory();
+                alert({
+                    title: t('chatHistory.deleteAllSuccess'),
+                    type: 'success'
+                });
+            }
+        });
     };
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={{ marginTop: 10, color: colors.textTertiary }}>{t('profile.loading')}</Text>
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={{ marginTop: 10, color: theme.textTertiary }}>{t('profile.loading')}</Text>
             </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>{t('profile.title')}</Text>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+            <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>{t('profile.title')}</Text>
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView contentContainerStyle={[
+                styles.scrollContent,
+                { paddingBottom: 100 + insets.bottom }
+            ]} showsVerticalScrollIndicator={false}>
                 {/* User Profile Card */}
-                <View style={styles.profileCard}>
+                <View style={[styles.profileCard, { backgroundColor: theme.surface, ...shadows.md }]}>
                     <LinearGradient
-                        colors={colors.primaryGradient}
+                        colors={theme.gradients.primary}
                         style={styles.avatarContainer}
                     >
                         <Text style={styles.avatarText}>
@@ -194,93 +233,111 @@ const ProfileScreen = ({ navigation }) => {
                         </Text>
                     </LinearGradient>
                     <View style={styles.profileInfo}>
-                        <Text style={styles.username}>{user?.fullUsername}</Text>
-                        <Text style={styles.userId}>@{user?.username}</Text>
+                        <Text style={[styles.username, { color: theme.text }]}>{user?.fullUsername}</Text>
+                        <Text style={[styles.userId, { color: theme.textSecondary }]}>@{user?.username}</Text>
                     </View>
-                    <TouchableOpacity onPress={copyDeviceId} style={styles.qrButton}>
+                    <TouchableOpacity onPress={copyDeviceId} style={[styles.qrButton, { backgroundColor: theme.background }]}>
                         <Text style={styles.qrIcon}>🆔</Text>
                     </TouchableOpacity>
                 </View>
 
                 {/* Account Settings */}
-                <Text style={styles.sectionTitle}>{t('profile.sections.account')}</Text>
-                <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>{t('profile.sections.account')}</Text>
+                <View style={[styles.section, { backgroundColor: theme.surface, ...shadows.sm }]}>
                     <SettingsItem
                         icon="🔑"
                         label={t('profile.deviceIdTitle')}
                         value={deviceId ? `${deviceId.substring(0, 8)}...` : t('profile.deviceIdPlaceholder')}
                         onPress={copyDeviceId}
+                        theme={theme}
                     />
                     <SettingsItem
                         icon="🔒"
                         label={t('profile.items.privacy')}
                         onPress={() => { }}
+                        theme={theme}
                     />
                 </View>
 
+                {/* Chat Settings */}
+                <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>{t('chatHistory.title')}</Text>
+                <View style={[styles.section, { backgroundColor: theme.surface, ...shadows.sm }]}>
+                    <View style={[styles.settingsItem, { borderBottomColor: theme.divider }]}>
+                        <View style={[styles.settingsIconContainer, { backgroundColor: theme.surfaceSecondary }]}>
+                            <Text style={styles.settingsIcon}>💬</Text>
+                        </View>
+                        <View style={styles.settingsContent}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.settingsLabel, { color: theme.text }]}>
+                                    {t('chatHistory.enable')}
+                                </Text>
+                                <Text style={[styles.historyDescription, { color: theme.textTertiary }]}>
+                                    {chatHistoryEnabled ? t('chatHistory.enableDescription') : t('chatHistory.disable')}
+                                </Text>
+                            </View>
+                            <Switch
+                                value={chatHistoryEnabled}
+                                onValueChange={handleToggleChatHistory}
+                                trackColor={{ false: theme.border, true: theme.primary + '60' }}
+                                thumbColor={chatHistoryEnabled ? theme.primary : theme.textTertiary}
+                            />
+                        </View>
+                    </View>
+                    {chatHistoryEnabled && (
+                        <SettingsItem
+                            icon="🗑️"
+                            label={t('chatHistory.deleteAll')}
+                            isDestructive
+                            onPress={handleDeleteAllHistory}
+                            theme={theme}
+                        />
+                    )}
+                </View>
+
                 {/* App Settings */}
-                <Text style={styles.sectionTitle}>{t('profile.sections.app')}</Text>
-                <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>{t('profile.sections.app')}</Text>
+                <View style={[styles.section, { backgroundColor: theme.surface, ...shadows.sm }]}>
                     <SettingsItem
-                        icon="🔔"
-                        label={t('profile.items.notifications')}
-                        hasToggle
-                        isToggled={notificationsEnabled}
-                        onToggle={(v) => setNotificationsEnabled(v)}
-                    />
-                    <SettingsItem
-                        icon="🌙"
-                        label={t('profile.items.darkMode')}
-                        hasToggle
-                        isToggled={darkModeEnabled}
-                        onToggle={(v) => setDarkModeEnabled(v)}
+                        icon="🎨"
+                        label={t('profile.theme.title')}
+                        value={currentThemeLabel}
+                        onPress={() => setThemeModalVisible(true)}
+                        theme={theme}
                     />
                     <SettingsItem
                         icon="🌐"
                         label={t('profile.items.language')}
                         value={currentLanguageLabel}
-                        onPress={showLanguageSelector}
-                    />
-                </View>
-
-                {/* Help & Support */}
-                <Text style={styles.sectionTitle}>{t('profile.sections.help')}</Text>
-                <View style={styles.section}>
-                    <SettingsItem
-                        icon="❓"
-                        label={t('profile.items.faq')}
-                        onPress={() => { }}
-                    />
-                    <SettingsItem
-                        icon="📝"
-                        label={t('profile.items.terms')}
-                        onPress={() => { }}
+                        onPress={() => setLanguageModalVisible(true)}
+                        theme={theme}
                     />
                 </View>
 
                 {/* Actions */}
-                <Text style={styles.sectionTitle}>{t('profile.sections.actions')}</Text>
-                <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: theme.textTertiary }]}>{t('profile.sections.actions')}</Text>
+                <View style={[styles.section, { backgroundColor: theme.surface, ...shadows.sm }]}>
                     <SettingsItem
                         icon="🚪"
                         label={t('profile.items.logout')}
-                        isDestructive
                         onPress={handleLogout}
+                        theme={theme}
                     />
                     <SettingsItem
                         icon="🗑️"
                         label={t('profile.items.delete')}
                         isDestructive
                         onPress={handleDeleteAccount}
+                        theme={theme}
                     />
                 </View>
 
-                <Text style={styles.version}>Versión 1.2.0 • Build 2026</Text>
+                <Text style={[styles.version, { color: theme.textTertiary }]}>Versión 1.3.0 • Premium Design</Text>
             </ScrollView>
 
+            {/* Language Modal */}
             <Modal
                 visible={languageModalVisible}
-                transparent={true}
+                transparent
                 animationType="fade"
                 onRequestClose={() => setLanguageModalVisible(false)}
             >
@@ -289,41 +346,78 @@ const ProfileScreen = ({ navigation }) => {
                     activeOpacity={1}
                     onPress={() => setLanguageModalVisible(false)}
                 >
-                    <View style={styles.languageModalContent}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>{t('profile.languages.select')}</Text>
-                            <TouchableOpacity onPress={() => setLanguageModalVisible(false)}>
-                                <Text style={styles.closeButton}>✕</Text>
-                            </TouchableOpacity>
+                            <Text style={[styles.modalTitle, { color: theme.text }]}>{t('profile.languages.select')}</Text>
                         </View>
 
                         {languages.map((lang) => (
                             <TouchableOpacity
                                 key={lang.code}
                                 style={[
-                                    styles.languageOption,
-                                    language === lang.code && styles.languageOptionActive
+                                    styles.optionItem,
+                                    { backgroundColor: language === lang.code ? theme.primary + '15' : 'transparent' }
                                 ]}
-                                onPress={() => handleSelectLanguage(lang.code)}
+                                onPress={() => {
+                                    setLanguage(lang.code);
+                                    setLanguageModalVisible(false);
+                                }}
                             >
-                                <View style={styles.languageInfo}>
-                                    <Text style={styles.languageFlag}>
-                                        {lang.code === 'en' ? '🇺🇸' :
-                                            lang.code === 'es' ? '🇪🇸' :
-                                                lang.code === 'ar' ? '🇸🇦' : '🇫🇷'}
-                                    </Text>
+                                <View style={styles.optionInfo}>
+                                    <Text style={styles.optionFlag}>{lang.flag}</Text>
                                     <Text style={[
-                                        styles.languageLabel,
-                                        language === lang.code && styles.languageLabelActive
+                                        styles.optionLabel,
+                                        { color: language === lang.code ? theme.primary : theme.text, fontWeight: language === lang.code ? '700' : '400' }
                                     ]}>
                                         {lang.label}
                                     </Text>
                                 </View>
-                                {language === lang.code && (
-                                    <View style={styles.checkIcon}>
-                                        <Text style={styles.checkText}>✓</Text>
-                                    </View>
-                                )}
+                                {language === lang.code && <View style={[styles.checkDot, { backgroundColor: theme.primary }]} />}
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+
+            {/* Theme Modal */}
+            <Modal
+                visible={themeModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setThemeModalVisible(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setThemeModalVisible(false)}
+                >
+                    <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+                        <View style={styles.modalHeader}>
+                            <Text style={[styles.modalTitle, { color: theme.text }]}>{t('profile.theme.select')}</Text>
+                        </View>
+
+                        {themes.map((th) => (
+                            <TouchableOpacity
+                                key={th.code}
+                                style={[
+                                    styles.optionItem,
+                                    { backgroundColor: themeMode === th.code ? theme.primary + '15' : 'transparent' }
+                                ]}
+                                onPress={() => {
+                                    setThemeMode(th.code);
+                                    setThemeModalVisible(false);
+                                }}
+                            >
+                                <View style={styles.optionInfo}>
+                                    <Text style={styles.optionFlag}>{th.icon}</Text>
+                                    <Text style={[
+                                        styles.optionLabel,
+                                        { color: themeMode === th.code ? theme.primary : theme.text, fontWeight: themeMode === th.code ? '700' : '400' }
+                                    ]}>
+                                        {th.label}
+                                    </Text>
+                                </View>
+                                {themeMode === th.code && <View style={[styles.checkDot, { backgroundColor: theme.primary }]} />}
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -336,74 +430,57 @@ const ProfileScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.background,
     },
     header: {
-        paddingHorizontal: 20,
-        paddingVertical: 15,
-        borderBottomWidth: 0.5,
-        borderBottomColor: colors.border,
-        backgroundColor: colors.surface,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
+        borderBottomWidth: 1,
     },
     headerTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: colors.text,
+        ...typography.h2,
     },
     scrollContent: {
-        padding: 20,
-        paddingBottom: 100,
+        padding: spacing.lg,
+        paddingBottom: 40,
     },
     profileCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.surface,
-        padding: 16,
-        borderRadius: 16,
-        marginBottom: 24,
-        shadowColor: 'rgba(255, 107, 53, 0.2)',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
+        padding: spacing.lg,
+        borderRadius: borderRadius.lg,
+        marginBottom: spacing.xl,
     },
     avatarContainer: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 16,
+        marginRight: spacing.md,
     },
     avatarText: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff',
+        ...typography.h2,
+        color: '#FFFFFF',
     },
     profileInfo: {
         flex: 1,
     },
     username: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: colors.text,
-        marginBottom: 4,
+        ...typography.h3,
+        marginBottom: 2,
     },
     userId: {
-        fontSize: 14,
-        color: colors.textSecondary,
+        ...typography.bodySmall,
     },
     qrButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: colors.background,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -411,43 +488,35 @@ const styles = StyleSheet.create({
         fontSize: 20,
     },
     sectionTitle: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: colors.textTertiary,
-        marginBottom: 8,
-        marginLeft: 12,
+        fontSize: 12,
+        fontWeight: '700',
+        marginBottom: spacing.sm,
+        marginLeft: spacing.sm,
         textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     section: {
-        backgroundColor: colors.surface,
-        borderRadius: 16,
-        marginBottom: 24,
+        borderRadius: borderRadius.lg,
+        marginBottom: spacing.xl,
         overflow: 'hidden',
-        shadowColor: 'rgba(255, 107, 53, 0.2)',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
     },
     settingsItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderBottomWidth: 0.5,
-        borderBottomColor: colors.border,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.lg,
+        borderBottomWidth: 1,
     },
     settingsIconContainer: {
-        width: 32,
-        height: 32,
-        borderRadius: 8,
-        backgroundColor: colors.background,
+        width: 36,
+        height: 36,
+        borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
+        marginRight: spacing.md,
     },
     settingsIcon: {
-        fontSize: 16,
+        fontSize: 18,
     },
     settingsContent: {
         flex: 1,
@@ -456,110 +525,71 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     settingsLabel: {
-        fontSize: 16,
-        color: colors.text,
-    },
-    destructiveLabel: {
-        color: '#FF3B30',
+        ...typography.body,
+        fontWeight: '500',
     },
     settingsValue: {
-        fontSize: 14,
-        color: colors.textSecondary,
-        marginRight: 8,
+        ...typography.bodySmall,
+        marginRight: spacing.xs,
     },
     settingsArrow: {
         fontSize: 20,
-        color: colors.textTertiary,
-        marginLeft: 8,
+        marginLeft: spacing.xs,
     },
     version: {
         textAlign: 'center',
-        color: colors.textTertiary,
-        fontSize: 12,
-        marginTop: 10,
+        ...typography.caption,
+        marginTop: spacing.md,
     },
-    // Modal Styles
+    historyDescription: {
+        fontSize: 11,
+        marginTop: 2,
+    },
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
+        padding: spacing.xl,
     },
-    languageModalContent: {
-        backgroundColor: colors.surface,
+    modalContent: {
         width: '100%',
         maxWidth: 340,
-        borderRadius: 24,
-        padding: 20,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 10,
+        borderRadius: borderRadius.xl,
+        padding: spacing.xl,
+        ...shadows.lg,
     },
     modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20,
-        paddingHorizontal: 4,
+        marginBottom: spacing.lg,
     },
     modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: colors.text,
+        ...typography.h3,
     },
-    closeButton: {
-        fontSize: 20,
-        color: colors.textSecondary,
-        padding: 4,
-    },
-    languageOption: {
+    optionItem: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        borderRadius: 16,
-        marginBottom: 8,
-        backgroundColor: colors.background,
+        paddingVertical: spacing.md,
+        paddingHorizontal: spacing.md,
+        borderRadius: borderRadius.md,
+        marginBottom: spacing.xs,
     },
-    languageOptionActive: {
-        backgroundColor: colors.primary + '15',
-        borderWidth: 1,
-        borderColor: colors.primary + '30',
-    },
-    languageInfo: {
+    optionInfo: {
         flexDirection: 'row',
         alignItems: 'center',
     },
-    languageFlag: {
+    optionFlag: {
         fontSize: 24,
-        marginRight: 16,
+        marginRight: spacing.md,
     },
-    languageLabel: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: colors.text,
+    optionLabel: {
+        ...typography.body,
     },
-    languageLabelActive: {
-        color: colors.primary,
-        fontWeight: '700',
+    checkDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
     },
-    checkIcon: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        backgroundColor: colors.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    checkText: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: 'bold',
-    }
 });
 
 export default ProfileScreen;

@@ -1,0 +1,64 @@
+# Chatti Web — Feature Parity Matrix
+
+**Source of truth:** `chatti-mobile` (Expo / React Native app). Backend: Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev` (verified live on 2026-08-11).
+
+Legend:
+- ✅ = implemented and working
+- ⚠️ = partially implemented / limited (explained in Notes)
+- ❌ = not implemented
+- Status: `DONE` / `TODO` / `BLOCKED` / `NOT-APPLICABLE` / `DEFERRED`
+
+## Feature Matrix
+
+| Feature | Mobile | Web | Status | Notes |
+|---------|--------|-----|--------|-------|
+| Login (username#disc + password) | ✅ | ✅ | DONE | LoginPage tabs, mobile-identical validation, error/success banners. Live-verified. |
+| Register (username + password) | ✅ | ✅ | DONE | Assigns `fullUsername` + discriminator; 3s auto-login after register (parity). Live-verified. |
+| Session persistence | ✅ | ✅ | DONE | localStorage `userData` (same key); session restore on boot with splash. |
+| Logout | ✅ | ✅ | DONE | Local only (removes `userData`, keeps `deviceId` — parity). Profile page. |
+| Delete account | ✅ | ◐ | PARTIAL | Shared ApiService + smoke-tested live; profile UI button pending (Task 12). |
+| Update push token | ✅ | ❌ | DEFERRED | `POST /api/auth/update-push-token`. Expo push is mobile-only; web push needs a backend change. |
+| Room list (paginated) | ✅ | ❌ | TODO | `GET /api/rooms?cursor&limit`. Live: returns empty list (no rooms exist yet). |
+| Create room | ✅ | ❌ | TODO | `POST /api/room/create`. Mobile navigates into the new room after creation. |
+| Private rooms | ⚠️ | ❌ | TODO | `createRoom` sends `isPrivate/password`, but the mobile join flow never sends a password — private rooms are effectively non-functional on mobile. Web should match mobile behavior (public rooms only) unless backend join flow is clarified. |
+| Room chat (WebSocket) | ✅ | ❌ | TODO | `wss://.../api/room/{roomId}`. Events: join, message, typing, history, user_joined, user_left, user_list. |
+| Room message history | ✅ | ❌ | TODO | Via WS `history` event + HTTP fallback `GET /api/room/{id}/messages`. |
+| HTTP message fallback | ✅ | ❌ | TODO | `POST /api/room/{roomId}/post`. |
+| Room presence (online count) | ✅ | ❌ | TODO | `user_joined/user_left` carry `totalUsers`. No global presence API. |
+| Room typing indicators | ✅ | ❌ | TODO | `typing` event with `{ isTyping }`. |
+| DM: start conversation | ✅ | ✅ | DONE | Live-verified. `conversationId` (e.g. `dm_xxxx_v2`) + `url`. StartConversation uses `findUserByUsername` → publicKey → start (mobile workaround pattern). |
+| DM: conversation list | ✅ | ✅ | DONE | Dedupe + sort + recipient normalization ported; 30s polling; unread from `lastSeen_{userId}`. |
+| DM: delete conversation | ✅ | ✅ | DONE | Confirm dialog + `POST /api/dm/delete` (deleteConversation port). |
+| DM: encrypted chat (WebSocket) | ✅ | ✅ | DONE | `wss://.../api/dm/{conversationId}`. Events: join (with publicKey), encrypted_message, user_joined, user_left. **Worker does NOT send `history` on join** (verified via raw-protocol probe: first join, join-while-peer-connected, solo rejoin, and rejoin after 100s inactivity all receive no history event — mobile `handleHistory` path appears dead in production; report to BE). Live smoke: encrypted round-trip both directions (web ⇄ web) passing. |
+| DM: E2E encryption (DH Group 14 + SHA-256 + XOR) | ✅ | ✅ | DONE | WebCrypto port; fixed-vector unit tests; live round-trip decrypts `isEncrypted:false` in both directions. Byte-compatible with mobile (fixed vectors). See ARCHITECTURE §5. |
+| DM: fetch recipient public key | ✅ | ✅ | DONE | `GET /api/users/public-key?userId` (no auth). Live-verified in smoke test. |
+| DM: last-seen / unread markers | ✅ | ✅ | DONE | Written on DM open, history and incoming message (mobile parity); `Number(timestamp) > Number(lastSeen)` comparison. |
+| Contacts list | ✅ | ❌ | TODO | `GET /api/contacts/list?userId`. Live: returns `{contacts, total}`. |
+| Add contact (by username#disc) | ✅ | ❌ | TODO | `POST /api/contacts/request {senderId, recipientDeviceId, senderUsername}` after `GET /api/users/find`. |
+| Contact requests list | ✅ | ❌ | TODO | `GET /api/contacts/requests?userId`. |
+| Accept contact request | ✅ | ❌ | TODO | `POST /api/contacts/accept {requestId, userId}`. |
+| Reject contact request | ✅ | ❌ | TODO | `POST /api/contacts/reject {requestId, userId}`. |
+| User directory search | ⚠️ | ❌ | BLOCKED | Backend disabled: `GET /api/users/list` and `GET /api/users/search` return "User directory is disabled for privacy". Mobile's UsersListScreen is dead code (not registered in the navigator). **Web must not implement it.** |
+| Find user by exact username | ✅ | ❌ | TODO | `GET /api/users/find?username=name#1234` (exact match only). |
+| User by device ID | ✅ | ❌ | TODO | `GET /api/users/by-device-id?deviceId`. |
+| Profile view (user + deviceId) | ✅ | ✅ | DONE | Profile page: user card, deviceId copy, logout (local-only, keeps deviceId — parity). |
+| Copy device ID | ✅ | ✅ | DONE | `navigator.clipboard.writeText` + copied-state feedback. |
+| Language selector | ⚠️ | ◐ | PARTIAL | i18n provider + `chatti_language` persistence ported; language switcher UI pending (profile page). |
+| i18n translation coverage | ✅ | ✅ | DONE | Dictionary extracted verbatim; `interpolate` helper; login/conversations/profile/DM keys verified. |
+| Notifications (push) | ✅ | ❌ | DEFERRED | Expo push requires native; web needs Web Push + Service Worker + backend endpoint (Backend Agent change). |
+| In-app notification toasts | ❌ | ❌ | TODO | Mobile shows local notifications only. Web can add in-app toasts (Web-only enhancement, no backend change). |
+| Unread conversations badge (tab) | ✅ | ✅ | DONE | `useSectionBadges` — 30s polling + focus refresh, 99+ cap. |
+| Pending requests badge (tab) | ✅ | ✅ | DONE | Same `useSectionBadges` polling. |
+| Conversation search | ✅ | ✅ | DONE | Client-side filter on recipient username (useMemo). |
+| Pull-to-refresh | ✅ | ❌ | N/A | Web replaces with manual refresh / live updates. |
+| Notifications test button | ✅ | ❌ | DEFERRED | Tied to expo-notifications. |
+| Dark mode toggle | ⚠️ | ❌ | TODO | Mobile toggle is a no-op (UI stays light). Web: implement as real feature (Web-only enhancement). |
+
+## Summary
+
+- **Web app implemented for Tasks 1–10 (P0 core)** — auth, shell, conversations, encrypted DMs live-verified. Remaining rows: Tasks 11–15 (contacts/rooms screens), toasts, RTL, dark mode, E2E.
+- **Backend support exists for all core features** (verified live). No backend changes are required for parity of core features.
+- **Blocked:** user directory (backend disabled — do not implement).
+- **Deferred (needs backend change):** push notifications.
+- **Critical constraint:** DM encryption must remain byte-compatible with mobile's `EncryptionService` (fixed-vector tests enforce this).
+- **Worker finding (report to BE):** the DM WebSocket never emits `history` on join — web and mobile both have the dead handler path; history decrypt is unit-tested via FakeWebSocket instead of live.

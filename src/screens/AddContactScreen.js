@@ -1,5 +1,5 @@
 /**
- * Add Contact Screen - Add contact by device ID
+ * Add Contact Screen - Add contact by username#discriminator
  */
 
 import React, { useState } from 'react';
@@ -9,142 +9,125 @@ import {
     StyleSheet,
     TextInput,
     TouchableOpacity,
-    Alert,
     ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
-import colors from '../theme/colors';
 import { useTranslation } from '../i18n';
+import { useTheme } from '../theme/ThemeContext';
+import { useAlert } from '../theme/AlertContext';
+import { spacing, borderRadius, shadows, typography } from '../theme/colors';
 
 const AddContactScreen = ({ navigation }) => {
+    const { theme, isDark } = useTheme();
+    const { alert } = useAlert();
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const { t } = useTranslation();
 
     const handleSendRequest = async () => {
         if (!searchQuery.trim()) {
-            Alert.alert(t('common.error'), t('addContact.errors.empty'));
+            alert({ title: t('common.error'), message: t('addContact.errors.empty'), type: 'error' });
             return;
         }
 
         if (!searchQuery.includes('#')) {
-            Alert.alert(t('common.error'), t('addContact.errors.invalidFormat'));
+            alert({ title: t('common.error'), message: t('addContact.errors.invalidFormat'), type: 'error' });
             return;
         }
 
         try {
             setLoading(true);
             const currentUser = await AuthService.getCurrentUser();
-
-            // Find user by username#discriminator
             const recipient = await ApiService.findUserByUsername(searchQuery.trim());
 
             if (!recipient) {
-                Alert.alert(t('common.error'), t('addContact.errors.notFound'));
+                alert({ title: t('common.error'), message: t('addContact.errors.notFound'), type: 'error' });
                 return;
             }
 
-            // Check if trying to add yourself
             if (recipient.userId === currentUser.userId) {
-                Alert.alert(t('common.error'), t('addContact.errors.self'));
+                alert({ title: t('common.error'), message: t('addContact.errors.self'), type: 'error' });
                 return;
             }
 
-            // Check if already in contacts or has pending request
             const contacts = await ApiService.getContactsList(currentUser.userId);
             const incomingRequests = await ApiService.getContactRequests(currentUser.userId);
 
-            const isAlreadyContact = contacts.some(c => c.userId === recipient.userId);
-            const hasIncomingRequest = incomingRequests.some(r => r.senderId === recipient.userId);
-
-            if (isAlreadyContact) {
-                Alert.alert(t('common.error'), t('addContact.errors.alreadyContact'));
+            if (contacts.some(c => c.userId === recipient.userId)) {
+                alert({ title: t('common.error'), message: t('addContact.errors.alreadyContact'), type: 'error' });
                 return;
             }
 
-            if (hasIncomingRequest) {
-                Alert.alert(t('common.error'), t('addContact.errors.incomingRequest'));
+            if (incomingRequests.some(r => r.senderId === recipient.userId)) {
+                alert({ title: t('common.error'), message: t('addContact.errors.incomingRequest'), type: 'error' });
                 return;
             }
 
-            // Send request
-            await ApiService.sendContactRequest(
-                currentUser.userId,
-                recipient.deviceId,
-                currentUser.fullUsername
-            );
+            await ApiService.sendContactRequest(currentUser.userId, recipient.deviceId, currentUser.fullUsername);
 
-            Alert.alert(
-                t('addContact.successTitle'),
-                t('addContact.successMessage', { username: recipient.fullUsername }),
-                [
-                    {
-                        text: t('common.ok'),
-                        onPress: () => navigation.goBack()
-                    }
-                ]
-            );
+            alert({
+                title: t('addContact.successTitle'),
+                message: t('addContact.successMessage', { username: recipient.fullUsername }),
+                type: 'success',
+                onConfirm: () => navigation.goBack()
+            });
 
             setSearchQuery('');
-
         } catch (error) {
-            console.error('Error sending contact request:', error);
-            Alert.alert(t('common.error'), error.message || t('addContact.errors.send'));
+            console.error('Error sending request:', error);
+            alert({ title: t('common.error'), message: error.message || t('addContact.errors.send'), type: 'error' });
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <View style={styles.content}>
-                <Text style={styles.title}>{t('addContact.title')}</Text>
-                <Text style={styles.description}>
-                    {t('addContact.description')}
-                </Text>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+                <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                    <Text style={[styles.title, { color: theme.text }]}>{t('addContact.title')}</Text>
+                    <Text style={[styles.description, { color: theme.textSecondary }]}>{t('addContact.description')}</Text>
 
-                <View style={styles.stepBox}>
-                    <Text style={styles.stepTitle}>{t('addContact.step1Title')}</Text>
-                    <Text style={styles.stepText}>
-                        {t('addContact.step1Text')}
-                    </Text>
-                </View>
+                    <View style={[styles.card, { backgroundColor: theme.surface }]}>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>{t('addContact.step2Title')}</Text>
+                        <TextInput
+                            style={[styles.input, { backgroundColor: theme.surfaceSecondary, color: theme.text, borderColor: theme.border }]}
+                            placeholder={t('addContact.placeholder')}
+                            placeholderTextColor={theme.textTertiary}
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                        />
+                    </View>
 
-                <View style={styles.stepBox}>
-                    <Text style={styles.stepTitle}>{t('addContact.step2Title')}</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder={t('addContact.placeholder')}
-                        placeholderTextColor={colors.textLight}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                    />
-                </View>
+                    <TouchableOpacity
+                        style={[styles.buttonWrapper, loading && { opacity: 0.7 }]}
+                        onPress={handleSendRequest}
+                        disabled={loading || !searchQuery.trim()}
+                    >
+                        <LinearGradient
+                            colors={theme.gradients.primary}
+                            style={styles.button}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                        >
+                            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('addContact.send')}</Text>}
+                        </LinearGradient>
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={[styles.sendButton, loading && styles.sendButtonDisabled]}
-                    onPress={handleSendRequest}
-                    disabled={loading || !searchQuery.trim()}
-                    activeOpacity={0.7}
-                >
-                    {loading ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.sendButtonText}>{t('addContact.send')}</Text>
-                    )}
-                </TouchableOpacity>
-
-                <View style={styles.infoBox}>
-                    <Text style={styles.infoTitle}>{t('addContact.infoTitle')}</Text>
-                    <Text style={styles.infoText}>
-                        {t('addContact.infoText')}
-                    </Text>
-                </View>
-            </View>
+                    <View style={[styles.infoCard, { backgroundColor: theme.surfaceSecondary, borderLeftColor: theme.primary }]}>
+                        <Text style={[styles.infoTitle, { color: theme.text }]}>{t('addContact.infoTitle')}</Text>
+                        <Text style={[styles.infoText, { color: theme.textSecondary }]}>{t('addContact.infoText')}</Text>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
@@ -152,83 +135,68 @@ const AddContactScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
     },
     content: {
-        padding: 20,
+        padding: spacing.xl,
     },
     title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: colors.text,
-        marginBottom: 8,
+        ...typography.h2,
+        fontWeight: '900',
+        marginBottom: spacing.xs,
     },
     description: {
-        fontSize: 14,
-        color: colors.textLight,
-        marginBottom: 20,
+        ...typography.body,
+        marginBottom: spacing.xl,
+        lineHeight: 22,
     },
-    stepBox: {
-        backgroundColor: colors.surface,
-        borderRadius: 8,
-        padding: 16,
-        marginBottom: 16,
-        borderLeftWidth: 3,
-        borderLeftColor: colors.primary,
+    card: {
+        borderRadius: borderRadius.lg,
+        padding: spacing.lg,
+        marginBottom: spacing.xl,
+        ...shadows.sm,
     },
-    stepTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.text,
-        marginBottom: 8,
-    },
-    stepText: {
-        fontSize: 14,
-        color: colors.textLight,
-        lineHeight: 20,
+    label: {
+        ...typography.bodySmall,
+        fontWeight: '700',
+        marginBottom: spacing.sm,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     input: {
-        backgroundColor: colors.surface,
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 14,
-        fontFamily: 'monospace',
-        color: colors.text,
-        borderWidth: 1,
-        borderColor: colors.border,
-        marginBottom: 16,
-    },
-    sendButton: {
-        backgroundColor: colors.primary,
-        borderRadius: 8,
-        padding: 14,
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    sendButtonDisabled: {
-        opacity: 0.6,
-    },
-    sendButtonText: {
-        color: '#fff',
+        height: 56,
+        borderRadius: borderRadius.md,
+        borderWidth: 1.5,
+        paddingHorizontal: spacing.lg,
         fontSize: 16,
-        fontWeight: '600',
+        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     },
-    infoBox: {
-        backgroundColor: colors.surface,
-        borderRadius: 8,
-        padding: 16,
+    buttonWrapper: {
+        ...shadows.md,
+        marginBottom: 40,
+    },
+    button: {
+        height: 56,
+        borderRadius: borderRadius.md,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    buttonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '800',
+    },
+    infoCard: {
+        borderRadius: borderRadius.lg,
+        padding: spacing.lg,
         borderLeftWidth: 4,
-        borderLeftColor: colors.primary,
     },
     infoTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.text,
-        marginBottom: 8,
+        ...typography.body,
+        fontWeight: '700',
+        marginBottom: spacing.xs,
     },
     infoText: {
-        fontSize: 14,
-        color: colors.textLight,
+        ...typography.bodySmall,
         lineHeight: 20,
     },
 });

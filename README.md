@@ -70,7 +70,7 @@ npx expo start --web
 ### Backend URL
 
 Por defecto, la app se conecta a:
-- **Desarrollo**: `http://127.0.0.1:8787`
+- **Desarrollo**: `http://127.0.0.1:8788`
 - **Producción**: `https://chatti-workers.wz0un.workers.dev`
 
 Para cambiar la URL del backend, edita `src/screens/ChatScreen.js`:
@@ -125,11 +125,11 @@ chatti-mobile/
 
 ### La app no se conecta al backend
 
-1. Verifica que el backend esté corriendo: `http://127.0.0.1:8787`
+1. Verifica que el backend esté corriendo: `http://127.0.0.1:8788`
 2. Si usas dispositivo físico, asegúrate de estar en la misma red WiFi
 3. Actualiza la URL en `ChatScreen.js` con la IP de tu computadora:
    ```javascript
-   const WORKER_URL = 'http://TU_IP:8787';
+   const WORKER_URL = 'http://TU_IP:8788';
    ```
 
 ### Notificaciones no funcionan
