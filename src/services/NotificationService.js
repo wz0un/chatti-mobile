@@ -120,9 +120,7 @@ class NotificationService {
             }
             return null;
         } catch (error) {
-            if (__DEV__) {
-                return 'development-mock-token';
-            }
+            console.error('Error getting push token:', error);
             return null;
         }
     }

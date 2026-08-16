@@ -13,34 +13,23 @@ import {
     Modal,
     ActivityIndicator,
     RefreshControl,
-    Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import ApiService from '../services/ApiService';
 import AuthService from '../services/AuthService';
-import colors from '../theme/colors';
 import { useTranslation } from '../i18n';
+import { useTheme } from '../theme/ThemeContext';
+import { useAlert } from '../theme/AlertContext';
+import { spacing, borderRadius, shadows, typography } from '../theme/colors';
 
 const RoomListScreen = ({ navigation, route }) => {
+    const { theme, isDark } = useTheme();
+    const { alert } = useAlert();
+    const insets = useSafeAreaInsets();
     const [username, setUsername] = useState(route.params?.username || null);
     const [currentUser, setCurrentUser] = useState(null);
     const { t, locale } = useTranslation();
-
-    useEffect(() => {
-        if (!username) {
-            AuthService.getCurrentUser().then(user => {
-                if (user) {
-                    setUsername(user.fullUsername);
-                    setCurrentUser(user);
-                }
-            });
-        } else {
-            AuthService.getCurrentUser().then(user => {
-                setCurrentUser(user);
-            });
-        }
-    }, []);
 
     const [rooms, setRooms] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -55,24 +44,29 @@ const RoomListScreen = ({ navigation, route }) => {
     const [creating, setCreating] = useState(false);
 
     useEffect(() => {
+        const loadUser = async () => {
+            const user = await AuthService.getCurrentUser();
+            if (user) {
+                setCurrentUser(user);
+                if (!username) setUsername(user.fullUsername);
+            }
+        };
+        loadUser();
+    }, []);
+
+    useEffect(() => {
         loadRooms();
     }, [currentUser]);
 
     const loadRooms = async (isRefresh = false) => {
         try {
-            if (isRefresh) {
-                setRefreshing(true);
-            } else {
-                setLoading(true);
-            }
-
+            if (isRefresh) setRefreshing(true); else setLoading(true);
             const data = await ApiService.listRooms(null, 20);
             setRooms(data.rooms);
             setCursor(data.cursor);
             setHasMore(data.hasMore);
         } catch (error) {
             console.error('Error loading rooms:', error);
-            Alert.alert(t('common.error'), t('rooms.errorLoad'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -81,7 +75,6 @@ const RoomListScreen = ({ navigation, route }) => {
 
     const loadMoreRooms = async () => {
         if (!hasMore || loadingMore) return;
-
         try {
             setLoadingMore(true);
             const data = await ApiService.listRooms(cursor, 20);
@@ -97,140 +90,110 @@ const RoomListScreen = ({ navigation, route }) => {
 
     const handleCreateRoom = async () => {
         if (!newRoomName.trim()) {
-            Alert.alert(t('common.error'), t('rooms.errorName'));
+            alert({ title: t('common.error'), message: t('rooms.errorName'), type: 'error' });
             return;
         }
 
         try {
             setCreating(true);
             const room = await ApiService.createRoom(newRoomName.trim(), username);
-
-            // Add new room to the list
             setRooms([room, ...rooms]);
-
-            // Close modal and reset
             setModalVisible(false);
             setNewRoomName('');
-
-            navigation.navigate('Chat', {
-                username,
-                roomId: room.id,
-                roomName: room.name,
-            });
+            navigation.navigate('Chat', { username, roomId: room.id, roomName: room.name });
         } catch (error) {
             console.error('Error creating room:', error);
-            Alert.alert(t('common.error'), t('rooms.errorCreate'));
+            alert({ title: t('common.error'), message: t('rooms.errorCreate'), type: 'error' });
         } finally {
             setCreating(false);
         }
     };
 
-    const handleJoinRoom = (room) => {
-        navigation.navigate('Chat', {
-            username,
-            roomId: room.id,
-            roomName: room.name,
-        });
-    };
-
     const renderRoom = ({ item }) => (
         <TouchableOpacity
-            style={styles.roomCard}
-            onPress={() => handleJoinRoom(item)}
+            style={[styles.roomCard, { backgroundColor: theme.surface, borderLeftColor: theme.primary }]}
+            onPress={() => navigation.navigate('Chat', { username, roomId: item.id, roomName: item.name })}
             activeOpacity={0.7}
         >
             <View style={styles.roomHeader}>
-                <Text style={styles.roomName}>{item.name}</Text>
+                <Text style={[styles.roomName, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
                 {item.isPrivate && (
-                    <View style={styles.privateBadge}>
+                    <View style={[styles.privateBadge, { backgroundColor: theme.secondary }]}>
                         <Text style={styles.privateBadgeText}>{t('rooms.private')}</Text>
                     </View>
                 )}
             </View>
             <View style={styles.roomFooter}>
-                <Text style={styles.roomOwner}>{t('rooms.createdBy', { owner: item.owner })}</Text>
-                <Text style={styles.roomDate}>
+                <Text style={[styles.roomOwner, { color: theme.textSecondary }]}>{t('rooms.createdBy', { owner: item.owner })}</Text>
+                <Text style={[styles.roomDate, { color: theme.textTertiary }]}>
                     {new Date(item.createdAt).toLocaleDateString(locale, {
-                        day: 'numeric',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit',
+                        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
                     })}
                 </Text>
             </View>
         </TouchableOpacity>
     );
 
-    const renderEmpty = () => (
-        <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>{t('rooms.empty')}</Text>
-            <Text style={styles.emptySubtext}>{t('rooms.createFirst')}</Text>
-        </View>
-    );
-
-    const renderFooter = () => {
-        if (!loadingMore) return null;
-        return (
-            <View style={styles.footerLoader}>
-                <ActivityIndicator size="small" color={colors.primary} />
-            </View>
-        );
-    };
-
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={styles.loadingText}>{t('rooms.loading')}</Text>
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            <LinearGradient
-                colors={colors.primaryGradient}
-                style={styles.header}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-            >
-                <View style={styles.headerContent}>
-                    <View>
-                        <Text style={styles.headerTitle}>Chat-ti</Text>
-                        <Text style={styles.headerSubtitle}>{t('rooms.welcome', { name: username || '' })}</Text>
-                    </View>
-                    <View style={styles.headerAvatar}>
-                        <Text style={styles.headerAvatarText}>{username?.charAt(0).toUpperCase()}</Text>
-                    </View>
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+            <View style={[styles.header, { backgroundColor: theme.surface }]}>
+                <View>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>Chat-ti</Text>
+                    <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>{t('rooms.welcome', { name: username || '' })}</Text>
                 </View>
-            </LinearGradient>
+                <LinearGradient
+                    colors={theme.gradients.primary}
+                    style={[styles.headerAvatar, shadows.sm]}
+                >
+                    <Text style={styles.headerAvatarText}>{username?.charAt(0).toUpperCase()}</Text>
+                </LinearGradient>
+            </View>
 
             <FlatList
                 data={rooms}
                 renderItem={renderRoom}
                 keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.listContent}
-                ListEmptyComponent={renderEmpty}
-                ListFooterComponent={renderFooter}
+                contentContainerStyle={[
+                    styles.listContent,
+                    { paddingBottom: 120 + insets.bottom }
+                ]}
+                ListEmptyComponent={() => (
+                    <View style={styles.emptyContainer}>
+                        <Text style={[styles.emptyIcon, { color: theme.primary + '30' }]}>🏠</Text>
+                        <Text style={[styles.emptyText, { color: theme.text }]}>{t('rooms.empty')}</Text>
+                        <Text style={[styles.emptySubtext, { color: theme.textSecondary }]}>{t('rooms.createFirst')}</Text>
+                    </View>
+                )}
+                ListFooterComponent={() => loadingMore ? <ActivityIndicator size="small" color={theme.primary} style={{ margin: 20 }} /> : null}
                 onEndReached={loadMoreRooms}
                 onEndReachedThreshold={0.5}
+                showsVerticalScrollIndicator={false}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={() => loadRooms(true)}
-                        colors={[colors.primary]}
+                        colors={[theme.primary]}
+                        tintColor={theme.primary}
                     />
                 }
             />
 
             <TouchableOpacity
-                style={styles.fabWrapper}
+                style={[styles.fabWrapper, { bottom: 90 + insets.bottom }]}
                 onPress={() => setModalVisible(true)}
                 activeOpacity={0.9}
             >
                 <LinearGradient
-                    colors={colors.primaryGradient}
-                    style={styles.fab}
+                    colors={theme.gradients.primary}
+                    style={[styles.fab, shadows.lg]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
@@ -238,49 +201,25 @@ const RoomListScreen = ({ navigation, route }) => {
                 </LinearGradient>
             </TouchableOpacity>
 
-            {/* Create Room Modal */}
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>{t('rooms.createTitle')}</Text>
-
+            <Modal animationType="fade" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
+                <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.surface }]}>
+                        <Text style={[styles.modalTitle, { color: theme.text }]}>{t('rooms.createTitle')}</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { backgroundColor: theme.surfaceSecondary, color: theme.text, borderColor: theme.border }]}
                             placeholder={t('rooms.roomNamePlaceholder')}
-                            placeholderTextColor={colors.textLight}
+                            placeholderTextColor={theme.textTertiary}
                             value={newRoomName}
                             onChangeText={setNewRoomName}
                             autoFocus
                             maxLength={50}
                         />
-
                         <View style={styles.modalButtons}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.cancelButton]}
-                                onPress={() => {
-                                    setModalVisible(false);
-                                    setNewRoomName('');
-                                }}
-                                disabled={creating}
-                            >
-                                <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
+                            <TouchableOpacity style={[styles.modalButton, { backgroundColor: theme.surfaceSecondary }]} onPress={() => { setModalVisible(false); setNewRoomName(''); }}>
+                                <Text style={[styles.cancelButtonText, { color: theme.text }]}>{t('common.cancel')}</Text>
                             </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.confirmButton]}
-                                onPress={handleCreateRoom}
-                                disabled={creating || !newRoomName.trim()}
-                            >
-                                {creating ? (
-                                    <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                    <Text style={styles.confirmButtonText}>{t('common.create')}</Text>
-                                )}
+                            <TouchableOpacity style={[styles.modalButton, { backgroundColor: theme.primary }]} onPress={handleCreateRoom} disabled={creating || !newRoomName.trim()}>
+                                {creating ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.confirmButtonText}>{t('common.create')}</Text>}
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -293,209 +232,168 @@ const RoomListScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.background,
-    },
-    loadingText: {
-        marginTop: 16,
-        fontSize: 16,
-        color: colors.textSecondary,
     },
     header: {
-        paddingHorizontal: 20,
-        paddingTop: 16,
-        paddingBottom: 20,
-    },
-    headerContent: {
+        paddingHorizontal: spacing.lg,
+        paddingTop: spacing.md,
+        paddingBottom: spacing.lg,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
     },
     headerTitle: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#fff',
-        marginBottom: 4,
+        fontSize: 32,
+        fontWeight: '900',
+        letterSpacing: -1,
     },
     headerSubtitle: {
         fontSize: 14,
-        color: 'rgba(255,255,255,0.9)',
+        fontWeight: '500',
     },
     headerAvatar: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        width: 48,
+        height: 48,
+        borderRadius: 24,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 2,
-        borderColor: 'rgba(255,255,255,0.3)',
     },
     headerAvatarText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#fff',
+        fontSize: 20,
+        fontWeight: '900',
+        color: '#FFFFFF',
     },
     listContent: {
-        padding: 16,
-        paddingBottom: 100, // Adjusted padding for FAB
+        padding: spacing.lg,
+        paddingBottom: 120,
     },
     roomCard: {
-        backgroundColor: colors.surface,
-        borderRadius: 16,
-        padding: 16,
-        marginBottom: 12,
-        shadowColor: 'rgba(255, 107, 53, 0.3)',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-        elevation: 4,
+        borderRadius: borderRadius.lg,
+        padding: spacing.lg,
+        marginBottom: spacing.md,
+        borderLeftWidth: 4,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
     roomHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: spacing.sm,
     },
     roomName: {
         fontSize: 18,
-        fontWeight: '600',
-        color: colors.text,
+        fontWeight: '700',
         flex: 1,
     },
     privateBadge: {
-        backgroundColor: colors.secondary,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: borderRadius.sm,
     },
     privateBadgeText: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: '#fff',
+        fontSize: 10,
+        fontWeight: '800',
+        color: '#FFFFFF',
+        textTransform: 'uppercase',
     },
     roomFooter: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: 0,
     },
     roomOwner: {
-        fontSize: 13,
-        color: colors.textSecondary,
+        fontSize: 12,
+        fontWeight: '500',
     },
     roomDate: {
-        fontSize: 12,
-        color: colors.textTertiary,
+        fontSize: 11,
     },
     emptyContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 60,
+        paddingVertical: 80,
+    },
+    emptyIcon: {
+        fontSize: 80,
+        marginBottom: spacing.lg,
     },
     emptyText: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: colors.textSecondary,
-        marginBottom: 8,
+        ...typography.h3,
+        marginBottom: spacing.xs,
+        textAlign: 'center',
     },
     emptySubtext: {
-        fontSize: 14,
-        color: colors.textTertiary,
+        ...typography.body,
+        textAlign: 'center',
     },
-    footerLoader: {
-        paddingVertical: 20,
-        alignItems: 'center',
-    },
-    // FAB (Floating Action Button)
     fabWrapper: {
         position: 'absolute',
         bottom: 90,
-        right: 20,
+        right: 24,
     },
     fab: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        width: 64,
+        height: 64,
+        borderRadius: 32,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: 'rgba(255, 107, 53, 0.5)',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
-        elevation: 12,
     },
     fabIcon: {
-        color: '#fff',
-        fontSize: 32,
+        color: '#FFFFFF',
+        fontSize: 36,
         fontWeight: '300',
-        marginTop: -2,
     },
-    // Modal Styles
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.6)',
         justifyContent: 'center',
         alignItems: 'center',
+        padding: spacing.xl,
     },
     modalContent: {
-        backgroundColor: colors.surface,
-        borderRadius: 20,
-        padding: 24,
-        width: '85%',
-        maxWidth: 400,
-        shadowColor: 'rgba(255, 107, 53, 0.5)',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.25,
-        shadowRadius: 16,
-        elevation: 12,
+        borderRadius: borderRadius.xl,
+        padding: spacing.xl,
+        width: '100%',
+        elevation: 20,
     },
     modalTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: colors.text,
-        marginBottom: 20,
+        ...typography.h3,
+        fontWeight: '800',
+        marginBottom: spacing.lg,
     },
     input: {
-        backgroundColor: colors.inputBackground,
-        borderWidth: 1,
-        borderColor: colors.inputBorder,
-        borderRadius: 12,
-        padding: 14,
+        height: 56,
+        borderWidth: 1.5,
+        borderRadius: borderRadius.md,
+        paddingHorizontal: spacing.lg,
         fontSize: 16,
-        color: colors.text,
-        marginBottom: 20,
+        marginBottom: spacing.xl,
     },
     modalButtons: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        gap: 12,
+        gap: spacing.md,
     },
     modalButton: {
         flex: 1,
-        paddingVertical: 14,
-        borderRadius: 12,
+        height: 50,
+        borderRadius: borderRadius.md,
         alignItems: 'center',
-    },
-    cancelButton: {
-        backgroundColor: colors.backgroundTertiary,
-    },
-    confirmButton: {
-        backgroundColor: colors.primary,
+        justifyContent: 'center',
     },
     cancelButtonText: {
-        color: colors.text,
-        fontSize: 16,
-        fontWeight: '600',
+        fontWeight: '700',
     },
     confirmButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '700',
+        color: '#FFFFFF',
+        fontWeight: '800',
     },
 });
 

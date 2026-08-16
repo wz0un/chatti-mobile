@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from '../screens/LoginScreen';
 import MainTabs from './MainTabs';
@@ -13,16 +13,30 @@ import AddContactScreen from '../screens/AddContactScreen';
 import ContactRequestsScreen from '../screens/ContactRequestsScreen';
 import DirectMessageScreen from '../screens/DirectMessageScreen';
 import AuthService from '../services/AuthService';
-import colors from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { useTranslation } from '../i18n';
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
+    const { theme, isDark } = useTheme();
     const [isLoading, setIsLoading] = useState(true);
     const [initialRoute, setInitialRoute] = useState('Login');
     const [initialParams, setInitialParams] = useState(null);
     const { t } = useTranslation();
+
+    const navigationTheme = {
+        ...(isDark ? DarkTheme : DefaultTheme),
+        colors: {
+            ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+            primary: theme.primary,
+            background: theme.background,
+            card: theme.surface,
+            text: theme.text,
+            border: theme.border,
+            notification: theme.primary,
+        },
+    };
 
     useEffect(() => {
         checkAuth();
@@ -44,24 +58,27 @@ const AppNavigator = () => {
 
     if (isLoading) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-                <ActivityIndicator size="large" color={colors.primary} />
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
 
     return (
-        <NavigationContainer>
+        <NavigationContainer theme={navigationTheme}>
             <Stack.Navigator
                 initialRouteName={initialRoute}
                 screenOptions={{
                     headerStyle: {
-                        backgroundColor: colors.primary,
+                        backgroundColor: theme.surface,
                     },
-                    headerTintColor: colors.textInverse,
+                    headerTintColor: theme.primary,
                     headerTitleStyle: {
                         fontWeight: 'bold',
+                        fontSize: 18,
                     },
+                    headerShadowVisible: false,
+                    headerBackTitleVisible: false,
                 }}
             >
                 <Stack.Screen
@@ -84,30 +101,30 @@ const AppNavigator = () => {
                     name="Chat"
                     component={ChatScreen}
                     options={{
-                        headerBackTitle: t('common.back'),
+                        headerTitleStyle: { color: theme.text },
                     }}
                 />
                 <Stack.Screen
                     name="AddContact"
                     component={AddContactScreen}
                     options={{
+                        headerTitleStyle: { color: theme.text },
                         title: t('addContact.title'),
-                        headerBackTitle: t('common.back'),
                     }}
                 />
                 <Stack.Screen
                     name="ContactRequests"
                     component={ContactRequestsScreen}
                     options={{
+                        headerTitleStyle: { color: theme.text },
                         title: t('contactRequests.title'),
-                        headerBackTitle: t('common.back'),
                     }}
                 />
                 <Stack.Screen
                     name="DirectMessage"
                     component={DirectMessageScreen}
                     options={{
-                        headerBackTitle: t('common.back'),
+                        headerTitleStyle: { color: theme.text },
                     }}
                 />
             </Stack.Navigator>

@@ -1,10 +1,12 @@
 /**
  * Direct Message Service for React Native
  * Handles encrypted 1-to-1 conversations
+ * EPHEMERAL: Messages exist only in RAM while the app is open.
  */
 
 import EncryptionService from './EncryptionService';
 import NotificationService from './NotificationService';
+import ChatHistoryService from './ChatHistoryService';
 
 class DirectMessageService {
     constructor() {
@@ -17,8 +19,10 @@ class DirectMessageService {
         this.listeners = new Map();
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
-        this.messageCache = []; // Decrypted messages cache
+        this.messageCache = []; // Decrypted messages (RAM only, lost on close)
+        this.messageIds = new Set(); // Track IDs to prevent duplicates
         this.notificationService = new NotificationService();
+        this.isTemporary = false; // Per-conversation temporary mode
     }
 
     /**
@@ -32,6 +36,21 @@ class DirectMessageService {
         this.userId = userId;
         this.username = username;
         this.recipientId = recipientId;
+
+        // Initialize chat history service for this user
+        ChatHistoryService.setUserId(userId);
+        this.isTemporary = await ChatHistoryService.isConversationTemporary(conversationId);
+
+        // Load saved messages from local storage (if history is enabled)
+        const shouldPersist = await ChatHistoryService.shouldPersist(conversationId);
+        if (shouldPersist) {
+            const savedMessages = await ChatHistoryService.loadDmMessages(conversationId);
+            if (savedMessages.length > 0) {
+                this.messageCache = savedMessages;
+                savedMessages.forEach(m => this.messageIds.add(m.id));
+                this.emit('history', { messages: this.messageCache });
+            }
+        }
 
         try {
             // Initialize encryption and notifications
@@ -132,16 +151,29 @@ class DirectMessageService {
     /**
      * Disconnect from conversation
      */
-    disconnect() {
+    async disconnect() {
         this.isDisconnected = true;
+
+        // Save messages to local storage before clearing (if enabled)
+        if (this.conversationId && this.messageCache.length > 0) {
+            try {
+                await ChatHistoryService.saveDmMessages(this.conversationId, this.messageCache);
+            } catch (error) {
+                console.error('Error saving chat history on disconnect:', error);
+            }
+        }
+
         if (this.ws) {
-            this.ws.onclose = null; // Remove handler to prevent reconnect loops
+            this.ws.onclose = null;
             this.ws.close();
             this.ws = null;
         }
+        // Clear all messages from RAM
         this.messageCache = [];
+        this.messageIds = new Set();
         this.listeners.clear();
         this.recipientPublicKey = null;
+        this.isTemporary = false;
     }
 
     /**
@@ -182,20 +214,21 @@ class DirectMessageService {
      * Handle message history
      */
     async handleHistory(messages) {
-        console.log('Received DM history:', messages.length, 'messages');
+        // In ephemeral mode, these are pending messages delivered on join
+        console.log('Received pending messages:', messages.length);
 
-        // Decrypt all messages
         const decryptedMessages = [];
 
         for (const msg of messages) {
+            if (this.messageIds.has(msg.id)) continue; // Skip duplicates
             try {
                 const decrypted = await this.decryptIncomingMessage(msg);
                 if (decrypted) {
+                    this.messageIds.add(msg.id);
                     decryptedMessages.push(decrypted);
                 }
             } catch (error) {
-                console.error('Error decrypting history message:', error);
-                // Add as encrypted if decryption fails
+                console.error('Error decrypting pending message:', error);
                 decryptedMessages.push({
                     ...msg,
                     content: '[Encrypted Message]',
@@ -204,8 +237,12 @@ class DirectMessageService {
             }
         }
 
-        this.messageCache = decryptedMessages;
-        this.emit('history', { messages: decryptedMessages });
+        // Append to existing cache (don't replace, we may already have messages)
+        this.messageCache = [...this.messageCache, ...decryptedMessages];
+        this.emit('history', { messages: this.messageCache });
+
+        // Persist newly received messages
+        ChatHistoryService.appendDmMessages(this.conversationId, decryptedMessages);
     }
 
     /**
@@ -213,22 +250,20 @@ class DirectMessageService {
      */
     async handleEncryptedMessage(data) {
         try {
+            if (this.messageIds.has(data.id)) return; // Skip duplicates
+
             const decrypted = await this.decryptIncomingMessage(data);
 
             if (decrypted) {
+                this.messageIds.add(data.id);
                 this.messageCache.push(decrypted);
                 this.emit('message', decrypted);
-                
-                // Show notification if message is from other user
-                if (decrypted.senderId !== this.userId) {
-                    // Get sender username from participants or use senderId
-                    const senderUsername = this.participants.get(decrypted.senderId)?.username || decrypted.senderId;
-                    this.notificationService.notifyEncryptedMessage(senderUsername, this.conversationId);
-                }
+
+                // Persist new message
+                ChatHistoryService.appendDmMessages(this.conversationId, [decrypted]);
             }
         } catch (error) {
             console.error('Error handling encrypted message:', error);
-            // Emit as encrypted if decryption fails
             this.emit('message', {
                 ...data,
                 content: '[Encrypted Message - Could not decrypt]',
@@ -450,6 +485,24 @@ class DirectMessageService {
      */
     isConnected() {
         return this.ws && this.ws.readyState === WebSocket.OPEN;
+    }
+
+    /**
+     * Toggle temporary mode for the current conversation
+     */
+    async setTemporary(isTemp) {
+        this.isTemporary = isTemp;
+        if (this.conversationId) {
+            await ChatHistoryService.setConversationTemporary(this.conversationId, isTemp);
+        }
+        return isTemp;
+    }
+
+    /**
+     * Check if current conversation is in temporary mode
+     */
+    getIsTemporary() {
+        return this.isTemporary;
     }
 }
 

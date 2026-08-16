@@ -213,6 +213,13 @@ const translations = {
         ar: 'Arabic',
         fr: 'French',
         select: 'Select Language',
+      },
+      theme: {
+        title: 'Theme',
+        light: 'Light',
+        dark: 'Dark',
+        system: 'System Default',
+        select: 'Select Theme',
       }
     },
     rooms: {
@@ -248,6 +255,18 @@ const translations = {
       joinBody: '{{username}} joined the chat',
       leftTitle: '👋 {{username}} left',
       leftBody: '{{username}} has left the chat',
+    },
+    chatHistory: {
+      title: 'Chat History',
+      enable: 'Save Chat History',
+      enableDescription: 'Messages are saved locally on this device only',
+      disable: 'Messages are not saved',
+      temporaryMode: 'Temporary Conversation',
+      temporaryBanner: 'Messages won\'t be saved',
+      deleteAll: 'Delete All History',
+      deleteAllConfirm: 'Delete all saved messages? This cannot be undone.',
+      deleteAllSuccess: 'All chat history deleted',
+      disablePrompt: 'Do you also want to delete existing saved messages?',
     },
   },
   es: {
@@ -451,6 +470,13 @@ const translations = {
         ar: 'Árabe',
         fr: 'Francés',
         select: 'Seleccionar Idioma',
+      },
+      theme: {
+        title: 'Tema',
+        light: 'Claro',
+        dark: 'Oscuro',
+        system: 'Predeterminado del sistema',
+        select: 'Seleccionar Tema',
       }
     },
     rooms: {
@@ -486,6 +512,18 @@ const translations = {
       joinBody: '{{username}} se ha unido al chat',
       leftTitle: '👋 {{username}} salió',
       leftBody: '{{username}} salió del chat',
+    },
+    chatHistory: {
+      title: 'Historial de Chat',
+      enable: 'Guardar Historial',
+      enableDescription: 'Los mensajes se guardan solo en este dispositivo',
+      disable: 'Los mensajes no se guardan',
+      temporaryMode: 'Conversación Temporal',
+      temporaryBanner: 'Los mensajes no se guardarán',
+      deleteAll: 'Eliminar Todo el Historial',
+      deleteAllConfirm: '¿Eliminar todos los mensajes guardados? Esta acción no se puede deshacer.',
+      deleteAllSuccess: 'Todo el historial ha sido eliminado',
+      disablePrompt: '¿También deseas eliminar los mensajes guardados?',
     },
   },
   ar: {
@@ -707,6 +745,18 @@ const translations = {
       leftTitle: '👋 {{username}} غادر',
       leftBody: '{{username}} غادر الدردشة',
     },
+    chatHistory: {
+      title: 'سجل المحادثات',
+      enable: 'حفظ سجل المحادثات',
+      enableDescription: 'يتم حفظ الرسائل محلياً على هذا الجهاز فقط',
+      disable: 'لا يتم حفظ الرسائل',
+      temporaryMode: 'محادثة مؤقتة',
+      temporaryBanner: 'لن يتم حفظ الرسائل',
+      deleteAll: 'حذف كل السجل',
+      deleteAllConfirm: 'حذف جميع الرسائل المحفوظة؟ هذا الإجراء لا يمكن التراجع عنه.',
+      deleteAllSuccess: 'تم حذف كل سجل المحادثات',
+      disablePrompt: 'هل تريد أيضاً حذف الرسائل المحفوظة؟',
+    },
   },
   fr: {
     common: {
@@ -911,6 +961,38 @@ const translations = {
         create: 'Impossible de créer le salon',
         nameRequired: 'Veuillez saisir un nom de salon',
       },
+    },
+    usersList: {
+      errorLoad: 'Impossible de charger les utilisateurs',
+      errorCurrent: 'Impossible d\'obtenir votre utilisateur actuel',
+      errorPublicKey: 'Impossible de récupérer la clé publique de cet utilisateur. Chat chiffré impossible.',
+      placeholder: 'Rechercher des utilisateurs (nom#1234)...',
+      emptySearch: 'Aucun utilisateur trouvé',
+      emptyAll: 'Aucun utilisateur inscrit pour l\'instant',
+    },
+    contactRequestItem: {
+      minutes: 'Il y a {{value}}m',
+      hours: 'Il y a {{value}}h',
+      days: 'Il y a {{value}}j',
+    },
+    theme: {
+      title: 'Thème',
+      light: 'Clair',
+      dark: 'Sombre',
+      system: 'Défaut du système',
+      select: 'Choisir le thème',
+    },
+    chatHistory: {
+      title: 'Historique des Chats',
+      enable: 'Sauvegarder l\'historique',
+      enableDescription: 'Les messages sont sauvegardés localement sur cet appareil uniquement',
+      disable: 'Les messages ne sont pas sauvegardés',
+      temporaryMode: 'Conversation Temporaire',
+      temporaryBanner: 'Les messages ne seront pas sauvegardés',
+      deleteAll: 'Supprimer tout l\'historique',
+      deleteAllConfirm: 'Supprimer tous les messages sauvegardés ? Cette action est irréversible.',
+      deleteAllSuccess: 'Tout l\'historique a été supprimé',
+      disablePrompt: 'Voulez-vous également supprimer les messages sauvegardés ?',
     },
   },
 };

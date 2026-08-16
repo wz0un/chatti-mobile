@@ -1,24 +1,22 @@
 /**
- * Conversation List Item Component - Modern WhatsApp/Telegram Style
- * Displays a conversation in the conversations list
+ * Conversation List Item Component - Modern Design
  */
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import colors, { spacing } from '../theme/colors';
+import { spacing, typography, borderRadius, shadows } from '../theme/colors';
 import { useTranslation } from '../i18n';
+import { useTheme } from '../theme/ThemeContext';
 
 const ConversationListItem = ({ conversation, currentUserId, isUnread, onPress, onLongPress }) => {
+    const { theme, isDark } = useTheme();
     const { t, locale } = useTranslation();
-    // Get the other participant ID
-    const otherUserId = conversation.participants?.find(id => id !== currentUserId) || conversation.normalizedRecipientId;
 
-    // Use enriched recipient data if available
+    const otherUserId = conversation.participants?.find(id => id !== currentUserId) || conversation.normalizedRecipientId;
     const displayName = conversation.recipient?.fullUsername || conversation.recipientUsername || otherUserId;
     const initial = (conversation.recipient?.username || conversation.recipientUsername || otherUserId).charAt(0).toUpperCase();
 
-    // Extract last message preview
     let lastMsg = t('conversations.emptyTitle');
     if (conversation.lastMessage) {
         lastMsg = typeof conversation.lastMessage === 'object'
@@ -32,9 +30,9 @@ const ConversationListItem = ({ conversation, currentUserId, isUnread, onPress, 
         const now = new Date();
         const diff = now - date;
 
-        if (diff < 86400000) { // Less than 24 hours
+        if (diff < 86400000) {
             return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
-        } else if (diff < 604800000) { // Less than a week
+        } else if (diff < 604800000) {
             const days = [
                 t('time.days.sun') || 'Dom',
                 t('time.days.mon') || 'Lun',
@@ -52,53 +50,61 @@ const ConversationListItem = ({ conversation, currentUserId, isUnread, onPress, 
 
     const msgTime = conversation.lastMessage?.timestamp || conversation.lastMessageTime || conversation.createdAt;
 
-    // Generate consistent color for avatar based on username
-    const getAvatarColor = (name) => {
-        const colors_list = ['#5865F2', '#7289DA', '#25D366', '#0088CC', '#F23F42', '#F0B232'];
-        const index = name.charCodeAt(0) % colors_list.length;
-        return colors_list[index];
+    const getAvatarColors = (name) => {
+        const palettes = [
+            ['#FF6B35', '#FFB84D'],
+            ['#4ECDC4', '#5EEAD4'],
+            ['#5865F2', '#7289DA'],
+            ['#F23F42', '#FF6B6B'],
+            ['#7C3AED', '#A855F7'],
+        ];
+        const index = name.charCodeAt(0) % palettes.length;
+        return palettes[index];
     };
+
+    const isUserOnline = conversation.recipient?.isOnline === true;
 
     return (
         <TouchableOpacity
-            style={[styles.container, isUnread && styles.unreadContainer]}
+            style={[styles.container, { backgroundColor: theme.surface, borderBottomColor: theme.divider }, isUnread && { backgroundColor: theme.surfaceSecondary }]}
             onPress={onPress}
             onLongPress={onLongPress}
             delayLongPress={500}
             activeOpacity={0.6}
         >
-            {/* Avatar with gradient */}
             <View style={styles.avatarContainer}>
                 <LinearGradient
-                    colors={isUnread ? colors.primaryGradient : [getAvatarColor(displayName), getAvatarColor(displayName)]}
-                    style={styles.avatar}
+                    colors={getAvatarColors(displayName)}
+                    style={[styles.avatar, shadows.sm]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                 >
                     <Text style={styles.avatarText}>{initial}</Text>
                 </LinearGradient>
-                {/* Online status indicator */}
-                <View style={styles.onlineIndicator} />
+                {/* Status Dot */}
+                <View style={[styles.statusDot, { backgroundColor: isUserOnline ? theme.success : theme.status?.offline || theme.textTertiary, borderColor: theme.surface }]} />
             </View>
 
-            {/* Content */}
             <View style={styles.content}>
                 <View style={styles.header}>
-                    <Text style={[styles.username, isUnread && styles.unreadText]} numberOfLines={1}>
+                    <Text style={[styles.username, { color: theme.text }, isUnread && { fontWeight: '800' }]} numberOfLines={1}>
                         {displayName}
                     </Text>
-                    <Text style={[styles.timestamp, isUnread && styles.unreadTime]}>
+                    <Text style={[styles.timestamp, { color: isUnread ? theme.primary : theme.textTertiary }]}>
                         {formatTimestamp(msgTime)}
                     </Text>
                 </View>
 
                 <View style={styles.previewContainer}>
-                    <Text style={[styles.preview, isUnread && styles.unreadPreview]} numberOfLines={2}>
+                    <Text
+                        style={[styles.preview, { color: isUnread ? theme.text : theme.textSecondary }]}
+                        numberOfLines={1}
+                    >
                         {lastMsg}
                     </Text>
                     {isUnread && (
-                        <View style={styles.unreadBadge}>
-                            <Text style={styles.unreadBadgeText}>•</Text>
+                        <View style={[styles.unreadBadge, { backgroundColor: theme.primary }]}>
+                            <Text style={styles.unreadBadgeText}>1</Text>
                         </View>
                     )}
                 </View>
@@ -111,46 +117,34 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm + 4,
-        backgroundColor: colors.surface,
-        borderBottomWidth: 0.5,
-        borderBottomColor: colors.border,
-    },
-    unreadContainer: {
-        backgroundColor: colors.surfaceHover,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
+        borderBottomWidth: 1,
     },
     avatarContainer: {
         position: 'relative',
         marginRight: spacing.md,
     },
     avatar: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 58,
+        height: 58,
+        borderRadius: 29,
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: 'rgba(255, 107, 53, 0.2)',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-        elevation: 2,
     },
     avatarText: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: colors.textInverse,
+        color: '#FFFFFF',
     },
-    onlineIndicator: {
+    statusDot: {
         position: 'absolute',
         bottom: 2,
         right: 2,
         width: 14,
         height: 14,
         borderRadius: 7,
-        backgroundColor: colors.online,
         borderWidth: 2.5,
-        borderColor: colors.surface,
     },
     content: {
         flex: 1,
@@ -159,27 +153,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: spacing.xs,
+        marginBottom: 4,
     },
     username: {
-        fontSize: 16,
+        ...typography.body,
         fontWeight: '600',
-        color: colors.text,
         flex: 1,
-        marginRight: spacing.sm,
-    },
-    unreadText: {
-        fontWeight: 'bold',
-        color: colors.text,
     },
     timestamp: {
         fontSize: 12,
-        color: colors.textSecondary,
-        fontWeight: '400',
-    },
-    unreadTime: {
-        color: colors.primary,
-        fontWeight: '600',
+        fontWeight: '500',
     },
     previewContainer: {
         flexDirection: 'row',
@@ -187,29 +170,22 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     preview: {
-        fontSize: 14,
-        color: colors.textSecondary,
+        ...typography.bodySmall,
         flex: 1,
-        lineHeight: 18,
-    },
-    unreadPreview: {
-        color: colors.text,
-        fontWeight: '500',
     },
     unreadBadge: {
-        width: 20,
+        minWidth: 20,
         height: 20,
+        paddingHorizontal: 6,
         borderRadius: 10,
-        backgroundColor: colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
         marginLeft: spacing.sm,
     },
     unreadBadgeText: {
-        color: colors.textInverse,
-        fontSize: 12,
-        fontWeight: 'bold',
-        marginTop: -4,
+        color: '#FFFFFF',
+        fontSize: 11,
+        fontWeight: '800',
     },
 });
 

@@ -1,26 +1,48 @@
 /**
- * User List Item Component
- * Displays a user in the users list
+ * User List Item Component - Modern Design
  */
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import colors from '../theme/colors';
+import { LinearGradient } from 'expo-linear-gradient';
+import { spacing, borderRadius, typography, shadows } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 
 const UserListItem = ({ user, onPress }) => {
+    const { theme } = useTheme();
     const initial = user.username.charAt(0).toUpperCase();
 
+    const getAvatarColors = (name) => {
+        const palettes = [['#FF6B35', '#FFB84D'], ['#4ECDC4', '#5EEAD4'], ['#5865F2', '#7289DA']];
+        const index = name.charCodeAt(0) % palettes.length;
+        return palettes[index];
+    };
+
+    const isUserOnline = user.isOnline === true;
+
     return (
-        <TouchableOpacity style={styles.container} onPress={onPress}>
-            <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{initial}</Text>
+        <TouchableOpacity
+            style={[styles.container, { backgroundColor: theme.surface, borderBottomColor: theme.divider }]}
+            onPress={onPress}
+            activeOpacity={0.7}
+        >
+            <View style={styles.avatarContainer}>
+                <LinearGradient
+                    colors={getAvatarColors(user.username)}
+                    style={[styles.avatar, shadows.sm]}
+                >
+                    <Text style={styles.avatarText}>{initial}</Text>
+                </LinearGradient>
+                <View style={[styles.statusDot, { backgroundColor: isUserOnline ? theme.success : theme.status?.offline || theme.textTertiary, borderColor: theme.surface }]} />
             </View>
+
             <View style={styles.info}>
-                <Text style={styles.username}>{user.fullUsername}</Text>
-                <Text style={styles.userId}>ID: {user.userId?.substring(0, 16)}...</Text>
+                <Text style={[styles.username, { color: theme.text }]}>{user.fullUsername}</Text>
+                <Text style={[styles.userId, { color: theme.textSecondary }]}>ID: {user.userId?.substring(0, 12)}...</Text>
             </View>
+
             <View style={styles.arrow}>
-                <Text style={styles.arrowText}>›</Text>
+                <Text style={[styles.arrowText, { color: theme.textTertiary }]}>›</Text>
             </View>
         </TouchableOpacity>
     );
@@ -30,44 +52,51 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        backgroundColor: colors.surface,
+        paddingHorizontal: spacing.lg,
+        paddingVertical: spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: colors.border,
+    },
+    avatarContainer: {
+        position: 'relative',
+        marginRight: spacing.md,
     },
     avatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: colors.primary,
+        width: 52,
+        height: 52,
+        borderRadius: 26,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
     },
     avatarText: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: 'bold',
-        color: '#fff',
+        color: '#FFFFFF',
+    },
+    statusDot: {
+        position: 'absolute',
+        bottom: 2,
+        right: 2,
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        borderWidth: 2,
     },
     info: {
         flex: 1,
     },
     username: {
-        fontSize: 16,
+        ...typography.body,
         fontWeight: '600',
-        color: colors.text,
-        marginBottom: 4,
+        marginBottom: 2,
     },
     userId: {
-        fontSize: 12,
-        color: colors.textLight,
+        ...typography.caption,
     },
     arrow: {
-        marginLeft: 8,
+        marginLeft: spacing.sm,
     },
     arrowText: {
         fontSize: 24,
-        color: colors.textLight,
     },
 });
 
