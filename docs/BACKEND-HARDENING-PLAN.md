@@ -1,13 +1,11 @@
 # Chatti: Prototype → Production Hardening Plan
 
-> **⚠️ Context:** This plan covers the **backend** in the separate `chatti` repo (`https://github.com/wz0un/chatti`), NOT this repo (`chatti-mobile`). Files referenced here (`workers/`, `src/services/`, `server/`) do not exist in `chatti-mobile`. This document is kept for reference on backend improvement scope.
-
 Based on the backend technical audit and a full code review of all 4 worker source files, 6 frontend services, and the legacy server.
 
 ## Current State Summary
 
-| Component | File (in `chatti` repo) | Lines | Role |
-|-----------|------------------------|-------|------|
+| Component | File | Lines | Role |
+|-----------|------|-------|------|
 | Worker Router | `workers/src/index.js` | 1682 | Auth, contacts, DM/room routing, KV CRUD |
 | ChatRoom DO | `workers/src/ChatRoom.js` | 413 | Room broadcast (ephemeral, no history) |
 | DirectMessage DO | `workers/src/DirectMessage.js` | 561 | 1:1 encrypted relay + offline pending queue |
@@ -26,7 +24,7 @@ Based on the backend technical audit and a full code review of all 4 worker sour
 > **Breaking Change - Legacy Server**: The `server/` directory (Socket.IO) is completely disconnected from the Worker stack. The plan proposes deleting it. **Is the legacy server still used anywhere (e.g., local development, other clients)?**
 
 > [!IMPORTANT]
-> **Mobile Client Impact**: The mobile app (`chatti-mobile`) will need matching changes for auth (JWT headers) and crypto upgrades. **Should I include mobile app modifications in the plan, or will those be a separate effort?**
+> **Mobile Client Impact**: The mobile app will need matching changes for auth (JWT headers) and crypto upgrades. **Should I include mobile app modifications in the plan, or will those be a separate effort?**
 
 ---
 
@@ -57,7 +55,7 @@ Uses `crypto.subtle.importKey` + `crypto.subtle.sign/verify` (Web Crypto API, na
 
 ---
 
-### [MODIFY] `workers/src/index.js` (in `chatti` repo)
+### [MODIFY] `workers/src/index.js`
 
 1. **Login/Register endpoints** — return `{ accessToken, refreshToken }` alongside user data
 2. **New endpoint** `POST /api/auth/refresh` — accepts refresh token, returns new access token
@@ -65,31 +63,31 @@ Uses `crypto.subtle.importKey` + `crypto.subtle.sign/verify` (Web Crypto API, na
 4. **Remove `userId` from query params** — extract from JWT instead (e.g., `getUserConversations` currently trusts `?userId=...`)
 5. **Lock CORS** — replace `Access-Control-Allow-Origin: *` with configurable allowed origins
 
-### [MODIFY] `workers/src/DirectMessage.js` (in `chatti` repo)
+### [MODIFY] `workers/src/DirectMessage.js`
 
 - WebSocket `join` message must include the JWT access token
 - `handleJoin` verifies token before accepting the connection
 - Reject unauthenticated sockets with close code `4401`
 
-### [MODIFY] `workers/src/ChatRoom.js` (in `chatti` repo)
+### [MODIFY] `workers/src/ChatRoom.js`
 
 - Same WebSocket auth pattern as DirectMessage
 
-### [MODIFY] `workers/wrangler.toml` (in `chatti` repo)
+### [MODIFY] `workers/wrangler.toml`
 
 - Add `JWT_SECRET` as secret binding (set via `wrangler secret put JWT_SECRET`)
 
 ### Frontend Changes
 
-#### [MODIFY] `src/services/ApiService.js` (in `chatti` repo)
+#### [MODIFY] `src/services/ApiService.js`
 - Store access/refresh tokens in `localStorage`
 - Attach `Authorization: Bearer <token>` to all API calls
 - Implement token refresh on 401 responses
 
-#### [MODIFY] `src/services/DirectMessageService.js` (in `chatti` repo)
+#### [MODIFY] `src/services/DirectMessageService.js`
 - Include token in WebSocket `join` message
 
-#### [MODIFY] `src/services/ChatService.js` (in `chatti` repo)
+#### [MODIFY] `src/services/ChatService.js`
 - Include token in WebSocket `join` message
 
 ---
@@ -110,7 +108,7 @@ client_msg_id (UUIDv7, client-generated)
   [read] — recipient opened (future)
 ```
 
-### [MODIFY] `workers/src/DirectMessage.js` (in `chatti` repo)
+### [MODIFY] `workers/src/DirectMessage.js`
 
 1. **Stop dropping tables** — remove `DROP TABLE IF EXISTS encrypted_messages` from `initDB()`
 2. **Add durable message table**:
@@ -133,14 +131,14 @@ client_msg_id (UUIDv7, client-generated)
 6. **Cursor-based sync** — new endpoint `GET /messages?after_seq={seq}&limit={n}` returns messages after a given sequence number
 7. **Retention policy** — configurable TTL (default 30 days), background cleanup via `alarm()`
 
-### [MODIFY] `workers/src/ChatRoom.js` (in `chatti` repo)
+### [MODIFY] `workers/src/ChatRoom.js`
 
 1. **Stop dropping tables** — remove `DROP TABLE IF EXISTS messages`
 2. **Add room message table** (similar schema, plaintext `content` instead of `encrypted_content`)
 3. **Sequence-based history** — `getHistory()` returns real messages with cursor pagination
 4. **Retention** — 7-day default for room messages
 
-### [NEW] `workers/src/MessageProtocol.js` (in `chatti` repo)
+### [NEW] `workers/src/MessageProtocol.js`
 
 Shared event envelope and message schema:
 ```js
@@ -154,7 +152,7 @@ export const MessageEnvelope = {
 
 ### Frontend Changes
 
-#### [MODIFY] `src/services/DirectMessageService.js` (in `chatti` repo)
+#### [MODIFY] `src/services/DirectMessageService.js`
 
 1. **Generate UUIDv7 `client_msg_id`** for each outgoing message (replaces `Date.now()-random`)
 2. **Client outbox** — push message to `pendingMessages[]` on send, remove on `ack` received
@@ -180,7 +178,7 @@ Replace with **Web Crypto API native AES-256-GCM** (authenticated encryption wit
 > [!IMPORTANT]
 > **Alternative: Full Signal Protocol (X3DH + Double Ratchet)**. This provides forward secrecy and future secrecy but is significantly more complex (~1 week extra). **Do you want AES-GCM (simpler, solid security) or full Signal Protocol (gold standard)?**
 
-### [MODIFY] `src/services/EncryptionService.js` (in `chatti` repo)
+### [MODIFY] `src/services/EncryptionService.js`
 
 1. **Replace `encryptMessage`** — use `crypto.subtle.encrypt('AES-GCM', ...)` instead of XOR
 2. **Replace `decryptMessage`** — use `crypto.subtle.decrypt('AES-GCM', ...)`
@@ -196,7 +194,7 @@ The mobile `src/services/EncryptionService.js` must be updated in lockstep to us
 
 ## Phase 4: Offline-First & Sync (P1) — ~3 days
 
-### [NEW] `src/services/OutboxService.js` (in `chatti` repo)
+### [NEW] `src/services/OutboxService.js`
 
 Client-side offline message queue:
 - **IndexedDB store** for pending messages (survives app restart)
@@ -205,14 +203,14 @@ Client-side offline message queue:
 - **Drain queue** when WebSocket reconnects
 - **Status tracking** — `queued → sending → acked → failed`
 
-### [MODIFY] `src/services/DirectMessageService.js` (in `chatti` repo)
+### [MODIFY] `src/services/DirectMessageService.js`
 
 1. **Integration with OutboxService** — `sendMessage()` goes to outbox first, not directly to WebSocket
 2. **Reconnect protocol** — on reconnect, send `{ type: 'sync', last_seq: N }` to get missed messages
 3. **Improved reconnect** — exponential backoff with jitter (currently linear), configurable max attempts
 4. **Message cache in IndexedDB** — persist decrypted message cache for offline viewing (optional, opt-in per conversation)
 
-### [MODIFY] `workers/src/DirectMessage.js` (in `chatti` repo)
+### [MODIFY] `workers/src/DirectMessage.js`
 
 1. **Handle `sync` message type** — return messages with `seq > last_seq`
 2. **Delivery reconciliation** — track what each client has acknowledged
@@ -221,17 +219,17 @@ Client-side offline message queue:
 
 ## Phase 5: Cleanup & Observability (P1/P2) — ~1 day
 
-### [DELETE] `server/` directory (in `chatti` repo)
+### [DELETE] `server/` directory
 
 The legacy Socket.IO server is completely disconnected from the Worker architecture. It serves no purpose.
 
-### [MODIFY] `workers/src/index.test.js` (in `chatti` repo)
+### [MODIFY] `workers/src/index.test.js`
 
 Fix stale tests:
 - Line 73: Test expects `totalMessages` but ephemeral `getRoomInfo` doesn't return it → update assertion
 - Line 147: Test expects `messages.length > 0` but ephemeral `getHistory` always returns empty → either update test for ephemeral mode OR update after Phase 2 when history is durable again
 
-### [MODIFY] `workers/src/index.js` (in `chatti` repo) — Bug fixes
+### [MODIFY] `workers/src/index.js` — Bug fixes
 
 1. **Line 975**: Conversation sorting uses `createdAt` but conversation objects use `lastMessageTime` → change sort to `lastMessageTime`
 2. **`generateDiscriminator`** scans KV sequentially (up to 9999 GETs worst case!) → use a counter key `user:discrim_counter:{username}` instead
