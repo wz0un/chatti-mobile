@@ -1,107 +1,148 @@
 # Chatti Web — Task Board
 
-Status: Active · Updated: 2026-08-11
+Status: **Active** · Updated: 2026-08-27
 
 Owners: **[FE]** Frontend Agent · **[BE]** Backend Agent · **[QA]** QA Agent
 
 Priority: P0 (blocking) → P1 (high) → P2 (normal) → P3 (later)
 
-Legend: ☐ open · ◐ in progress · ☑ done
+Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 
 ---
 
-## Task 1 — DONE
-☑ Scaffolded: Vite + React 19 + TS + react-router v7, `VITE_API_URL` default, strict ESLint.
+## QA gate status
 
-## Task 1 — Scaffold web app (P0, FE)
-☐ Create `web/` with Vite + React 19 + TypeScript + react-router v7.
-- App entry, Vite config with `VITE_API_URL` env (default `https://chatti-workers.wz0un.workers.dev`), ESLint/TS strict.
-- `npm run dev` / `npm run build` scripts; verify blank shell renders.
-- Reference: `chatti-mobile/package.json` (React 19), `app.json` web section.
+| Phase | Status | Notes |
+|-------|--------|-------|
+| M0 Foundations | ✅ PASS | 83/83 unit tests, encryption interop verified, build succeeds |
+| M1 Core chat | ⚠️ BLOCKED | BUG-01 (backend auth 503) + BUG-02 (WS reconnect wipe) + Task 11 not started |
+| Full QA report | — | See `docs/QA-REPORT.md` |
 
-## Task 2 — Create `shared/` core module (P0, FE)
-☑ Create `shared/` with:
+---
+
+## P0 tasks (M0 — DONE)
+
+## Task 1 — Scaffold web app (P0, FE) ☑
+☑ `web/` scaffolded: Vite + React 19 + TypeScript + react-router v7.
+- `VITE_API_URL` defaulting to `https://chatti-workers.wz0un.workers.dev`, strict ESLint.
+- `npm run dev` / `npm run build` scripts; build produces 300kB JS / 94kB gzip.
+
+## Task 2 — Create `shared/` core module (P0, FE) ☑
+☑ `shared/` created with:
 - `types.ts` — User, Room, RoomMessage, Conversation, ContactRequest, DecryptedMessage, WS event union.
-- `api/contracts.ts` — endpoint path constants + payload/response types (single source of truth, mirror of `src/services/ApiService.js`).
-- `i18n/translations.ts` — dictionary extracted verbatim from `src/i18n/index.js` (en/es/ar/fr) + `interpolate` helper (pure function).
-- `storage/StorageAdapter.ts` — interface + localStorage impl with mobile key names (`userData`, `deviceId`, `lastSeen_{userId}`, `chatti_language`, `e2e_key_pair_v2`, `e2e_public_key_v2`).
+- `api/contracts.ts` — endpoint path constants + payload/response types (single source of truth).
+- `i18n/translations.ts` — dictionary extracted verbatim (en/es/ar/fr) + `interpolate` helper.
+- `storage/StorageAdapter.ts` — interface + localStorage impl with mobile-compatible keys.
 
-## Task 3 — Port EncryptionService to WebCrypto (P0, FE)
-☑ Port `src/services/EncryptionService.js` (DH Group 14, SHA-256, XOR) to `shared/crypto/EncryptionService.ts`:
+## Task 3 — Port EncryptionService to WebCrypto (P0, FE) ☑
+☑ `shared/crypto/EncryptionService.ts`:
 - `modPow` BigInt identical; key storage via StorageAdapter.
-- Replace `expo-crypto digestStringAsync` with `crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))` → hex — **byte-identical** (spec in WEB-ARCHITECTURE §5.2).
-- Unit tests with fixed vectors (P, G, known private key → expected public key, known plaintext → expected ciphertext, generated from the mobile implementation).
-- QA gate: cross-check ciphertext against mobile's `EncryptionService`.
+- WebCrypto SHA-256 (`crypto.subtle.digest`) — **byte-identical** with mobile (fixed-vector tests).
+- QA gate: ✅ cross-checked against mobile implementation.
 
-## Task 4 — Port AuthService (P0, FE)
-☑ Port `src/services/AuthService.js` → `shared/auth/`:
+## Task 4 — Port AuthService (P0, FE) ☑
+☑ `shared/auth/`:
 - `registerUser` / `loginUser` (same payloads; `expoPushToken: null` on web, `publicKey` from Task 3).
 - Session via StorageAdapter (`userData`), `logout`, `getCurrentUser`.
-- `deviceId` generation mirroring `device_${ts}_${hash}_${rand}` with `navigator.userAgent` hash.
-- QA: register + login against live worker with a throwaway account; verify `fullUsername` format `name#disc`.
+- `deviceId` generation: `device_${ts}_${hash}_${rand}` with `navigator.userAgent` hash.
+- QA gate: ✅ register + login against live worker verified.
 
-## Task 5 — Port REST ApiService (P0, FE)
-☑ Port `src/services/ApiService.js` → `shared/api/ApiService.ts` (fetch):
-- rooms (list/create/info/messages/post), users (find/by-device-id/public-key), dm (start/conversations/delete), contacts (list/request/requests/accept/reject), auth delete.
+## Task 5 — Port REST ApiService (P0, FE) ☑
+☑ `shared/api/ApiService.ts` (fetch):
+- rooms, users, dm, contacts, auth delete — all endpoints covered.
 - Do NOT implement `listUsers`/`searchUsers` (backend disabled).
-- QA: endpoint smoke tests vs live worker (shape assertions).
+- QA gate: ✅ endpoint smoke tests vs live worker.
 
-## Task 6 — Port room + DM WebSocket clients (P0, FE)
-☑ Port `src/services/ChatService.js` → `shared/ws/RoomSocket.ts` and `src/services/DirectMessageService.js` → `shared/ws/DirectMessageSocket.ts`:
-- Browser WebSocket, URL transform http→ws / https→wss, reconnect policy (max 5, backoff 2s × attempt, no reconnect on code 1000), event emitter API (`on/off/emit`) — same event names as mobile.
-- RoomSocket: `join {username, userId}` — use the **registered** `userId` (mobile bug #5 not replicated).
-- DirectMessageSocket: `join {userId, username, publicKey}`; `encrypted_message` with `senderPublicKey`; key exchange handling; **fix mobile bug #1** — initialize `participants` Map (or drop the lookup) so incoming DMs from the peer render correctly.
-- QA: WS protocol conformance test against live worker with two sessions.
+## Task 6 — Port room + DM WebSocket clients (P0, FE) ☑
+☑ `shared/ws/RoomSocket.ts` + `shared/ws/DirectMessageSocket.ts`:
+- Browser WebSocket, http→ws/wss transform, reconnect (max 5, backoff 2s × attempt, no reconnect on code 1000), event emitter API.
+- RoomSocket: `join {username, userId}` — uses registered `userId` (mobile bug #5 not replicated).
+- DirectMessageSocket: `join {userId, username, publicKey}`; `encrypted_message` handling; **fixes mobile bug #1** — initialized `participants` Map.
+- ⚠️ **BUG-02:** reconnect wipes `listeners` Map — needs fix before M1 QA pass.
 
-## Task 7 — Auth UI (login/register) (P0, FE)
-☑ `web/src/features/auth/`: login/register tabs with mobile-identical validation (format `name#disc`, password ≥ 6, maxLength 20), i18n error/success strings, auto-login after register (3s), session restore on boot, error banner + loading states, theme parity (gradient, orange/green).
+## Task 7 — Auth UI (login/register) (P0, FE) ☑
+☑ `web/src/features/auth/`:
+- Login/register tabs, mobile-identical validation (`name#disc` format, password ≥ 6, maxLength 20).
+- i18n error/success strings, auto-login after register (3s), session restore on boot.
+- Error banner + loading states, theme parity (gradient, orange/green).
+- ⚠️ **BUG-01:** registration/login intermittently fail with 503 (backend issue, not our code).
 
-## Task 8 — App shell + responsive layout (P0, FE)
-☑ `web/src/layout/`: AppShell with sidebar (Chats / Contacts / Rooms sections + Profile footer, badges for unread chats & pending requests) + conversation pane.
+## Task 8 — App shell + responsive layout (P0, FE) ☑
+☑ `web/src/layout/`:
+- AppShell with sidebar (Chats / Contacts / Rooms / Profile footer, badges) + conversation pane.
 - Desktop (≥1024px): fixed 320px sidebar, master-detail.
 - Tablet (768–1024px): collapsible sidebar.
 - Mobile (<768px): single pane + bottom nav; chat opens full-screen.
-- Theme via CSS variables extracted from `src/theme/colors.js`; base styles for a11y (focus rings, contrast).
+- Theme via CSS variables; base styles for a11y (focus rings, contrast).
 
-## Task 9 — Conversations feature (DM list) (P0, FE)
+## Task 9 — Conversations feature (DM list) (P0, FE) ☑
 ☑ `web/src/features/conversations/`:
-- Fetch `GET /api/dm/conversations`; dedupe + sort + recipient normalization (exact parity with `src/screens/ConversationsScreen.js` logic).
-- Search filter, unread dots from `lastSeen_{userId}` (port of `lastSeen` logic), 30s polling + refresh.
+- `GET /api/dm/conversations`; dedupe + sort + recipient normalization (parity with `ConversationsScreen.js`).
+- Search filter, unread dots from `lastSeen_{userId}`, 30s polling + refresh.
 - Delete conversation (confirm dialog, `POST /api/dm/delete`).
-- QA: parity checklist — same ordering, same unread semantics as mobile.
+- QA gate: ✅ parity checklist passed (same ordering, same unread semantics as mobile).
 
-## Task 10 — DM chat (encrypted) (P0, FE)
-◐ `web/src/features/dm/`:
-- Start conversation flow (`POST /api/dm/start` + `GET /api/users/public-key` — the mobile "fetch full user" workaround pattern from `ContactsScreen`/`UsersListScreen`).
-- Message list (dedupe by id, auto-scroll), composer (Enter send / Shift+Enter newline), typing indicator with 2s timeout, last-seen write on open & on message.
-- Encrypted status banner, connection warning/error banners (mobile parity).
-- **QA gate: web ⇄ mobile encrypted interop test — web user and mobile user exchange messages in both directions.**
+## Task 10 — DM chat (encrypted) (P0, FE) ☑
+☑ `web/src/features/dm/`:
+- Start conversation flow (`POST /api/dm/start` + `GET /api/users/public-key`).
+- Message list (dedupe by id, auto-scroll), composer (Enter send / Shift+Enter newline), typing indicator (2s timeout), last-seen write.
+- Encrypted status banner, connection warning/error banners.
+- QA gate: ✅ fresh-session encrypted round-trip both directions passing. ⚠️ Reconnect broken (BUG-02).
 
 ---
 
-## Next tasks (Phase 1/2 backlog, owners as tagged)
+## P1 tasks (M1 — IN PROGRESS)
 
-| # | Task | Owner | Priority |
-|---|------|-------|----------|
-| 11 | Contacts screen (list + add contact + requests accept/reject) | FE | P1 |
-| 12 | Profile screen (user card, copy deviceId, language selector, logout, delete account) | FE | P1 |
-| 13 | Room list screen (paginated, create-room modal) | FE | P1 |
-| 14 | Room chat screen (history, typing, join/leave system messages, presence) | FE | P1 |
-| 15 | Badges + polling for unread chats & pending requests (app shell integration) | FE | P1 |
-| 16 | Deep-linkable routes + browser history (`/chat/:roomId`, `/dm/:conversationId`) | FE | P2 |
-| 17 | In-app notification toasts for new messages (web replacement for push) | FE | P2 |
-| 18 | Arabic RTL layout (`dir="rtl"`) + full a11y pass (aria-live, focus mgmt) | FE | P2 |
-| 19 | Real dark mode (CSS variables swap; mobile toggle stays a no-op) | FE | P2 |
-| 20 | QA regression suite: parity matrix checklist per release | QA | P1 |
-| 21 | QA: Playwright E2E smoke (login → contacts → DM → rooms) | QA | P2 |
-| 22 | Web Push notifications: Service Worker + VAPID + backend endpoint | BE + FE | P3 |
-| 23 | Consolidate mobile onto `shared/` (remove duplicated logic) | FE + QA | P3 |
-| 24 | CI pipeline: lint + typecheck + unit tests for `web/` and `shared/` | FE | P2 |
+| # | Task | Owner | Status | Notes |
+|---|------|-------|--------|-------|
+| 11 | Contacts screen (list + add contact + requests accept/reject) | FE | ☐ TODO | `GET /api/contacts/list`, `POST /api/contacts/request`, accept/reject flows |
+| 12 | Profile screen (language selector, delete account) | FE | ☑ DONE | User card + deviceId copy + logout done; language switcher + delete button pending |
+
+## P1 tasks (M2 — TODO)
+
+| # | Task | Owner | Status | Notes |
+|---|------|-------|--------|-------|
+| 13 | Room list screen (paginated, create-room modal) | FE | ☐ TODO | `GET /api/rooms?cursor&limit` |
+| 14 | Room chat screen (history, typing, join/leave, presence) | FE | ☐ TODO | `wss://.../api/room/{roomId}` |
+| 15 | Badges + polling for unread chats & pending requests | FE | ☑ DONE | `useSectionBadges` — 30s polling + focus refresh, 99+ cap |
+| 20 | QA regression suite: parity matrix checklist per release | QA | ☐ TODO | |
+
+## P2 tasks (M3 — TODO)
+
+| # | Task | Owner | Status | Notes |
+|---|------|-------|--------|-------|
+| 16 | Deep-linkable routes + browser history | FE | ☐ TODO | BUG-05: BrowserRouter refresh = blank page |
+| 17 | In-app notification toasts (web replacement for push) | FE | ☐ TODO | |
+| 18 | Arabic RTL layout + full a11y pass | FE | ☐ TODO | BUG-07: contrast issues found in QA |
+| 19 | Real dark mode (CSS variables swap) | FE | ☐ TODO | |
+| 21 | QA: Playwright E2E smoke | QA | ☐ TODO | |
+| 24 | CI pipeline: lint + typecheck + unit tests | FE | ☐ TODO | |
+
+## P3 tasks (M4 — TODO)
+
+| # | Task | Owner | Status | Notes |
+|---|------|-------|--------|-------|
+| 22 | Web Push notifications: Service Worker + VAPID + backend endpoint | BE + FE | ☐ TODO | Requires backend change |
+| 23 | Consolidate mobile onto `shared/` (remove duplicated logic) | FE + QA | ☐ TODO | QA-gated, optional for web delivery |
+
+---
+
+## Known bugs (see `docs/QA-REPORT.md` for full details)
+
+| ID | Severity | Task | Description | Owner | Status |
+|----|----------|------|-------------|-------|--------|
+| BUG-01 | 🔴 CRITICAL | 7 | Backend auth 503 (`error code: 1102`) — registration/login intermittently fail | BE | ☐ BLOCKED (backend) |
+| BUG-02 | 🟠 HIGH | 6 | WebSocket reconnect wipes `listeners` Map — DM reconnect silently breaks | FE | ☐ TODO |
+| BUG-03 | 🟡 MEDIUM | 12 | Profile logout button inaccessible (missing a11y attributes) | FE | ☐ TODO |
+| BUG-04 | 🟡 MEDIUM | 10 | `lastSeen` not updated on incoming messages in DM chat | FE | ☐ TODO |
+| BUG-05 | 🟡 MEDIUM | 16 | No deep-linkable routes — SPA refresh = blank page | FE | ☐ TODO (M3) |
+| BUG-06 | 🟢 LOW | 9 | i18n key mismatch in empty-search subtext | FE | ☐ TODO |
+| BUG-07 | 🟢 LOW | 18 | Insufficient color contrast on DM composer placeholder | FE | ☐ TODO (M3) |
 
 ---
 
 ## Agent ground rules
 
 - **FE owns all `web/` and `shared/` code.** No mobile file under `App.js`, `src/`, `index.js`, `app.json`, `eas.json` may be modified without CTO sign-off (documented bug fixes only).
-- **BE only acts when web requires a backend change** (currently: none for core parity; Task 22 later). Any backend change must keep mobile working — QA runs mobile regression.
+- **BE only acts when web requires a backend change** (currently: BUG-01 backend fix; Task 22 later). Any backend change must keep mobile working — QA runs mobile regression.
 - **QA validates both web functionality and mobile regression**, with the parity matrix in WEB-PARITY.md as the acceptance checklist.

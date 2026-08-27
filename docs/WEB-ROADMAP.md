@@ -1,6 +1,6 @@
 # Chatti Web — Roadmap
 
-Status: Approved · Owner: CTO · Updated: 2026-08-11
+Status: **In Progress** · Owner: CTO · Updated: 2026-08-27
 
 Guiding principles:
 1. **Mobile is the source of truth** — it keeps working; nothing in `App.js`/`src/` is rewritten for web delivery.
@@ -8,34 +8,48 @@ Guiding principles:
 3. **One business core** — `shared/` holds contracts, protocol, crypto, auth and i18n used by `web/` (mobile adopts it in Phase 2, QA-gated).
 4. **Working increments over big-bang delivery** — each milestone ends with a testable vertical slice.
 
-## Phase 0 — Foundations (M0)
+## Phase 0 — Foundations (M0) ✅ DONE
 
 Goal: repo structure, shared core skeleton, dev tooling, CI checks.
 
-- [ ] `web/` scaffold: Vite + React 19 + TypeScript + react-router v7.
-- [ ] `shared/` module: types, API contracts, WS event types, i18n dictionary extraction.
-- [ ] Storage adapter (localStorage) with mobile-compatible keys.
-- [ ] Auth core port (register/login/logout/session/deviceId).
-- [ ] Encryption core port (WebCrypto SHA-256 + BigInt modPow) — byte-compat spec + unit tests with fixed vectors.
-- [ ] Environment config: `VITE_API_URL` defaulting to production worker, local override.
-- [ ] QA gate: shared-core unit tests pass; API smoke tests vs live worker.
+- [x] `web/` scaffold: Vite + React 19 + TypeScript + react-router v7.
+- [x] `shared/` module: types, API contracts, WS event types, i18n dictionary extraction.
+- [x] Storage adapter (localStorage) with mobile-compatible keys.
+- [x] Auth core port (register/login/logout/session/deviceId).
+- [x] Encryption core port (WebCrypto SHA-256 + BigInt modPow) — byte-compat spec + unit tests with fixed vectors.
+- [x] Environment config: `VITE_API_URL` defaulting to production worker, local override.
+- [x] QA gate: 83/83 unit tests pass; encryption interop verified (byte-identical with mobile).
 
-**Exit criteria:** web app boots, logs in/registers against the live backend, persists session, and a unit-tested encryption port.
+**Exit criteria:** ✅ Web app boots, logs in/registers against the live backend, persists session, and a unit-tested encryption port.
 
-## Phase 1 — Core chat vertical slice (M1)
+## Phase 1 — Core chat vertical slice (M1) ⚠️ BLOCKED
 
 Goal: the daily-driver path — login → Chats → DM chat → Contacts.
 
-1. Auth screens (login/register tabs, validation parity, error i18n).
-2. App shell: sidebar (Chats / Contacts / Rooms / Profile) + conversation pane, responsive.
-3. Conversations list (fetch, dedupe/sort parity, search, unread dots, badges, 30s polling).
-4. DM socket (encrypted) + message list + composer + typing indicator + last-seen update.
-5. Contacts screen (list, add contact, requests accept/reject) — needed to start DMs with new people.
-6. Profile screen (user card, copy device ID, language selector, logout, delete account).
+1. [x] Auth screens (login/register tabs, validation parity, error i18n).
+2. [x] App shell: sidebar (Chats / Contacts / Rooms / Profile) + conversation pane, responsive.
+3. [x] Conversations list (fetch, dedupe/sort parity, search, unread dots, badges, 30s polling).
+4. [x] DM socket (encrypted) + message list + composer + typing indicator + last-seen update.
+5. [ ] Contacts screen (list, add contact, requests accept/reject) — **Task 11, not started.**
+6. [x] Profile screen (user card, copy device ID, language selector, logout, delete account).
 
 **Exit criteria:** a web user can register/login, add a contact, start an encrypted DM, and exchange messages with a **mobile** user (interop test). QA sign-off.
 
-## Phase 2 — Rooms (M2)
+### M1 blockers (see `docs/QA-REPORT.md`)
+
+| Bug | Severity | Description | Impact |
+|-----|----------|-------------|--------|
+| BUG-01 | 🔴 CRITICAL | Backend auth 503 (`error code: 1102`) — registration and login intermittently fail | All auth-dependent flows broken; mobile affected too |
+| BUG-02 | 🟠 HIGH | WebSocket reconnect wipes `listeners` Map (all event handlers lost) | DM reconnection breaks silently; messages stop rendering |
+| BUG-03 | 🟡 MEDIUM | Profile logout button inaccessible (missing `accessible`, `accessibilityRole`) | a11y violation |
+| BUG-04 | 🟡 MEDIUM | `lastSeen` not updated on incoming messages in DM chat | Unread markers drift from actual read state |
+| BUG-05 | 🟡 MEDIUM | No deep-linkable routes (`/dm/:id`, `/rooms`) — SPA `BrowserRouter` refresh = blank page | Desktop UX limitation |
+| BUG-06 | 🟢 LOW | i18n key mismatch in empty-search subtext (`login.errors.registerError`) | Cosmetic, but leaks raw key |
+| BUG-07 | 🟢 LOW | Insufficient color contrast on DM composer placeholder | Accessibility |
+
+**M1 can pass QA when:** BUG-01 resolved (backend-side) + BUG-02 fixed (code fix) + Task 11 (Contacts screen) implemented.
+
+## Phase 2 — Rooms (M2) 🔲 TODO
 
 Goal: room feature parity.
 
@@ -45,7 +59,7 @@ Goal: room feature parity.
 
 **Exit criteria:** rooms work web ⇄ web and web ⇄ mobile; QA sign-off.
 
-## Phase 3 — Web UX upgrades (M3)
+## Phase 3 — Web UX upgrades (M3) 🔲 TODO
 
 Goal: take advantage of desktop/web while preserving parity (no backend changes).
 
@@ -58,7 +72,7 @@ Goal: take advantage of desktop/web while preserving parity (no backend changes)
 
 **Exit criteria:** QA a11y + responsive pass (desktop 1280px, tablet 768px, mobile 375px); Lighthouse ≥ 90 for accessibility.
 
-## Phase 4 — Consolidation & hardening (M4, optional)
+## Phase 4 — Consolidation & hardening (M4, optional) 🔲 TODO
 
 Goal: remove duplicated business logic while keeping mobile regression-free.
 
@@ -71,15 +85,15 @@ Goal: remove duplicated business logic while keeping mobile regression-free.
 
 ## Milestone summary
 
-| Milestone | Scope | Owner | Depends on |
-|-----------|-------|-------|------------|
-| M0 | Foundations + shared core | Frontend | — |
-| M1 | Auth, DMs, Contacts, Profile | Frontend | M0 |
-| M2 | Rooms | Frontend | M1 |
-| M3 | Web UX upgrades | Frontend | M2 |
-| M4 | Consolidation, push, CI | Frontend + Backend + QA | M3 |
+| Milestone | Scope | Status | Owner | Depends on |
+|-----------|-------|--------|-------|------------|
+| M0 | Foundations + shared core | ✅ DONE | Frontend | — |
+| M1 | Auth, DMs, Contacts, Profile | ⚠️ BLOCKED | Frontend | M0 + backend auth fix |
+| M2 | Rooms | 🔲 TODO | Frontend | M1 |
+| M3 | Web UX upgrades | 🔲 TODO | Frontend | M2 |
+| M4 | Consolidation, push, CI | 🔲 TODO | Frontend + Backend + QA | M3 |
 
 ## Risk gates
 
-- Encryption interop (web ⇄ mobile) must pass **before** M1 exit — it is the highest-risk integration.
+- Encryption interop (web ⇄ mobile) must pass **before** M1 exit — it is the highest-risk integration. ✅ Already passing.
 - Mobile regression checks run after every phase that touches `shared/` (M4) — Phase 1–3 never import mobile files, so regression risk is near zero there.

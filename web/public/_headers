@@ -1,0 +1,15 @@
+# Security headers for the Chatti Web SPA (Workers Static Assets).
+# Vite copies public/_headers into dist/; wrangler applies it on deploy.
+#
+# CSP note: style-src 'unsafe-inline' is required by one dynamic inline
+# avatar style (web/src/features/conversations/ConversationListItem.tsx).
+# No inline scripts, no external origins, no eval in the production bundle.
+#
+# connect-src includes the production backend (REST + WebSocket).
+# If VITE_API_URL is changed at build time, update this header accordingly.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://chatti-workers.wz0un.workers.dev wss://chatti-workers.wz0un.workers.dev; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests
