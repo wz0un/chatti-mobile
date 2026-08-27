@@ -1,16 +1,13 @@
-# Deep Technical Audit (Requested: `dev` branch)
+# Deep Technical Audit — Backend
 
-## Scope reality check
-- Repository has only one local branch: `work`.
-- There is no local `dev` branch to audit.
-- This audit is therefore based on the current checked-out codebase (`work`) as the closest available target.
+> **⚠️ Context:** This audit covers the **backend** in the separate `chatti` repo (`https://github.com/wz0un/chatti`), NOT this repo (`chatti-mobile`). Files referenced here (`workers/`, `src/`, `server/`) do not exist in `chatti-mobile`. This document is kept for reference on backend architecture and known issues.
 
 ## 1) Architecture Overview
 
 ### Topology
 - **Primary backend runtime:** Cloudflare Worker + Durable Objects + KV.
-- **Secondary backend runtime (legacy/parallel):** Node.js + Socket.IO server in `server/` (separate stack, not integrated with Worker path).
-- **Frontend:** React SPA (CRA-style) + service worker.
+- **Secondary backend runtime (legacy/parallel):** Node.js + Socket.IO server in `server/` (separate stack, not integrated with Worker path; does not exist in `chatti-mobile`).
+- **Frontend:** React SPA (CRA-style) + service worker (old frontend in `chatti` repo; `chatti-mobile` uses Expo mobile app + Vite web app).
 
 ### Architectural style
 - Not microservices.
@@ -18,14 +15,14 @@
 - It is a **hybrid edge monolith with stateful shards** (Durable Objects) plus a **stranded legacy realtime server**.
 
 ### Key components
-- **Worker router/API:** auth, contacts, DM/session discovery, room CRUD.
-- **Durable Object `ChatRoom`:** realtime room broadcast, no persistent history in current mode.
-- **Durable Object `DirectMessage`:** 1:1 encrypted payload relay; offline pending queue only.
-- **KV namespace (`ROOMS_KV`):** users, contacts, room metadata, DM conversation indexes, transient online markers.
-- **Frontend services:**
-  - `ChatService` for room websocket.
-  - `DirectMessageService` for DM websocket + client-side decrypt.
-  - `EncryptionService` for key exchange/encryption logic.
+- **Worker router/API** (in `chatti` repo): auth, contacts, DM/session discovery, room CRUD.
+- **Durable Object `ChatRoom`** (in `chatti` repo): realtime room broadcast, no persistent history in current mode.
+- **Durable Object `DirectMessage`** (in `chatti` repo): 1:1 encrypted payload relay; offline pending queue only.
+- **KV namespace (`ROOMS_KV`)** (in `chatti` repo): users, contacts, room metadata, DM conversation indexes, transient online markers.
+- **Mobile services** (in `chatti-mobile/src/services/`):
+  - `ChatService.js` for room websocket.
+  - `DirectMessageService.js` for DM websocket + client-side decrypt.
+  - `EncryptionService.js` for key exchange/encryption logic.
 
 ### Data flow (DM send/receive)
 1. Sender opens websocket to `/api/dm/:conversationId`.
@@ -109,7 +106,7 @@ Verdict: **not offline-first**. It is online-first with minimal reconnect behavi
 
 ## 6) Code Quality & Risks
 
-- **Architectural split-brain:** Worker stack and legacy Socket.IO stack coexist; unclear source of truth.
+- **Architectural split-brain:** Worker stack and legacy Socket.IO stack (`server/` in `chatti` repo) coexist; unclear source of truth.
 - **Ephemeral mode comments contradict product direction** (WhatsApp-like requires durable sync).
 - **Potential bug:** conversation sorting uses `createdAt` but conversation objects set `lastMessageTime`.
 - **Tests are stale vs implementation:** test expects `totalMessages` and non-empty history while implementation is ephemeral empty history.
@@ -167,4 +164,4 @@ Verdict: **not offline-first**. It is online-first with minimal reconnect behavi
    - Versioned event envelope and migration compatibility matrix.
 
 ## Bottom line
-As-is, this is a prototype realtime chat demo, not a production-grade secure messenger. Launching to millions under poor network conditions would fail on reliability, security, and offline behavior.
+As-is, the backend is a prototype realtime chat demo, not a production-grade secure messenger. Launching to millions under poor network conditions would fail on reliability, security, and offline behavior.
