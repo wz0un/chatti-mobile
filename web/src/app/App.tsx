@@ -74,7 +74,7 @@ export default function App() {
         <Route path="/login" element={<Navigate to="/" replace />} />
         <Route path="*" element={<AppShell user={user} />}>
           <Route index element={<Navigate to="/rooms" replace />} />
-          <Route path="rooms" element={<RoomsPage />} />
+          <Route path="rooms" element={<RoomsPage user={user} />} />
           <Route path="chats" element={<ConversationsPage user={user} />} />
           <Route path="contacts" element={<ContactsPage user={user} />} />
           <Route path="profile" element={<ProfilePage user={user} onLogout={onLogout} />} />
