@@ -50,7 +50,7 @@ Goal: the daily-driver path — login → Chats → DM chat → Contacts.
 
 Goal: room feature parity.
 
-1. Room list (paginated, create-room modal, gradient header).
+1. [x] Room list (paginated, create-room modal, gradient header) — **Task 13 done.**
 2. Room chat: WS join/history/messages/typing/join-leave system messages, presence count.
 3. Unread/refresh behavior parity (30s polling + focus refresh).
 

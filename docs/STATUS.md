@@ -1,6 +1,6 @@
 # Chatti Mobile — Current Status
 
-Updated: 2026-09-10
+Updated: 2026-09-10 (Task 13 committed)
 
 ## Repository
 
@@ -43,7 +43,8 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | Encrypted DM chat | ✅ Done | T10 |
 | Contacts screen (list + add + requests) | ✅ Done | T11 |
 | Profile (language selector, delete) | ⚠️ Partial | T12 |
-| Room list/chat | ❌ Not started | T13-T14 |
+| Room list screen | ✅ Done | T13 |
+| Room chat screen | ❌ Not started | T14 |
 | Deep-linkable routes | ❌ Not started | T16 |
 | RTL/a11y | ❌ Not started | T18 |
 | Dark mode | ❌ Not started | T19 |
@@ -71,17 +72,17 @@ Full report: `docs/QA-REPORT.md`
 
 1. **BUG-01 (CRITICAL):** Backend auth 503 — registration/login intermittently fail. Backend-side issue. Affects mobile too.
 
-## Fixed (in working tree, uncommitted)
+## Fixed (committed)
 
-- **BUG-02 (HIGH):** WebSocket reconnect wipes `listeners` Map — fixed in `shared/ws/DirectMessageSocket.ts`
-- **BUG-04 (MEDIUM):** `lastSeen` not updated on incoming DM messages — fixed in `web/src/features/dm/DirectMessagePage.tsx`
-- **BUG-06 (LOW):** i18n key mismatch in empty-search subtext — fixed in `web/src/features/conversations/ConversationsPage.tsx`
+- **BUG-02 (HIGH):** WebSocket reconnect wipes `listeners` Map — fixed in `shared/ws/DirectMessageSocket.ts` (commit `673832a`)
+- **BUG-04 (MEDIUM):** `lastSeen` not updated on incoming DM messages — fixed in `web/src/features/dm/DirectMessagePage.tsx` (commit `673832a`)
+- **BUG-06 (LOW):** i18n key mismatch in empty-search subtext — fixed in `web/src/features/conversations/ConversationsPage.tsx` (commit `673832a`)
 
 ## Next steps
 
-1. Commit all changes (CTO-WEB-STABILITY fixes + Task 11) — FE
+1. Implement Task 14 (Room chat screen) — FE
 2. M1 QA re-run (only BUG-01 backend-side blocker remains) — QA
-3. Proceed to M2 (Rooms) after M1 passes
+3. Proceed to M3 (Web UX upgrades) after M2 completes
 
 ## Docs index
 
