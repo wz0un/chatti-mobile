@@ -1,6 +1,6 @@
 # Chatti Web — Task Board
 
-Status: **Active** · Updated: 2026-08-27
+Status: **Active** · Updated: 2026-09-10
 
 Owners: **[FE]** Frontend Agent · **[BE]** Backend Agent · **[QA]** QA Agent
 
@@ -14,8 +14,8 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 
 | Phase | Status | Notes |
 |-------|--------|-------|
-| M0 Foundations | ✅ PASS | 83/83 unit tests, encryption interop verified, build succeeds |
-| M1 Core chat | ⚠️ BLOCKED | BUG-01 (backend auth 503) + BUG-02 (WS reconnect wipe) + Task 11 not started |
+| M0 Foundations | ✅ PASS | 85/85 unit tests, encryption interop verified, build succeeds |
+| M1 Core chat | ⚠️ BLOCKED | BUG-01 (backend auth 503) only — all FE work done (BUG-02/04/06 fixed, Task 11 done) |
 | Full QA report | — | See `docs/QA-REPORT.md` |
 
 ---
@@ -58,7 +58,7 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 - Browser WebSocket, http→ws/wss transform, reconnect (max 5, backoff 2s × attempt, no reconnect on code 1000), event emitter API.
 - RoomSocket: `join {username, userId}` — uses registered `userId` (mobile bug #5 not replicated).
 - DirectMessageSocket: `join {userId, username, publicKey}`; `encrypted_message` handling; **fixes mobile bug #1** — initialized `participants` Map.
-- ⚠️ **BUG-02:** reconnect wipes `listeners` Map — needs fix before M1 QA pass.
+- ☑ **BUG-02:** reconnect wipes `listeners` Map — **FIXED** (only `disconnect()` clears listeners).
 
 ## Task 7 — Auth UI (login/register) (P0, FE) ☑
 ☑ `web/src/features/auth/`:
@@ -87,7 +87,7 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 - Start conversation flow (`POST /api/dm/start` + `GET /api/users/public-key`).
 - Message list (dedupe by id, auto-scroll), composer (Enter send / Shift+Enter newline), typing indicator (2s timeout), last-seen write.
 - Encrypted status banner, connection warning/error banners.
-- QA gate: ✅ fresh-session encrypted round-trip both directions passing. ⚠️ Reconnect broken (BUG-02).
+- QA gate: ✅ fresh-session encrypted round-trip both directions passing.
 
 ---
 
@@ -95,7 +95,7 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 
 | # | Task | Owner | Status | Notes |
 |---|------|-------|--------|-------|
-| 11 | Contacts screen (list + add contact + requests accept/reject) | FE | ☐ TODO | `GET /api/contacts/list`, `POST /api/contacts/request`, accept/reject flows |
+| 11 | Contacts screen (list + add contact + requests accept/reject) | FE | ☑ DONE | Implemented + validated (typecheck/lint/85 tests pass) |
 | 12 | Profile screen (language selector, delete account) | FE | ☑ DONE | User card + deviceId copy + logout done; language switcher + delete button pending |
 
 ## P1 tasks (M2 — TODO)
@@ -132,11 +132,11 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 | ID | Severity | Task | Description | Owner | Status |
 |----|----------|------|-------------|-------|--------|
 | BUG-01 | 🔴 CRITICAL | 7 | Backend auth 503 (`error code: 1102`) — registration/login intermittently fail | BE | ☐ BLOCKED (backend) |
-| BUG-02 | 🟠 HIGH | 6 | WebSocket reconnect wipes `listeners` Map — DM reconnect silently breaks | FE | ☐ TODO |
+| BUG-02 | 🟠 HIGH | 6 | WebSocket reconnect wipes `listeners` Map — DM reconnect silently breaks | FE | ☑ FIXED |
 | BUG-03 | 🟡 MEDIUM | 12 | Profile logout button inaccessible (missing a11y attributes) | FE | ☐ TODO |
-| BUG-04 | 🟡 MEDIUM | 10 | `lastSeen` not updated on incoming messages in DM chat | FE | ☐ TODO |
+| BUG-04 | 🟡 MEDIUM | 10 | `lastSeen` not updated on incoming messages in DM chat | FE | ☑ FIXED |
 | BUG-05 | 🟡 MEDIUM | 16 | No deep-linkable routes — SPA refresh = blank page | FE | ☐ TODO (M3) |
-| BUG-06 | 🟢 LOW | 9 | i18n key mismatch in empty-search subtext | FE | ☐ TODO |
+| BUG-06 | 🟢 LOW | 9 | i18n key mismatch in empty-search subtext | FE | ☑ FIXED |
 | BUG-07 | 🟢 LOW | 18 | Insufficient color contrast on DM composer placeholder | FE | ☐ TODO (M3) |
 
 ---

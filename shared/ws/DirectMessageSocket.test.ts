@@ -4,7 +4,7 @@
  * mobile bug #1 fix, reconnect policy.
  */
 
-import { DirectMessageSocket } from './DirectMessageSocket';
+import { DirectMessageSocket, DM_RECONNECT } from './DirectMessageSocket';
 import { FakeWebSocket, fakeWsFactory } from './testUtils';
 import { EncryptionService } from '../crypto/EncryptionService';
 import { MemoryStorageAdapter } from '../storage/StorageAdapter';
@@ -340,7 +340,85 @@ describe('DirectMessageSocket', () => {
     expect(FakeWebSocket.instances).toHaveLength(2);
   });
 
-  it('stops after max reconnect attempts and emits error', async () => {
+  it('BUG-02 regression: listeners survive reconnection', async () => {
+    const encryptionA = await peerEncryption(PRIV_A, PUB_A);
+    const socket = new DirectMessageSocket({
+      wsFactory: fakeWsFactory,
+      encryption: encryptionA,
+    });
+    await socket.connect('conv_1', 'user_1', 'a#1', 'user_2', API_URL, PUB_B);
+    let ws = FakeWebSocket.instances[0];
+    ws.open();
+
+    // Register listeners before any reconnect
+    const onMessage = vi.fn();
+    const onTyping = vi.fn();
+    const onConnected = vi.fn();
+    socket.on('message', onMessage);
+    socket.on('typing', onTyping);
+    socket.on('connected', onConnected);
+
+    // Force a reconnect (network blip → close code 1006)
+    ws.close(1006, 'abnormal');
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(FakeWebSocket.instances).toHaveLength(2);
+    ws = FakeWebSocket.instances[1];
+    ws.open();
+
+    // Listener registered before reconnect still fires after reconnect
+    expect(onConnected).toHaveBeenCalledWith({ conversationId: 'conv_1' });
+
+    // Simulate incoming message on the new socket
+    const secretB = await (await peerEncryption(PRIV_B, PUB_B)).deriveSharedSecret('user_1', PUB_A);
+    const { encryptedContent, iv } = await (await peerEncryption(PRIV_B, PUB_B)).encryptMessage('post-reconnect', secretB);
+    await ws.serverSend({
+      type: 'encrypted_message',
+      id: 'm_reconnect',
+      senderId: 'user_2',
+      recipientId: 'user_1',
+      encryptedContent,
+      iv,
+      senderPublicKey: PUB_B,
+      timestamp: '2026-08-11T00:00:10.000Z',
+    });
+
+    expect(onMessage).toHaveBeenCalledTimes(1);
+    expect(onMessage.mock.calls[0][0].content).toBe('post-reconnect');
+
+    // Simulate typing on the new socket
+    await ws.serverSend({ type: 'typing', isTyping: true, username: 'bob#5678' });
+    expect(onTyping).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops after max reconnect attempts and emits error to listeners', async () => {
+    const socket = new DirectMessageSocket({
+      wsFactory: fakeWsFactory,
+      maxReconnectAttempts: 1,
+      encryption: await peerEncryption(PRIV_A, PUB_A),
+    });
+    await socket.connect('conv_1', 'user_1', 'a#1', 'user_2', API_URL, PUB_B);
+    let ws = FakeWebSocket.instances[0];
+    ws.open();
+
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const onError = vi.fn();
+    socket.on('error', onError);
+
+    // Close #1: reconnectAttempts 0→1, reconnect scheduled
+    ws.close(1006, 'x');
+    expect(onError).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(DM_RECONNECT.backoffBaseMs);
+    expect(FakeWebSocket.instances).toHaveLength(2);
+    ws = FakeWebSocket.instances[1];
+
+    // Close #2: reconnectAttempts (1) is NOT < maxReconnectAttempts (1) → error
+    ws.close(1006, 'x');
+    expect(errorSpy).toHaveBeenCalledWith('Max DM reconnection attempts reached');
+    expect(onError).toHaveBeenCalledWith({ message: 'Could not connect to encrypted chat server' });
+    errorSpy.mockRestore();
+  });
+
+  it('BUG-02 regression: listeners survive reconnect after abnormal close', async () => {
     const socket = new DirectMessageSocket({
       wsFactory: fakeWsFactory,
       encryption: await peerEncryption(PRIV_A, PUB_A),
@@ -349,25 +427,31 @@ describe('DirectMessageSocket', () => {
     let ws = FakeWebSocket.instances[0];
     ws.open();
 
-    // Mobile parity: each reconnect runs connect() → disconnect() → clear(),
-    // so event listeners registered before are wiped. The final error is
-    // therefore only observable through the console log (same as mobile).
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const onError = vi.fn();
-    socket.on('error', onError);
+    // Register listeners BEFORE reconnect
+    const onMessage = vi.fn();
+    const onTyping = vi.fn();
+    const onConnected = vi.fn();
+    socket.on('message', onMessage);
+    socket.on('typing', onTyping);
+    socket.on('connected', onConnected);
 
-    for (let attempt = 1; attempt <= 5; attempt++) {
-      ws.close(1006, 'x');
-      await vi.advanceTimersByTimeAsync(2000 * attempt);
-      ws = FakeWebSocket.instances[FakeWebSocket.instances.length - 1];
-    }
+    // Abnormal close → reconnect
+    ws.close(1006, 'network');
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(FakeWebSocket.instances).toHaveLength(2);
 
-    // The 6th connection is the last attempt: its close emits the error
-    ws.close(1006, 'x');
-    expect(errorSpy).toHaveBeenCalledWith('Max DM reconnection attempts reached');
-    // The error event is emitted, but listeners were cleared on reconnect (mobile parity)
-    expect(onError).not.toHaveBeenCalled();
-    errorSpy.mockRestore();
+    ws = FakeWebSocket.instances[1];
+    ws.open();
+    await ws.serverSend({ type: 'typing', isTyping: true });
+
+    // Core assertion: listeners survived the reconnect
+    expect(onConnected).toHaveBeenCalledWith({ conversationId: 'conv_1' });
+    expect(onTyping).toHaveBeenCalledTimes(1);
+
+    // disconnect() still clears listeners (intentional teardown)
+    socket.disconnect();
+    socket.emit('typing', { isTyping: false });
+    expect(onTyping).toHaveBeenCalledTimes(1);
   });
 
   it('disconnect prevents reconnects and clears listeners', async () => {

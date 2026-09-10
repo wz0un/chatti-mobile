@@ -1,6 +1,6 @@
 # Chatti Mobile — Current Status
 
-Updated: 2026-08-27
+Updated: 2026-09-10
 
 ## Repository
 
@@ -41,8 +41,8 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | App shell (sidebar + responsive) | ✅ Done | T8 |
 | Conversations list | ✅ Done | T9 |
 | Encrypted DM chat | ✅ Done | T10 |
-| Contacts screen | ❌ Not started | T11 |
-| Profile (language selector, delete) | ❌ Not started | T12 |
+| Contacts screen (list + add + requests) | ✅ Done | T11 |
+| Profile (language selector, delete) | ⚠️ Partial | T12 |
 | Room list/chat | ❌ Not started | T13-T14 |
 | Deep-linkable routes | ❌ Not started | T16 |
 | RTL/a11y | ❌ Not started | T18 |
@@ -57,28 +57,31 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 
 | Phase | Gate | Result |
 |-------|------|--------|
-| M0 Foundations | Unit tests + build | ✅ PASS (83/83 tests, 300kB JS / 94kB gzip) |
+| M0 Foundations | Unit tests + build | ✅ PASS (85/85 tests, 300kB JS / 94kB gzip) |
 | M0 Foundations | Encryption interop | ✅ PASS (byte-identical with mobile) |
 | M1 Core chat | Fresh-session DM round-trip | ✅ PASS |
 | M1 Core chat | Auth (register/login) | ⚠️ BLOCKED (backend 503) |
-| M1 Core chat | DM reconnect | ❌ FAIL (BUG-02: listener wipe) |
-| M1 Core chat | Contacts screen | ❌ NOT STARTED |
-| M1 Core chat | Full QA gate | ❌ FAIL (1 critical + 1 high + 4 medium/low bugs) |
+| M1 Core chat | DM reconnect | ✅ FIXED (BUG-02: listener wipe resolved) |
+| M1 Core chat | Contacts screen | ✅ DONE (Task 11 implemented + validated) |
+| M1 Core chat | Full QA gate | ⚠️ BLOCKED (BUG-01 backend-only remaining) |
 
 Full report: `docs/QA-REPORT.md`
 
 ## Blockers
 
 1. **BUG-01 (CRITICAL):** Backend auth 503 — registration/login intermittently fail. Backend-side issue. Affects mobile too.
-2. **BUG-02 (HIGH):** WebSocket reconnect wipes `listeners` Map — DM messages stop rendering after reconnect. Frontend fix needed.
+
+## Fixed (in working tree, uncommitted)
+
+- **BUG-02 (HIGH):** WebSocket reconnect wipes `listeners` Map — fixed in `shared/ws/DirectMessageSocket.ts`
+- **BUG-04 (MEDIUM):** `lastSeen` not updated on incoming DM messages — fixed in `web/src/features/dm/DirectMessagePage.tsx`
+- **BUG-06 (LOW):** i18n key mismatch in empty-search subtext — fixed in `web/src/features/conversations/ConversationsPage.tsx`
 
 ## Next steps
 
-1. Fix BUG-02 (WebSocket reconnect listener wipe) — FE
-2. Implement Task 11 (Contacts screen) — FE
-3. Wait for backend auth fix (BUG-01) — BE
-4. M1 QA re-run after fixes + Task 11
-5. Proceed to M2 (Rooms) after M1 passes
+1. Commit all changes (CTO-WEB-STABILITY fixes + Task 11) — FE
+2. M1 QA re-run (only BUG-01 backend-side blocker remains) — QA
+3. Proceed to M2 (Rooms) after M1 passes
 
 ## Docs index
 

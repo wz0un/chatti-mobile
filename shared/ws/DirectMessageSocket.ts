@@ -77,7 +77,16 @@ export class DirectMessageSocket extends EventEmitter<DirectMessageSocketEvents>
     apiUrl = API_BASE_URL,
     recipientPublicKey: string | null = null,
   ): Promise<void> {
-    this.disconnect(); // Ensure any existing connection is closed
+    // Close any existing socket WITHOUT clearing event listeners.
+    // Listeners survive reconnection; only explicit disconnect()/destroy()
+    // wipes them.  (BUG-02 fix)
+    // NOTE: reconnectAttempts is NOT reset here — it accumulates across
+    // reconnect attempts and only resets in onopen() on successful connect.
+    if (this.ws) {
+      this.ws.onclose = null;
+      this.ws.close();
+      this.ws = null;
+    }
     this.isDisconnected = false;
 
     this.conversationId = conversationId;
@@ -144,9 +153,9 @@ export class DirectMessageSocket extends EventEmitter<DirectMessageSocketEvents>
         if (this.reconnectAttempts < this.maxReconnectAttempts && event.code !== 1000) {
           this.reconnectAttempts++;
           const backoff = DM_RECONNECT.backoffBaseMs * this.reconnectAttempts;
-          setTimeout(() => {
+          setTimeout(async () => {
             if (this.isDisconnected) return;
-            this.connect(
+            await this.connect(
               conversationId,
               userId,
               username,
@@ -167,7 +176,10 @@ export class DirectMessageSocket extends EventEmitter<DirectMessageSocketEvents>
   }
 
   /**
-   * Disconnect from conversation.
+   * Disconnect from conversation and clear all event listeners.
+   * Use this for intentional teardown (page unmount, logout).
+   * For reconnection, `connect()` handles socket replacement without
+   * touching listeners.
    */
   disconnect(): void {
     this.isDisconnected = true;

@@ -100,6 +100,19 @@ export default function DirectMessagePage({ user }: { user: User }) {
     socket.on('history', (data) => {
       setMessageList(data.messages);
       messageListRef.current = data.messages;
+      // BUG-04 fix: persist lastSeen on history (mobile parity)
+      if (data.messages.length > 0) {
+        void (async () => {
+          try {
+            const lastSeenStr = (await storage.getItem(lastSeenKey(user.userId))) ?? '{}';
+            const lastSeen = JSON.parse(lastSeenStr) as Record<string, number>;
+            lastSeen[recipientId] = Date.now();
+            await storage.setItem(lastSeenKey(user.userId), JSON.stringify(lastSeen));
+          } catch (err) {
+            console.error('Error updating lastSeen on history:', err);
+          }
+        })();
+      }
     });
 
     socket.on('message', (data) => {
@@ -112,6 +125,20 @@ export default function DirectMessagePage({ user }: { user: User }) {
         messageListRef.current = newList;
         return newList;
       });
+      // BUG-04 fix: persist lastSeen on incoming messages (mobile parity:
+      // lastSeen is written on open, history, and incoming message).
+      if (data.senderId !== user.userId) {
+        void (async () => {
+          try {
+            const lastSeenStr = (await storage.getItem(lastSeenKey(user.userId))) ?? '{}';
+            const lastSeen = JSON.parse(lastSeenStr) as Record<string, number>;
+            lastSeen[recipientId] = Date.now();
+            await storage.setItem(lastSeenKey(user.userId), JSON.stringify(lastSeen));
+          } catch (err) {
+            console.error('Error updating lastSeen on incoming message:', err);
+          }
+        })();
+      }
     });
 
     socket.on('typing', (data) => {

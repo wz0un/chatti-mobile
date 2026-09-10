@@ -76,7 +76,7 @@ export default function App() {
           <Route index element={<Navigate to="/rooms" replace />} />
           <Route path="rooms" element={<RoomsPage />} />
           <Route path="chats" element={<ConversationsPage user={user} />} />
-          <Route path="contacts" element={<ContactsPage />} />
+          <Route path="contacts" element={<ContactsPage user={user} />} />
           <Route path="profile" element={<ProfilePage user={user} onLogout={onLogout} />} />
           <Route path="dm/:conversationId" element={<DirectMessagePage user={user} />} />
         </Route>

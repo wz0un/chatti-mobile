@@ -212,7 +212,7 @@ export default function ConversationsPage({ user }: ConversationsPageProps) {
             {searchQuery ? t('usersList.emptySearch') : t('conversations.emptyTitle')}
           </p>
           <p className="convs__emptySubtext">
-            {searchQuery ? t('login.errors.registerError') : t('conversations.emptySubtitle')}
+            {searchQuery ? t('usersList.emptySearch') : t('conversations.emptySubtitle')}
           </p>
         </div>
       ) : (
