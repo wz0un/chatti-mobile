@@ -1,6 +1,6 @@
 # Chatti Mobile — Current Status
 
-Updated: 2026-09-10 (Task 13 committed)
+Updated: 2026-09-10 (Task 14 committed)
 
 ## Repository
 
@@ -44,7 +44,7 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | Contacts screen (list + add + requests) | ✅ Done | T11 |
 | Profile (language selector, delete) | ⚠️ Partial | T12 |
 | Room list screen | ✅ Done | T13 |
-| Room chat screen | ❌ Not started | T14 |
+| Room chat screen | ✅ Done | T14 |
 | Deep-linkable routes | ❌ Not started | T16 |
 | RTL/a11y | ❌ Not started | T18 |
 | Dark mode | ❌ Not started | T19 |

@@ -14,6 +14,7 @@ import AppShell from '../layout/AppShell';
 import ConversationsPage from '../features/conversations/ConversationsPage';
 import ContactsPage from '../features/contacts/ContactsPage';
 import RoomsPage from '../features/rooms/RoomsPage';
+import RoomChatPage from '../features/rooms/RoomChatPage';
 import ProfilePage from '../features/profile/ProfilePage';
 import DirectMessagePage from '../features/dm/DirectMessagePage';
 
@@ -78,6 +79,7 @@ export default function App() {
           <Route path="chats" element={<ConversationsPage user={user} />} />
           <Route path="contacts" element={<ContactsPage user={user} />} />
           <Route path="profile" element={<ProfilePage user={user} onLogout={onLogout} />} />
+          <Route path="room/:roomId" element={<RoomChatPage user={user} />} />
           <Route path="dm/:conversationId" element={<DirectMessagePage user={user} />} />
         </Route>
       </Routes>

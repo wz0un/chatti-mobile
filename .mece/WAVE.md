@@ -1,18 +1,38 @@
-# M1 Web Stabilization
+# M1 Read-Only Audit and Publication
 
 ## Goal
 
-Remove the confirmed web-chat correctness regressions that block the M1 QA gate,
-without changing backend contracts or mobile behavior.
+Run four mutually exclusive reviews of the existing project state. Do not add,
+edit, format, generate, or delete product files. The only permitted mutable
+Git action is DevOps creating a commit from the already-present working-tree
+changes and pushing it to the configured `origin` GitHub remote, after
+recording the exact diff and verification status.
 
 ## Cells
 
-- `CTO-WEB-STABILITY`: Owns the Direct Message WebSocket lifecycle and the two
-  localized web UI correctness fixes. This cell exclusively owns changes for
-  this wave.
+- `CTO-ARCHITECTURE`: architecture audit only; no commands that mutate files or Git.
+- `DEVOPS-CLOUDFLARE-PUBLISH`: inspect Cloudflare deployment readiness and publish
+  the existing working-tree changes only; no source edits or deployment.
+- `QA-WEB-MOBILE`: perform read-only web and mobile verification; no source edits.
+- `BACKEND-PARITY`: audit backend/web/mobile contract parity; no source edits.
 
 ## Guardrails
 
-- Do not change Cloudflare Worker or mobile application code.
-- Preserve existing public API and event contracts.
-- Run focused verification before reporting completion.
+- No new product changes until a later user order.
+- No dependency upgrades, lockfile changes, migrations, deployments, secrets,
+  or infrastructure changes.
+- Do not amend, reset, stash, discard, rebase, force-push, or alter existing commits.
+- Reports are the only coordination artifacts each cell may write.
+- DevOps may commit and push only the files that were already dirty when the
+  wave began: `docs/STATUS.md`, `web/src/app/App.tsx`,
+  `web/src/features/rooms/RoomChatPage.tsx`, and
+  `web/src/features/rooms/room-chat.css`.
+
+## Publication protocol
+
+1. Capture `git status --short`, `git diff --check`, and a concise diff summary.
+2. Run only non-mutating, relevant checks.
+3. Commit the existing changes with a descriptive message and push the current
+   branch to `origin` without force.
+4. If authentication, branch protection, or any other external prerequisite
+   blocks the push, do not work around it; record the exact blocker.

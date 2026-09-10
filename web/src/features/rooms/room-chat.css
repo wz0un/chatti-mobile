@@ -1,0 +1,99 @@
+/* Room chat page */
+
+.room-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background-color: var(--color-background);
+}
+
+.room-chat__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--color-surface);
+  border-bottom: 0.5px solid var(--color-border);
+}
+
+.room-chat__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-hover);
+  color: var(--color-primary);
+  font-size: 18px;
+  text-decoration: none;
+}
+
+.room-chat__back:hover {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.room-chat__title {
+  flex: 1;
+  margin: 0;
+  font-size: var(--font-h3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-chat__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.room-chat__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+}
+
+.room-chat__dot--connected {
+  background-color: var(--color-connected);
+}
+
+.room-chat__dot--disconnected {
+  background-color: var(--color-disconnected);
+}
+
+.room-chat__statusText {
+  font-size: var(--font-caption);
+  color: var(--color-text-tertiary);
+}
+
+.room-chat__presence {
+  font-size: var(--font-caption);
+  color: var(--color-text-tertiary);
+  background-color: var(--color-background-tertiary);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.room-chat__warningBanner {
+  padding: var(--space-sm);
+  background-color: #ffa500;
+  text-align: center;
+}
+
+.room-chat__bannerText {
+  color: var(--color-text-inverse);
+  font-size: var(--font-caption);
+  font-weight: 600;
+}
+
+.room-chat__messageList {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-sm) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
