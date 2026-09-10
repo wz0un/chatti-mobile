@@ -10,7 +10,7 @@
   border-bottom: 0.5px solid var(--color-border);
 }
 
-.rooms__headerInfo {
+.rooms__headerText {
   min-width: 0;
 }
 
@@ -261,6 +261,13 @@
   text-align: center;
   font-size: var(--font-caption);
   color: var(--color-text-tertiary);
+}
+
+.rooms__refreshing {
+  text-align: center;
+  font-size: var(--font-caption);
+  color: var(--color-text-tertiary);
+  padding: var(--space-sm);
 }
 
 /* FAB */
