@@ -44,17 +44,17 @@ Goal: the daily-driver path — login → Chats → DM chat → Contacts.
 | BUG-04 | 🟡 MEDIUM | ☑ FIXED | `lastSeen` not updated on incoming DM messages | Unread markers drift from actual read state |
 | BUG-06 | 🟢 LOW | ☑ FIXED | i18n key mismatch in empty-search subtext | Cosmetic, but leaks raw key |
 
-**M1 can pass QA when:** BUG-01 resolved (backend-side). All FE fixes done (BUG-02, BUG-04, BUG-06 + Task 11).
+**M1 can pass QA when:** BUG-01 is resolved (backend-side). All FE fixes are done (BUG-02, BUG-03, BUG-04, BUG-06 + Tasks 11–12).
 
-## Phase 2 — Rooms (M2) 🔲 TODO
+## Phase 2 — Rooms (M2) ⚠️ IMPLEMENTED — QA NOT READY
 
 Goal: room feature parity.
 
 1. [x] Room list (paginated, create-room modal, gradient header) — **Task 13 done.**
-2. Room chat: WS join/history/messages/typing/join-leave system messages, presence count.
-3. Unread/refresh behavior parity (30s polling + focus refresh).
+2. [x] Room chat: WS join/history/messages/typing/join-leave system messages, presence count — **Task 14 done.**
+3. [x] Unread/refresh behavior parity (30s polling + focus refresh).
 
-**Exit criteria:** rooms work web ⇄ web and web ⇄ mobile; QA sign-off.
+**Exit criteria:** rooms work web ⇄ web and web ⇄ mobile; QA sign-off. **Pending:** no authenticated live room/contact session and no mobile session were available; QA verdict is `M2 not ready`.
 
 ## Phase 3 — Web UX upgrades (M3) 🔲 TODO
 
@@ -86,7 +86,7 @@ Goal: remove duplicated business logic while keeping mobile regression-free.
 |-----------|-------|--------|-------|------------|
 | M0 | Foundations + shared core | ✅ DONE | Frontend | — |
 | M1 | Auth, DMs, Contacts, Profile | ⚠️ BLOCKED (BUG-01) | Frontend | M0 + backend auth fix |
-| M2 | Rooms | 🔲 TODO | Frontend | M1 |
+| M2 | Rooms | ⚠️ IMPLEMENTED — QA NOT READY | Frontend + QA | live auth/session + room interop verification |
 | M3 | Web UX upgrades | 🔲 TODO | Frontend | M2 |
 | M4 | Consolidation, push, CI | 🔲 TODO | Frontend + Backend + QA | M3 |
 

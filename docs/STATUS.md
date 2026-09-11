@@ -1,6 +1,6 @@
 # Chatti Mobile — Current Status
 
-Updated: 2026-09-10 (Task 14 committed)
+Updated: 2026-09-11 (Task 12 and BUG-03 completed; M2 QA incomplete)
 
 ## Repository
 
@@ -42,7 +42,7 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | Conversations list | ✅ Done | T9 |
 | Encrypted DM chat | ✅ Done | T10 |
 | Contacts screen (list + add + requests) | ✅ Done | T11 |
-| Profile (language selector, delete) | ⚠️ Partial | T12 |
+| Profile (language selector, delete) | ✅ Done | T12 |
 | Room list screen | ✅ Done | T13 |
 | Room chat screen | ✅ Done | T14 |
 | Deep-linkable routes | ❌ Not started | T16 |
@@ -64,7 +64,9 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | M1 Core chat | Auth (register/login) | ⚠️ BLOCKED (backend 503) |
 | M1 Core chat | DM reconnect | ✅ FIXED (BUG-02: listener wipe resolved) |
 | M1 Core chat | Contacts screen | ✅ DONE (Task 11 implemented + validated) |
+| M1 Core chat | Profile controls + conversation delete | ✅ DONE (Task 12 + BUG-03; typecheck/lint/85 tests pass) |
 | M1 Core chat | Full QA gate | ⚠️ BLOCKED (BUG-01 backend-only remaining) |
+| M2 Rooms | Functional QA | ⚠️ NOT READY (live room/contact coverage and mobile interop not run) |
 
 Full report: `docs/QA-REPORT.md`
 
@@ -80,9 +82,9 @@ Full report: `docs/QA-REPORT.md`
 
 ## Next steps
 
-1. Implement Task 14 (Room chat screen) — FE
-2. M1 QA re-run (only BUG-01 backend-side blocker remains) — QA
-3. Proceed to M3 (Web UX upgrades) after M2 completes
+1. Restore the Worker checkout and resolve BUG-01 (auth 503/1102) — BE
+2. Re-run live contacts/rooms and web↔mobile room interoperability QA — QA
+3. Publish `chatti-web-staging` only after an M2 staging-safe QA verdict; production remains out of scope
 
 ## Docs index
 

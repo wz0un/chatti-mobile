@@ -15,7 +15,7 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 | Phase | Status | Notes |
 |-------|--------|-------|
 | M0 Foundations | ✅ PASS | 85/85 unit tests, encryption interop verified, build succeeds |
-| M1 Core chat | ⚠️ BLOCKED | BUG-01 (backend auth 503) only — all FE work done (BUG-02/04/06 fixed, Task 11 done) |
+| M1 Core chat | ⚠️ BLOCKED | BUG-01 (backend auth 503) only — all FE work done (BUG-02/03/04/06 fixed, Tasks 11–12 done) |
 | Full QA report | — | See `docs/QA-REPORT.md` |
 
 ---
@@ -96,14 +96,14 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 | # | Task | Owner | Status | Notes |
 |---|------|-------|--------|-------|
 | 11 | Contacts screen (list + add contact + requests accept/reject) | FE | ☑ DONE | Implemented + validated (typecheck/lint/85 tests pass) |
-| 12 | Profile screen (language selector, delete account) | FE | ☑ DONE | User card + deviceId copy + logout done; language switcher + delete button pending |
+| 12 | Profile screen (language selector, delete account) | FE | ☑ DONE | en/es/ar/fr selector persists via `chatti_language`; confirmed delete-account flow with in-UI errors; static QA passed |
 
 ## P1 tasks (M2 — TODO)
 
 | # | Task | Owner | Status | Notes |
 |---|------|-------|--------|-------|
 | 13 | Room list screen (paginated, create-room modal) | FE | ☑ DONE | `RoomsPage.tsx` (255 lines) + `rooms.css` (387 lines); typecheck/lint/85 tests pass |
-| 14 | Room chat screen (history, typing, join/leave, presence) | FE | ☐ TODO | `wss://.../api/room/{roomId}` |
+| 14 | Room chat screen (history, typing, join/leave, presence) | FE | ☑ DONE | `RoomChatPage.tsx` and `/room/:roomId` implemented; live QA remains blocked/not run |
 | 15 | Badges + polling for unread chats & pending requests | FE | ☑ DONE | `useSectionBadges` — 30s polling + focus refresh, 99+ cap |
 | 20 | QA regression suite: parity matrix checklist per release | QA | ☐ TODO | |
 
@@ -133,7 +133,7 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 |----|----------|------|-------------|-------|--------|
 | BUG-01 | 🔴 CRITICAL | 7 | Backend auth 503 (`error code: 1102`) — registration/login intermittently fail | BE | ☐ BLOCKED (backend) |
 | BUG-02 | 🟠 HIGH | 6 | WebSocket reconnect wipes `listeners` Map — DM reconnect silently breaks | FE | ☑ FIXED |
-| BUG-03 | 🟡 MEDIUM | 12 | Profile logout button inaccessible (missing a11y attributes) | FE | ☐ TODO |
+| BUG-03 | 🟡 MEDIUM | 9 | Conversation delete was context-menu-only | FE | ☑ FIXED (visible touch/hover control + keyboard route) |
 | BUG-04 | 🟡 MEDIUM | 10 | `lastSeen` not updated on incoming messages in DM chat | FE | ☑ FIXED |
 | BUG-05 | 🟡 MEDIUM | 16 | No deep-linkable routes — SPA refresh = blank page | FE | ☐ TODO (M3) |
 | BUG-06 | 🟢 LOW | 9 | i18n key mismatch in empty-search subtext | FE | ☑ FIXED |

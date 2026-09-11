@@ -52,3 +52,62 @@
 - **Riesgo medio:** la interop de salas web/móvil no se pudo ejecutar sin una sesión móvil.
 
 M2 not ready
+
+---
+
+## Phase B delta
+
+- **Fecha:** 2026-09-11.
+- **Sesión OpenCode:** `01a09196-b587-7cb2-98ae-76ecf9f6465f`.
+- **Alcance:** validación del delta FE sin integrar (sólo lectura). No se re-ejecutó M1/M2; el informe Phase A y su veredicto `M2 not ready` se conservan intactos arriba. No hubo escrituras de backend, ni borrado de cuenta real.
+- **Base:** misma que Phase A (`a2d5c657c528bf97626bf604b1c0f392d024a178`), trabajando sobre el árbol con cambios sin hacer commit.
+
+### Delta producto cubierto
+
+Sólo 4 archivos del delta FE (confirmado con `git status`): `web/src/features/profile/ProfilePage.tsx`, `web/src/features/profile/profile.css`, `web/src/features/conversations/ConversationListItem.tsx`, `web/src/features/conversations/conversations.css`.
+
+### Evidencia de comandos (ejecutada ahora, no mutante)
+
+| Script | Estado | Resultado |
+| --- | --- | --- |
+| `npm run typecheck` | **PASS** | `tsc -b --pretty false` sin errores. |
+| `npm run lint` | **PASS** | `eslint .` sin errores. |
+| `npm run test` | **PASS** | 6 archivos / 85 pruebas; mismo baseline que Phase A. Ninguna regresión. |
+| `npm run smoke` | **NOT RUN** | Escribe en backend (registro/login en vivo); prohibido en este delta. |
+
+### Task 12 — Perfil (idioma + borrado de cuenta)
+
+| Criterio | Estado | Evidencia |
+| --- | --- | --- |
+| Selector en/es/ar/fr | **PASS** | `LANGUAGE_OPTIONS` con en/es/ar/fr, `ProfilePage.tsx:21-26`; flags + etiquetas endónimas. |
+| Cambio inmediato de idioma | **PASS** | `handleLanguageChange` llama `setLanguage` (`ProfilePage.tsx:57-59`); `I18nProvider.setLanguage` hace `setLanguageState(next)` síncrono antes de persistir (`web/src/lib/i18n.tsx:33-36`). |
+| Persistencia por la ruta i18n existente (`chatti_language`) | **PASS** | `storage.setItem(STORAGE_KEYS.language, next)` (i18n.tsx:35); `STORAGE_KEYS.language = 'chatti_language'` (`shared/storage/StorageAdapter.ts:18`), misma clave que móvil. |
+| El botón confirma el borrado | **PASS** | `window.confirm(t('profile.deleteMessage'))` (`ProfilePage.tsx:62`); la clave existe en en/es/ar/fr. |
+| Envía el par userId/deviceId vía `ApiService.deleteAccount` | **PASS** | `ApiService.deleteAccount(user.userId, user.deviceId)` (`ProfilePage.tsx:67`); payload `{ userId, deviceId }` (`shared/api/ApiService.ts:348-351`). |
+| Logout sólo tras éxito | **PASS** | `await onLogout()` dentro del `try`, después del `await` del API (`ProfilePage.tsx:68`); logout real en `App.tsx:54-57` (`authService.logout()`). |
+| Deshabilitado mientras está pendiente | **PASS** | `setDeleting(true)` antes de la petición y `disabled={deleting}` (`ProfilePage.tsx:64,125`). |
+| Renderiza fallo de API | **PASS** | `catch` → `setDeleteError(t('profile.deleteError'))` y `<p className="profile__deleteError">` (`ProfilePage.tsx:69-72,129`). |
+
+### BUG-03 — Borrado de conversación
+
+| Criterio | Estado | Evidencia |
+| --- | --- | --- |
+| Visible en touch | **PASS** | `@media (hover: none) { .conv-item__delete { opacity: 1 } }` (`conversations.css:140-144`). |
+| Visible en hover/focus de escritorio | **PASS** | `.conv-item:hover .conv-item__delete, .conv-item:focus-within .conv-item__delete { opacity: 1 }` (`conversations.css:131-134`). |
+| Alcanzable por teclado | **PASS** | Control nativo `<button type="button">` (`ConversationListItem.tsx:134-145`), tabulable; `:focus-within` del ítem lo revela al recibir foco. |
+| Etiqueta accesible | **PASS** | `aria-label` + `title` con `t('conversations.deleteTitle')` (`ConversationListItem.tsx:137-138`). |
+| Conserva la confirmación vía `onDelete` | **PASS** | El botón llama `onDelete()` (`ConversationListItem.tsx:141`); en el padre, `deleteConversation` confirma con `window.confirm(t('conversations.deleteMessage'))` antes del API (`web/src/features/conversations/ConversationsPage.tsx:161-176`). `stopPropagation` evita que la pulsación abra el chat. |
+
+### Verdict (delta)
+
+`M1 blocked on BUG-01`
+
+El delta FE (Task 12 + BUG-03) está **PASS** en las 13 comprobaciones. El bloqueo para la totalidad de M1 sigue siendo **BUG-01** (auth en vivo 503/1102, BLOCKER externo, documentado en Phase A; no se reintentó). `M2 not ready` de Phase A no se re-evalúa.
+
+### Riesgos residuales
+
+- **Sólo estático:** idioma y borrado de cuenta se verificaron por inspección, no por interacción DOM en vivo; no se realizó un borrado de cuenta real (prohibido). Las claves i18n de perfil/delete existen en las 4 locales.
+- **Precondición no reseculada (baja):** `ApiService.deleteAccount` devuelve `data.success === true` y sólo lanza en `!response.ok`; un 200 con `success:false` (si el backend lo emitiera) no lanzaría y el FE haría logout igualmente. Es el mismo contrato compartido que el móvil (`src/services/ApiService.js` `deleteAccount`) y otras rutas; preexistente, no introducido en este delta.
+- **Menor:** la ruta de éxito del delete no resetea `deleting` antes del logout; inofensivo porque el logout desmonta la página.
+- **Menor:** no hay focus ring CSS propio para `.conv-item__delete`; se usa el outline por defecto del navegador.
+- **Task 12 en producción** sigue dependiendo de BUG-01 para validación en vivo con sesión autenticada.
