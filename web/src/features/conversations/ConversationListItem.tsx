@@ -88,46 +88,61 @@ export default function ConversationListItem({
     : getAvatarColor(displayName);
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      className={isUnread ? 'conv-item conv-item--unread' : 'conv-item'}
-      onClick={onPress}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
+    <div className={isUnread ? 'conv-item conv-item--unread' : 'conv-item'}>
+      <div
+        role="button"
+        tabIndex={0}
+        className="conv-item__main"
+        onClick={onPress}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onPress();
+          }
+        }}
+        onContextMenu={(event) => {
           event.preventDefault();
-          onPress();
-        }
-      }}
-      onContextMenu={(event) => {
-        event.preventDefault();
-        onDelete();
-      }}
-    >
-      <div className="conv-item__avatarWrap">
-        <div className="conv-item__avatar" style={{ background: avatarColor }}>
-          {initial}
-        </div>
-        <span className="conv-item__online" />
-      </div>
-
-      <div className="conv-item__content">
-        <div className="conv-item__header">
-          <span className={isUnread ? 'conv-item__username conv-item__username--unread' : 'conv-item__username'}>
-            {displayName}
-          </span>
-          <span className={isUnread ? 'conv-item__time conv-item__time--unread' : 'conv-item__time'}>
-            {formatTimestamp(msgTime)}
-          </span>
+          onDelete();
+        }}
+      >
+        <div className="conv-item__avatarWrap">
+          <div className="conv-item__avatar" style={{ background: avatarColor }}>
+            {initial}
+          </div>
+          <span className="conv-item__online" />
         </div>
 
-        <div className="conv-item__previewRow">
-          <span className={isUnread ? 'conv-item__preview conv-item__preview--unread' : 'conv-item__preview'}>
-            {lastMsg}
-          </span>
-          {isUnread && <span className="conv-item__unreadDot">•</span>}
+        <div className="conv-item__content">
+          <div className="conv-item__header">
+            <span className={isUnread ? 'conv-item__username conv-item__username--unread' : 'conv-item__username'}>
+              {displayName}
+            </span>
+            <span className={isUnread ? 'conv-item__time conv-item__time--unread' : 'conv-item__time'}>
+              {formatTimestamp(msgTime)}
+            </span>
+          </div>
+
+          <div className="conv-item__previewRow">
+            <span className={isUnread ? 'conv-item__preview conv-item__preview--unread' : 'conv-item__preview'}>
+              {lastMsg}
+            </span>
+            {isUnread && <span className="conv-item__unreadDot">•</span>}
+          </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        className="conv-item__delete"
+        aria-label={t('conversations.deleteTitle')}
+        title={t('conversations.deleteTitle')}
+        onClick={(event) => {
+          event.stopPropagation();
+          onDelete();
+        }}
+      >
+        🗑
+      </button>
     </div>
   );
 }

@@ -104,3 +104,54 @@
   background-color: var(--color-error);
   color: var(--color-text-inverse);
 }
+
+.profile__language {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.profile__languageLabel {
+  margin: 0;
+  font-weight: 600;
+}
+
+.profile__languageSelect {
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-full);
+  background-color: var(--color-input-background);
+  color: var(--color-text);
+  font-size: var(--font-body-small);
+  cursor: pointer;
+}
+
+.profile__delete {
+  padding: 14px;
+  border: 2px solid var(--color-error);
+  border-radius: var(--radius-md);
+  background-color: var(--color-error);
+  color: var(--color-text-inverse);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.profile__delete:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.profile__delete:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.profile__deleteError {
+  margin: 0;
+  color: var(--color-error);
+  font-size: var(--font-body-small);
+  text-align: center;
+}

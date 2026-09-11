@@ -105,6 +105,44 @@
   background-color: var(--color-surface-hover);
 }
 
+.conv-item__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.conv-item__delete {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--color-error);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.conv-item:hover .conv-item__delete,
+.conv-item:focus-within .conv-item__delete {
+  opacity: 1;
+}
+
+.conv-item__delete:hover {
+  background-color: var(--color-input-background);
+}
+
+@media (hover: none) {
+  .conv-item__delete {
+    opacity: 1;
+  }
+}
+
 .conv-item__avatarWrap {
   position: relative;
   flex-shrink: 0;
