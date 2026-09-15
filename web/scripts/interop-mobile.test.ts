@@ -18,7 +18,7 @@ import { describe, expect, it } from 'vitest';
 import { EncryptionService as WebEncryption } from '../../shared/crypto/EncryptionService';
 import { MemoryStorageAdapter } from '../../shared/storage/StorageAdapter';
 import mobileEncryption from '../../src/services/EncryptionService.js';
-import { storeMap } from '/tmp/opencode/shims/async-storage.mjs';
+import { storeMap } from './shims/async-storage.mjs';
 
 // Fixed private keys (32 bytes each) — deterministic vectors
 const PRIV_A = '0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20';
