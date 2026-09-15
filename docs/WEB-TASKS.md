@@ -131,7 +131,7 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 
 | ID | Severity | Task | Description | Owner | Status |
 |----|----------|------|-------------|-------|--------|
-| BUG-01 | 🔴 CRITICAL | 7 | Backend auth 503 (`error code: 1102`) — registration/login intermittently fail | BE | ☐ BLOCKED (backend) |
+| BUG-01 | 🔴 CRITICAL | 7 | Backend auth 503 (`error code: 1102`) — registration/login intermittently fail | BE | ⚠️ NOT REPRODUCED 2026-09-15 — probe 90/90 OK + smoke 4/4×2; ver `docs/QA-BUG01-RETEST.md`; formal re-open pending Staff/BE |
 | BUG-02 | 🟠 HIGH | 6 | WebSocket reconnect wipes `listeners` Map — DM reconnect silently breaks | FE | ☑ FIXED |
 | BUG-03 | 🟡 MEDIUM | 9 | Conversation delete was context-menu-only | FE | ☑ FIXED (visible touch/hover control + keyboard route) |
 | BUG-04 | 🟡 MEDIUM | 10 | `lastSeen` not updated on incoming messages in DM chat | FE | ☑ FIXED |
