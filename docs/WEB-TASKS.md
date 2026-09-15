@@ -103,7 +103,7 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 | # | Task | Owner | Status | Notes |
 |---|------|-------|--------|-------|
 | 13 | Room list screen (paginated, create-room modal) | FE | ☑ DONE | `RoomsPage.tsx` (255 lines) + `rooms.css` (387 lines); typecheck/lint/85 tests pass |
-| 14 | Room chat screen (history, typing, join/leave, presence) | FE | ☑ DONE | `RoomChatPage.tsx` and `/room/:roomId` implemented; live QA remains blocked/not run |
+| 14 | Room chat screen (history, typing, join/leave, presence) | FE | ☑ DONE | `RoomChatPage.tsx` and `/room/:roomId` implemented; ✅ live QA vs móvil real 2026-09-15 (`docs/QA-M2-INTEROP.md`) |
 | 15 | Badges + polling for unread chats & pending requests | FE | ☑ DONE | `useSectionBadges` — 30s polling + focus refresh, 99+ cap |
 | 20 | QA regression suite: parity matrix checklist per release | QA | ☑ DONE | `npm run qa:regression` (92 tests: 85 unit + 5 interop + 2 reconnect) + `npm run smoke`; docs en `docs/QA-REGRESSION.md`. Interop ahora reproducible (shims en-repo) |
 
