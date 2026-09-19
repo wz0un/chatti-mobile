@@ -122,7 +122,7 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 
 | # | Task | Owner | Status | Notes |
 |---|------|-------|--------|-------|
-| 22 | Web Push notifications: Service Worker + VAPID + backend endpoint | BE + FE | ◐ IN PROGRESS | FE done: SW + VAPID subscription + `/api/auth/webpush` contract + Profile toggle (109 tests, build OK). BE endpoint pending in Worker repo. Spec: `docs/WEB-PUSH.md` |
+| 22 | Web Push notifications: Service Worker + VAPID + backend endpoint | BE + FE | ☑ FE DONE · BE PENDING | FE: SW + VAPID subscription + Profile toggle + `/api/auth/webpush` contract (109 tests, build OK). BE: Worker endpoint + VAPID delivery remain in the backend repo — spec: `docs/WEB-PUSH.md` |
 | 23 | Consolidate mobile onto `shared/` (remove duplicated logic) | FE + QA | ☐ TODO | QA-gated, optional for web delivery |
 
 ---
