@@ -22,6 +22,54 @@ Instrucciones de obligado cumplimiento para cualquier agente (CTO, FE, BE, QA, D
 6. Si un agente detecta que está a punto de commitear en `master`, debe detenerse y crear la rama/el merge adecuado; reportar antes que forzar nada.
 7. Los agentes leen este archivo al inicio de cada sesión. Las instrucciones de `docs/*` y `.mece/*` están subordinadas a esta política.
 
+
+## Definition of Done — QA + CTO (CRÍTICA — no negociable)
+
+Una tarea **NO está terminada** por el hecho de que el código esté implementado, compile, pase CI, tenga tests automatizados en verde o haya sido mergeada a `dev`.
+
+Para poder marcar una task como **DONE / COMPLETED** deben existir los dos sign-offs:
+
+1. **QA:** validación funcional de los criterios de aceptación, incluyendo pruebas manuales/funcionales cuando corresponda y evidencia de los resultados.
+2. **CTO/Staff:** revisión y aprobación técnica del resultado y de la evidencia de QA.
+
+Hasta que ambos estén confirmados, la task debe permanecer abierta (por ejemplo, `IN PROGRESS`, `QA` o `BLOCKED`) y **no debe presentarse como completada en Trello, GitHub, STATUS.md ni en los reportes de avance**.
+
+Los tests automatizados son evidencia complementaria; **no sustituyen la validación de QA ni el sign-off del CTO/Staff**.
+
+## Política de ramas por tipo de trabajo
+
+Cada desarrollo debe comenzar en una **rama nueva y específica**, creada desde la base correcta:
+
+| Tipo | Rama | Base |
+|------|------|------|
+| Nueva funcionalidad | `feature/<nombre>` | `dev` |
+| Bug de desarrollo | `bugfix/<nombre>` | `dev` |
+| Refactor/mantenimiento | `chore/<nombre>` | `dev` |
+| Hotfix de producción | `hotfix/<nombre>` | `master` |
+| Documentación/proceso | `docs/<nombre>` o `chore/<nombre>` | `dev` |
+
+**No se debe trabajar directamente sobre `dev` para una tarea nueva.** La rama de trabajo se fusiona a `dev` mediante PR después de completar la revisión correspondiente. Los hotfix de producción son la excepción controlada: nacen de `master`, se validan, y vuelven a `master` mediante PR; después deben sincronizarse de vuelta a `dev` para evitar divergencia.
+
+## Trazabilidad y documentación (CRÍTICA)
+
+Todo cambio relevante debe quedar trazado en la documentación del repositorio, siguiendo el patrón existente. Como mínimo, cuando aplique, actualizar:
+
+- `STATUS.md` para estado/progreso y bloqueos.
+- Documentación específica de la feature o QA en `docs/*`.
+- Evidencia de pruebas: qué se probó, resultado, entorno y fecha.
+- PR/commit vinculados a la tarea.
+- Trello con el estado real y los criterios de salida.
+
+**No se considera trazado un cambio únicamente porque exista el commit.** La documentación debe permitir reconstruir qué se hizo, por qué, qué se validó, quién dio el sign-off y qué queda pendiente.
+
+### Regla de promoción
+
+El flujo normal es:
+
+`feature/bugfix/chore/docs -> dev -> QA -> CTO/Staff -> PR dev -> master -> producción`
+
+Nunca se debe saltar QA/CTO para declarar una tarea terminada o promocionarla a producción. Un PR verde significa que los checks técnicos pasan; **no significa automáticamente que la tarea esté aprobada funcionalmente**.
+
 ## Alcance de edición
 
 - La app móvil (`.expo/` excepciones aparte) `App.js`, `src/`, `index.js`, `app.json`, `eas.json` es **la fuente de producción**: no modificar sin aprobación explícita del Staff (solo correcciones de bugs documentados con sign-off).
