@@ -1,0 +1,32 @@
+name = "chatti-workers"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Durable Objects bindings
+[[durable_objects.bindings]]
+name = "CHAT_ROOMS"
+class_name = "ChatRoom"
+
+[[durable_objects.bindings]]
+name = "DIRECT_MESSAGES"
+class_name = "DirectMessage"
+
+# KV namespace for room registry
+[[kv_namespaces]]
+binding = "ROOMS_KV"
+id = "1824a2df4c6e466a9034a7b1ccb59185"
+
+# Migrations para Durable Objects
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ChatRoom"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["DirectMessage"]
+
+# Variables de entorno
+[vars]
+ENVIRONMENT = "production"
+

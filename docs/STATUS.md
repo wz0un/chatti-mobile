@@ -6,6 +6,25 @@ Updated: 2026-09-19 (Task 22 FE shipped + QA PR #27 + DevOps pipeline fix)
 
 `chatti-mobile` — Expo SDK 54, React Native 0.81.5, React 19.1.0
 
+## Backend (integrated in this repo)
+
+**Monorepo:** el backend de Cloudflare Workers se migró del repo independiente
+`wz0un/chatti` (workers/) a `chatti-mobile/backend/` — chore/monorepo-backend.
+El repo `chatti` queda como referencia/archivado (solo `master`, 1 commit;
+contenía también un frontend CRA obsoleto y un server Socket.IO deprecado que
+NO se migran).
+
+- Worker de producción `chatti-workers` en `https://chatti-workers.wz0un.workers.dev`
+- Config: `backend/wrangler.toml` (DOs `ChatRoom`, `DirectMessage`; KV `ROOMS_KV`)
+- Tests: `backend/` → `pnpm test` (vitest + `@cloudflare/vitest-plugin`, 6/6)
+- CI: `.github/workflows/backend.yml` — **solo tests** en `backend/**`
+  (push/PR a dev/master). El deploy automático queda pendiente de DevOps/Staff
+  para configurar entornos Cloudflare (DOs staging, secretos).
+- Auth: device-based, no tokens, `userId` as parameter
+- Durable Objects: `ChatRoom` (rooms), `DirectMessage` (DMs)
+- KV: rooms, users, contacts, conversations
+- Known issues: ver `docs/BACKEND-AUDIT.md` y `docs/QA-BUG01-RETEST.md`
+
 ## Branches
 
 | Branch | Purpose | Key files |
@@ -83,6 +102,7 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 ## Blockers
 
 1. **BUG-01 (CRITICAL, backend):** ⚠️ **NOT REPRODUCED en sesión QA 2026-09-15** — probe dedicado 90/90 intentos OK (3 rondas × 10 register+login), smoke 4/4 ×2, cero 503/1102. Veredicto: `docs/QA-BUG01-RETEST.md`. Sigue pendiente re-apertura formal del gate de auth M1 (Staff/BE) y confirmación BE de la causa raíz.
+2. **Backend deploy automático:** pendiente de DevOps/Staff — configurar DOs/entornos de staging en Cloudflare antes de habilitar el deploy de `backend/` desde CI.
 2. **Task 22 (backend web, BLOQUEA la feature end-to-end):** `POST /api/auth/webpush` **no existe** en el producción (`chatti-workers`) — verificado live 2026-09-19 (devuelve el JSON raíz con HTTP 200). El toggle de Web Push en Profile fallará con "Could not update push notifications" hasta que el backend implemente registro/borrado de suscripciones + keypair VAPID + envío. Contract en `docs/WEB-PUSH.md` §2. Fuera del repo actual (Worker repo), requiere Staff/BE.
 
 ## Fixed (committed)
