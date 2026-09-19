@@ -48,6 +48,7 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | Deep-linkable routes | ❌ Not started | T16 |
 | RTL/a11y | ❌ Not started | T18 |
 | Dark mode | ❌ Not started | T19 |
+| Web Push notifications (SW + VAPID + toggle) | ✅ FE done — BE endpoint pending | T22 |
 
 ### Cloudflare deployment (on `dev` branch)
 - `chatti-web` Worker: deployed (production)
@@ -95,6 +96,7 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md`
 | `WEB-ROADMAP.md` | M0–M4 milestones with status |
 | `WEB-TASKS.md` | 24 tasks with ownership and status |
 | `WEB-PARITY.md` | 26-feature mobile vs web matrix |
+| `WEB-PUSH.md` | Task 22 Web Push: BE/FE contract, payload schema, SW behavior |
 | `QA-REPORT.md` | QA gate report with bugs |
 | `CLOUDFLARE-DEPLOYMENT.md` | Cloudflare deployment config |
 | `BACKEND-AUDIT.md` | Deep backend technical audit (separate repo context) |

@@ -17,6 +17,7 @@ export const ENDPOINTS = {
   authRegister: '/api/auth/register',
   authLogin: '/api/auth/login',
   authUpdatePushToken: '/api/auth/update-push-token',
+  authWebPush: '/api/auth/webpush',
   authDelete: '/api/auth/delete',
   usersFind: '/api/users/find',
   usersByDeviceId: '/api/users/by-device-id',
@@ -60,6 +61,46 @@ export interface LoginPayload {
 export interface AuthResponse {
   success: boolean;
   user?: User;
+  error?: string;
+}
+
+// --- Web Push ---
+
+/**
+ * Serialized form of a Web Push `PushSubscription` as produced by
+ * `PushSubscription.toJSON()` (endpoint + optional keys). Sent to the
+ * backend when registering a browser for push. Contract: docs/WEB-PUSH.md.
+ */
+export interface WebPushSubscription {
+  endpoint: string;
+  expirationTime: number | null;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
+export type WebPushAction = 'register' | 'remove';
+
+export type WebPushRegisterPayload = {
+  userId: string;
+  deviceId: string;
+  action: 'register';
+  subscription: WebPushSubscription;
+};
+
+export type WebPushRemovePayload = {
+  userId: string;
+  deviceId: string;
+  action: 'remove';
+  /** Exact subscription endpoint previously registered (identifies the device on the backend). */
+  endpoint: string;
+};
+
+export type WebPushPayload = WebPushRegisterPayload | WebPushRemovePayload;
+
+export interface WebPushResponse {
+  success: boolean;
   error?: string;
 }
 
