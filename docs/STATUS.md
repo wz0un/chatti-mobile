@@ -61,30 +61,31 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | M0 Foundations | Unit tests + build | ✅ PASS (85/85 tests, 300kB JS / 94kB gzip) |
 | M0 Foundations | Encryption interop | ✅ PASS (byte-identical with mobile) |
 | M1 Core chat | Fresh-session DM round-trip | ✅ PASS |
-| M1 Core chat | Auth (register/login) | ⚠️ BLOCKED (backend 503) |
+| M1 Core chat | Auth (register/login) | ✅ RE-CHECK 2026-09-15: probe BUG-01 90/90 OK + smoke 4/4×2 — BUG-01 no reproducido (ver `docs/QA-BUG01-RETEST.md`); re-apertura formal del gate pendiente Staff/BE |
 | M1 Core chat | DM reconnect | ✅ FIXED (BUG-02: listener wipe resolved) |
 | M1 Core chat | Contacts screen | ✅ DONE (Task 11 implemented + validated) |
 | M1 Core chat | Profile controls + conversation delete | ✅ DONE (Task 12 + BUG-03; typecheck/lint/85 tests pass) |
-| M1 Core chat | Full QA gate | ⚠️ BLOCKED (BUG-01 backend-only remaining) |
+| M1 Core chat | Full QA gate | ⚠️ Blocked sin confirmar — BUG-01 no reproducido en sesión 2026-09-15; queda validación Staff/formal |
 | M2 Rooms | Functional QA | ⚠️ NOT READY (live room/contact coverage and mobile interop not run) |
+| Regression suite | Task 20 (QA regression) | ✅ DONE — `npm run qa:regression` = 92/92 (85 unit + 5 interop + 2 reconnect), reproducible en clone limpio. Ver `docs/QA-REGRESSION.md` |
 
-Full report: `docs/QA-REPORT.md`
+Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md`
 
 ## Blockers
 
-1. **BUG-01 (CRITICAL):** Backend auth 503 — registration/login intermittently fail. Backend-side issue. Affects mobile too.
+1. **BUG-01 (CRITICAL, backend):** ⚠️ **NOT REPRODUCED en sesión QA 2026-09-15** — probe dedicado 90/90 intentos OK (3 rondas × 10 register+login), smoke 4/4 ×2, cero 503/1102. Veredicto: `docs/QA-BUG01-RETEST.md`. Sigue pendiente re-apertura formal del gate de auth M1 (Staff/BE) y confirmación BE de la causa raíz.
 
 ## Fixed (committed)
 
-- **BUG-02 (HIGH):** WebSocket reconnect wipes `listeners` Map — fixed in `shared/ws/DirectMessageSocket.ts` (commit `673832a`)
+- **BUG-02 (HIGH):** WebSocket reconnect wipes `listeners` Map — fixed in `shared/ws/DirectMessageSocket.ts` (commit `673832a`); regression cubierta por `npm run qa:reconnect`
 - **BUG-04 (MEDIUM):** `lastSeen` not updated on incoming DM messages — fixed in `web/src/features/dm/DirectMessagePage.tsx` (commit `673832a`)
 - **BUG-06 (LOW):** i18n key mismatch in empty-search subtext — fixed in `web/src/features/conversations/ConversationsPage.tsx` (commit `673832a`)
 
 ## Next steps
 
-1. Restore the Worker checkout and resolve BUG-01 (auth 503/1102) — BE
-2. Re-run live contacts/rooms and web↔mobile room interoperability QA — QA
-3. Publish `chatti-web-staging` only after an M2 staging-safe QA verdict; production remains out of scope
+1. Confirmar formalmente BUG-01 (backend) y re-aperturar el gate de auth de M1 — Staff/BE
+2. Re-run live contacts/rooms and web↔mobile room interoperability QA — QA (M2)
+3. Publicar `chatti-web-staging` only after an M2 staging-safe QA verdict; production remains out of scope
 
 ## Docs index
 

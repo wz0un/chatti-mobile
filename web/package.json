@@ -11,7 +11,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",
-    "smoke": "vitest run --config vitest.smoke.config.ts"
+    "smoke": "vitest run --config vitest.smoke.config.ts",
+    "qa:interop": "vitest run --config scripts/interop.vitest.config.ts",
+    "qa:reconnect": "vitest run --config scripts/reconnect.vitest.config.ts",
+    "qa:bug01": "vitest run --config scripts/bug01.vitest.config.ts",
+    "qa:bug01:stress": "BUG01_STRESS=1 vitest run --config scripts/bug01.vitest.config.ts",
+    "qa:regression": "vitest run && vitest run --config scripts/interop.vitest.config.ts && vitest run --config scripts/reconnect.vitest.config.ts"
   },
   "dependencies": {
     "react": "^19.3.0",
