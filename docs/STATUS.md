@@ -1,6 +1,6 @@
 # Chatti Mobile — Current Status
 
-Updated: 2026-09-11 (Task 12 and BUG-03 completed; M2 QA incomplete)
+Updated: 2026-09-19 (Task 22 FE shipped + QA PR #27 + DevOps pipeline fix)
 
 ## Repository
 
@@ -54,6 +54,13 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 - `chatti-web` Worker: deployed (production)
 - `chatti-web-staging` Worker: deployed (staging)
 - Config: `web/wrangler.jsonc`, `web/public/_headers`
+- **DevOps (2026-09-19): Workers Builds CI/CD arreglado.** Causa raíz del fallo sistémico
+  (todos los builds fallaban en ~2 s, incluidos los de `master`):
+  1. `web/pnpm-workspace.yaml` roto — eliminado en `master` (commit `756780b`).
+  2. `tsconfig.json` raíz extendía `expo/tsconfig.base` (no resoluble en el build de CF) —
+     inlineado en `master` (commit `f7c896f`).
+  Build de producción `51b03b57` **SUCCESS** sobre `master` `f7c896f`
+  (`npx wrangler deploy`, 2026-09-19 21:03). **Pendiente reintroducir ambos fixes en `dev`**.
 
 ## QA status
 
@@ -69,12 +76,14 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | M1 Core chat | Full QA gate | ⚠️ Blocked sin confirmar — BUG-01 no reproducido en sesión 2026-09-15; queda validación Staff/formal |
 | M2 Rooms | Functional QA | ⚠️ NOT READY (live room/contact coverage and mobile interop not run) |
 | Regression suite | Task 20 (QA regression) | ✅ DONE — `npm run qa:regression` = 92/92 (85 unit + 5 interop + 2 reconnect), reproducible en clone limpio. Ver `docs/QA-REGRESSION.md` |
+| Task 22 Web Push — FE | PR #27 (`dev`→`master`) | ✅ QA CODE PASS — typecheck/lint/build OK, 109/109 tests, smoke 4/4, interop 5/5, i18n 11/11×4; merge simulado en CI: build+109 tests OK y SDK 57 conservado. ⛔ **Función NO operativa end-to-end**: backend `POST /api/auth/webpush` + VAPID pendientes. **Merge pendiente de aprobación Staff una vez el pipeline quede verde.** Ver `docs/QA-PR27-TASK22.md` |
 
-Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md`
+Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #27: `docs/QA-PR27-TASK22.md`
 
 ## Blockers
 
 1. **BUG-01 (CRITICAL, backend):** ⚠️ **NOT REPRODUCED en sesión QA 2026-09-15** — probe dedicado 90/90 intentos OK (3 rondas × 10 register+login), smoke 4/4 ×2, cero 503/1102. Veredicto: `docs/QA-BUG01-RETEST.md`. Sigue pendiente re-apertura formal del gate de auth M1 (Staff/BE) y confirmación BE de la causa raíz.
+2. **Task 22 (backend web, BLOQUEA la feature end-to-end):** `POST /api/auth/webpush` **no existe** en el producción (`chatti-workers`) — verificado live 2026-09-19 (devuelve el JSON raíz con HTTP 200). El toggle de Web Push en Profile fallará con "Could not update push notifications" hasta que el backend implemente registro/borrado de suscripciones + keypair VAPID + envío. Contract en `docs/WEB-PUSH.md` §2. Fuera del repo actual (Worker repo), requiere Staff/BE.
 
 ## Fixed (committed)
 
@@ -84,9 +93,11 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md`
 
 ## Next steps
 
-1. Confirmar formalmente BUG-01 (backend) y re-aperturar el gate de auth de M1 — Staff/BE
-2. Re-run live contacts/rooms and web↔mobile room interoperability QA — QA (M2)
-3. Publicar `chatti-web-staging` only after an M2 staging-safe QA verdict; production remains out of scope
+1. **PR #27 (`dev`→`master`):** merge pendiente de Staff. Pipeline de producción ya verde (DevOps); merge simulado QA OK. Tras el merge, `chatti-web` se desplegará con el código de Task 22 (web push) sin tocar la app móvil (SDK 57 conservado).
+2. **Sync CI fixes `master`→`dev`:** traer a `dev` el tsconfig inline + eliminación de `web/pnpm-workspace.yaml` para que `dev` también buildee en CF (evitar divergencia).
+3. Confirmar formalmente BUG-01 (backend) y re-aperturar el gate de auth de M1 — Staff/BE
+4. Re-run live contacts/rooms and web↔mobile room interoperability QA — QA (M2)
+5. Publicar `chatti-web-staging` only after an M2 staging-safe QA verdict; production remains out of scope
 
 ## Docs index
 
@@ -97,6 +108,7 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md`
 | `WEB-TASKS.md` | 24 tasks with ownership and status |
 | `WEB-PARITY.md` | 26-feature mobile vs web matrix |
 | `WEB-PUSH.md` | Task 22 Web Push: BE/FE contract, payload schema, SW behavior |
+| `QA-PR27-TASK22.md` | QA verdict PR #27 (Task 22) — gates, merge sim, pipeline, blockers |
 | `QA-REPORT.md` | QA gate report with bugs |
 | `CLOUDFLARE-DEPLOYMENT.md` | Cloudflare deployment config |
 | `BACKEND-AUDIT.md` | Deep backend technical audit (separate repo context) |
