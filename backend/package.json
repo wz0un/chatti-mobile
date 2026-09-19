@@ -1,0 +1,32 @@
+{
+    "name": "chatti-workers",
+    "version": "2.2.0",
+    "description": "Cloudflare Workers backend for Chatti with SQLite persistence",
+    "main": "src/index.js",
+    "type": "module",
+    "scripts": {
+        "dev": "wrangler dev",
+        "deploy": "wrangler deploy",
+        "tail": "wrangler tail",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "keywords": [
+        "cloudflare",
+        "workers",
+        "durable-objects",
+        "chat",
+        "sqlite"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "bcryptjs": "^2.4.3"
+    },
+    "devDependencies": {
+        "@cloudflare/vitest-plugin": "^1.1.13",
+        "esbuild": "^0.28.1",
+        "vitest": "^4.1.0",
+        "wrangler": "^3.78.0"
+    }
+}
