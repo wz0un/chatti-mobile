@@ -219,6 +219,20 @@ export const translations: Record<LanguageCode, TranslationBundle> = {
         fr: 'French',
         select: 'Select Language',
       },
+      webPush: {
+        title: 'Push Notifications',
+        hint: 'Get notified about new room and chat messages, even when Chat-Ti is closed.',
+        statusEnabled: 'On',
+        statusDisabled: 'Off',
+        enable: 'Enable notifications',
+        disable: 'Disable notifications',
+        busy: 'Updating...',
+        unsupported: 'Push notifications are not supported in this browser.',
+        permissionDenied:
+          'Notifications are blocked in the browser. Allow them from the site settings, then try again.',
+        vapidMissing: 'Web Push is not configured yet. Please try again later.',
+        error: 'Could not update push notifications.',
+      },
     },
     rooms: {
       headerTitle: 'Chat Rooms',
@@ -458,6 +472,20 @@ export const translations: Record<LanguageCode, TranslationBundle> = {
         fr: 'Francés',
         select: 'Seleccionar Idioma',
       },
+      webPush: {
+        title: 'Notificaciones Push',
+        hint: 'Recibe avisos de mensajes nuevos en salas y chats, incluso con Chat-Ti cerrado.',
+        statusEnabled: 'Activadas',
+        statusDisabled: 'Desactivadas',
+        enable: 'Activar notificaciones',
+        disable: 'Desactivar notificaciones',
+        busy: 'Actualizando...',
+        unsupported: 'Este navegador no admite notificaciones push.',
+        permissionDenied:
+          'Las notificaciones están bloqueadas en el navegador. Permítelas desde los ajustes del sitio e inténtalo de nuevo.',
+        vapidMissing: 'Web Push aún no está configurado. Inténtalo de nuevo más tarde.',
+        error: 'No se pudieron actualizar las notificaciones.',
+      },
     },
     rooms: {
       headerTitle: 'Salas de Chat',
@@ -678,6 +706,20 @@ export const translations: Record<LanguageCode, TranslationBundle> = {
         fr: 'الفرنسية',
         select: 'اختر اللغة',
       },
+      webPush: {
+        title: 'إشعارات الدفع',
+        hint: 'احصل على تنبيهات عند وصول رسائل جديدة إلى الغرف والمحادثات حتى عندما يكون تطبيق شاتي مغلقاً.',
+        statusEnabled: 'مفعّلة',
+        statusDisabled: 'معطّلة',
+        enable: 'تفعيل الإشعارات',
+        disable: 'تعطيل الإشعارات',
+        busy: 'جارٍ التحديث...',
+        unsupported: 'هذا المتصفح لا يدعم إشعارات الدفع.',
+        permissionDenied:
+          'الإشعارات محظورة في المتصفح. اسمح بها من إعدادات الموقع ثم حاول مجدداً.',
+        vapidMissing: 'الإشعارات غير مكوّنة بعد. حاول مرة أخرى لاحقاً.',
+        error: 'تعذر تحديث الإشعارات.',
+      },
     },
     rooms: {
       headerTitle: 'غرف الدردشة',
@@ -897,6 +939,20 @@ export const translations: Record<LanguageCode, TranslationBundle> = {
         ar: 'Arabe',
         fr: 'Français',
         select: 'Choisir la langue',
+      },
+      webPush: {
+        title: 'Notifications push',
+        hint: 'Soyez averti des nouveaux messages dans les salons et les chats, même lorsque Chat-Ti est fermé.',
+        statusEnabled: 'Activées',
+        statusDisabled: 'Désactivées',
+        enable: 'Activer les notifications',
+        disable: 'Désactiver les notifications',
+        busy: 'Mise à jour...',
+        unsupported: 'Ce navigateur ne prend pas en charge les notifications push.',
+        permissionDenied:
+          'Les notifications sont bloquées dans le navigateur. Autorisez-les depuis les paramètres du site, puis réessayez.',
+        vapidMissing: 'Les notifications push ne sont pas encore configurées. Réessayez plus tard.',
+        error: 'Impossible de mettre à jour les notifications.',
       },
     },
     rooms: {

@@ -23,6 +23,9 @@ import {
   type RoomMessagesResponse,
   type RoomsResponse,
   type StartDmResponse,
+  type WebPushPayload,
+  type WebPushResponse,
+  type WebPushSubscription,
 } from './contracts';
 import type {
   Contact,
@@ -385,6 +388,47 @@ export class ApiService {
       body: JSON.stringify(payload),
     });
     return this.parseAuthResponse(response);
+  }
+
+  /**
+   * Register (or refresh) a Web Push subscription for a device — Task 22.
+   * Contract: docs/WEB-PUSH.md (BE endpoint `POST /api/auth/webpush`).
+   */
+  static async registerWebPush(
+    userId: string,
+    deviceId: string,
+    subscription: WebPushSubscription,
+  ): Promise<boolean> {
+    return this.webPushCall({ userId, deviceId, action: 'register', subscription });
+  }
+
+  /**
+   * Remove a Web Push subscription for a device — Task 22.
+   * Contract: docs/WEB-PUSH.md (BE endpoint `POST /api/auth/webpush`).
+   */
+  static async removeWebPush(userId: string, deviceId: string, endpoint: string): Promise<boolean> {
+    return this.webPushCall({ userId, deviceId, action: 'remove', endpoint });
+  }
+
+  private static async webPushCall(payload: WebPushPayload): Promise<boolean> {
+    const response = await fetch(`${this.baseUrl}${ENDPOINTS.authWebPush}`, {
+      method: 'POST',
+      headers: jsonHeaders,
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      let data: { error?: string } = {};
+      try {
+        data = (await response.json()) as { error?: string };
+      } catch {
+        /* non-JSON error body */
+      }
+      throw new Error(data.error ?? `HTTP error! status: ${response.status}`);
+    }
+
+    const data = (await response.json()) as WebPushResponse;
+    return data.success === true;
   }
 
   private static async parseAuthResponse(response: Response): Promise<AuthResponse> {
