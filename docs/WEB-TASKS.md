@@ -122,7 +122,7 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 
 | # | Task | Owner | Status | Notes |
 |---|------|-------|--------|-------|
-| 22 | Web Push notifications: Service Worker + VAPID + backend endpoint | BE + FE | ◐ IN PROGRESS | FE done: SW + VAPID subscription + `/api/auth/webpush` contract + Profile toggle (109 tests, build OK). BE endpoint pending in Worker repo. Spec: `docs/WEB-PUSH.md` |
+| 22 | Web Push notifications: Service Worker + VAPID + backend endpoint | BE + FE | ◐ IN PROGRESS | FE done (SW + VAPID subscription + `/api/auth/webpush` contract + Profile toggle, 109 tests/build OK). BE DONE en `backend/` (`WebPush.js` VAPID+aes128gcm RFC 8291 + endpoints `/api/auth/webpush` y `/api/auth/update-push-token` + hooks room/DM, tests 20/20). Pendiente: secrets VAPID (Staff), deploy y QA end-to-end. Spec: `docs/WEB-PUSH.md` |
 | 23 | Consolidate mobile onto `shared/` (remove duplicated logic) | FE + QA | ☐ TODO | QA-gated, optional for web delivery |
 
 ---
@@ -144,5 +144,5 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 ## Agent ground rules
 
 - **FE owns all `web/` and `shared/` code.** No mobile file under `App.js`, `src/`, `index.js`, `app.json`, `eas.json` may be modified without CTO sign-off (documented bug fixes only).
-- **BE only acts when web requires a backend change** (currently: BUG-01 backend fix; Task 22 — FE shipped, BE endpoint contract defined in `docs/WEB-PUSH.md`). Any backend change must keep mobile working — QA runs mobile regression.
+- **BE only acts when web requires a backend change** (currently: BUG-01 backend fix; Task 22 — FE shipped, BE endpoint implemented in `backend/`, pending infra secrets + QA). Any backend change must keep mobile working — QA runs mobile regression.
 - **QA validates both web functionality and mobile regression**, with the parity matrix in WEB-PARITY.md as the acceptance checklist.

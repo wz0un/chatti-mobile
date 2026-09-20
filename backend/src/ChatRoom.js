@@ -3,6 +3,8 @@
  * Cada sala de chat es una instancia de este Durable Object
  * Maneja WebSocket connections, broadcasting de mensajes y persistencia en SQLite
  */
+import { vapidConfigFromEnv, sendWebPush } from './WebPush.js';
+
 export class ChatRoom {
     constructor(state, env) {
         this.state = state;
@@ -64,6 +66,10 @@ export class ChatRoom {
 
     async fetch(request) {
         const url = new URL(request.url);
+
+        // /api/room/<roomId>/<endpoint> — capturar el id real de la sala para
+        // deep-links web (/room/:roomId) en las notificaciones push.
+        this.roomId = url.pathname.split('/')[3];
 
         // Upgrade HTTP request to WebSocket
         if (request.headers.get('Upgrade') === 'websocket') {
@@ -418,35 +424,35 @@ export class ChatRoom {
      */
     async sendPushNotificationsToOfflineUsers(message) {
         try {
-            // Get all users who have been in this room recently
-            const roomId = this.state.id.toString();
-            
-            // For now, we'll send to all registered users with push tokens
-            // In a real app, you'd track room membership
+            // El id real de la sala viene de la URL (/api/room/<roomId>/...);
+            // fallback al id del Durable Object si no se pudo capturar.
+            const roomId = this.roomId || this.state.id.toString();
+
+            // 1. Expo push (móvil) — fan-out amplio igual que antes
             const listOptions = {
                 prefix: 'user:device:',
                 limit: 100
             };
 
             const list = await this.env.ROOMS_KV.list(listOptions);
-            
+
             const notificationPromises = list.keys.map(async (key) => {
                 try {
                     const userData = await this.env.ROOMS_KV.get(key.name);
                     if (!userData) return;
-                    
+
                     const user = JSON.parse(userData);
-                    
+
                     // Don't send notification to the sender
                     if (user.fullUsername === message.username) return;
-                    
+
                     // Only send if user has push token
                     if (!user.expoPushToken || user.expoPushToken === 'expo-go-mock-token') return;
-                    
+
                     // Check if user is currently connected to this room
                     const isConnected = Array.from(this.users.keys()).includes(user.fullUsername);
                     if (isConnected) return; // Skip connected users
-                    
+
                     // Send push notification
                     await this.sendPushNotification(
                         user.expoPushToken,
@@ -458,11 +464,72 @@ export class ChatRoom {
                     console.error('Error sending notification to user:', error);
                 }
             });
-            
+
             await Promise.all(notificationPromises);
+
+            // 2. Web push (navegadores, Task 22) — solo si VAPID está configurado
+            const vapid = vapidConfigFromEnv(this.env);
+            if (vapid) {
+                await this.sendWebPushNotificationsToOfflineUsers(message, roomId, vapid);
+            }
         } catch (error) {
             console.error('Error sending push notifications:', error);
         }
+    }
+
+    /**
+     * Fan-out web push a todos los usuarios con suscripción de navegador que
+     * no estén conectados a la sala. Purgando suscripciones 410 Gone (el
+     * navegador ya la desregistró o el push service la invalidó).
+     */
+    async sendWebPushNotificationsToOfflineUsers(message, roomId, vapid) {
+        const senderId = message.userId || null;
+        const list = await this.env.ROOMS_KV.list({ prefix: 'user:', limit: 1000 });
+        const webPushKeys = list.keys.filter((key) => /^user:[^:]+:webpush:[^:]+$/.test(key.name));
+
+        const sendPromises = webPushKeys.map(async (key) => {
+            try {
+                const subscriptionRaw = await this.env.ROOMS_KV.get(key.name);
+                if (!subscriptionRaw) return;
+
+                const subscription = JSON.parse(subscriptionRaw);
+                const userId = key.name.split(':')[1];
+
+                if (userId === senderId) return;           // no al remitente
+                if (this.isUserConnectedByUserId(userId)) return; // no a conectados
+
+                const payload = {
+                    title: `💬 ${message.username}`,
+                    body:
+                        message.content.length > 50
+                            ? message.content.substring(0, 50) + '…'
+                            : message.content,
+                    tag: `room-${roomId}`,
+                    icon: '/icons/chatti-icon-192.png',
+                    data: {
+                        kind: 'room',
+                        roomId,
+                        timestamp: new Date(message.timestamp || Date.now()).toISOString()
+                    }
+                };
+
+                const result = await sendWebPush({ subscription, payload, vapid });
+                if (result.gone) {
+                    await this.env.ROOMS_KV.delete(key.name);
+                }
+            } catch (error) {
+                console.error('Error sending web push notification:', error);
+            }
+        });
+
+        await Promise.all(sendPromises);
+    }
+
+    isUserConnectedByUserId(userId) {
+        for (const user of this.users.values()) {
+            if (user.userId === userId) return true;
+        }
+        return false;
     }
 
     /**

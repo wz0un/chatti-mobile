@@ -3,6 +3,8 @@
  * Stores encrypted messages and relays them between two participants
  * Does NOT decrypt messages - acts as a secure relay
  */
+import { vapidConfigFromEnv, sendWebPush, listWebPushSubscriptions } from './WebPush.js';
+
 export class DirectMessage {
     constructor(state, env) {
         this.state = state;
@@ -359,7 +361,12 @@ export class DirectMessage {
 
             // 5. Send Push Notification if recipient is not connected
             if (!this.participants.has(message.recipientId)) {
-                this.sendPushNotificationToUser(message.recipientId, message.senderId, 'New Message');
+                this.sendPushNotificationToUser(
+                    message.recipientId,
+                    message.senderId,
+                    this.conversationId,
+                    'New encrypted message'
+                );
             }
         } catch (error) {
             console.error('Error persisting encrypted message:', error);
@@ -444,38 +451,78 @@ export class DirectMessage {
     }
 
     /**
-     * Send push notification to a specific user
+     * Send push notification to a specific user (Expo móvil + Web Push browser).
+     * El cuerpo del DM nunca incluye contenido: solo "nuevo mensaje cifrado"
+     * (los mensajes 1-a-1 son cifrados end-to-end en el cliente).
      */
-    async sendPushNotificationToUser(userId, senderId, title) {
+    async sendPushNotificationToUser(userId, senderId, conversationId, body) {
         try {
             // Get user data to find device/token
             // Since we don't have direct userId -> token mapping in memory, we check KV
-            // We need to look up by user ID. 
+            // We need to look up by user ID.
             // In index.js `registerUser` we added `user:id:${userId}` index.
 
             const userData = await this.env.ROOMS_KV.get(`user:id:${userId}`);
             if (!userData) return;
 
             const user = JSON.parse(userData);
-            if (!user.expoPushToken) return;
 
-            const message = {
-                to: user.expoPushToken,
-                sound: 'default',
-                title: title,
-                body: 'You have a new encrypted message',
-                data: { type: 'message', senderId, conversationId: this.state.id.toString() },
-            };
+            const sender = this.participants.get(senderId);
+            const senderName = sender?.username;
+            const title = senderName ? `🔒 ${senderName}` : 'New encrypted message';
 
-            await fetch('https://exp.host/--/api/v2/push/send', {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Accept-encoding': 'gzip, deflate',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(message),
-            });
+            const conversationIdForDeepLink =
+                conversationId || this.conversationId || this.state.id.toString();
+
+            // 1. Expo push (móvil)
+            if (user.expoPushToken && user.expoPushToken !== 'expo-go-mock-token') {
+                const message = {
+                    to: user.expoPushToken,
+                    sound: 'default',
+                    title,
+                    body,
+                    data: { type: 'message', senderId, conversationId: conversationIdForDeepLink },
+                };
+
+                await fetch('https://exp.host/--/api/v2/push/send', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Accept-encoding': 'gzip, deflate',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(message),
+                });
+            }
+
+            // 2. Web push (navegadores, Task 22)
+            const vapid = vapidConfigFromEnv(this.env);
+            if (!vapid) return;
+
+            const subs = await listWebPushSubscriptions(this.env, userId);
+            await Promise.all(
+                subs.map(async ({ deviceId, subscription }) => {
+                    try {
+                        const payload = {
+                            title,
+                            body,
+                            tag: `dm-${conversationIdForDeepLink}`,
+                            icon: '/icons/chatti-icon-192.png',
+                            data: {
+                                kind: 'dm',
+                                conversationId: conversationIdForDeepLink,
+                                conversationPartnerId: senderId,
+                            },
+                        };
+                        const result = await sendWebPush({ subscription, payload, vapid });
+                        if (result.gone) {
+                            await this.env.ROOMS_KV.delete(`user:${userId}:webpush:${deviceId}`);
+                        }
+                    } catch (error) {
+                        console.error('Error sending DM web push:', error);
+                    }
+                })
+            );
         } catch (error) {
             console.error('Error sending DM push notification:', error);
         }

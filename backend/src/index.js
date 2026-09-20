@@ -1,6 +1,11 @@
 import { ChatRoom } from './ChatRoom.js';
 import { DirectMessage } from './DirectMessage.js';
 import bcrypt from 'bcryptjs';
+import {
+    webPushKey,
+    listWebPushSubscriptions,
+    deleteWebPushSubscriptions,
+} from './WebPush.js';
 
 /**
  * Worker principal de Chatti
@@ -50,6 +55,16 @@ export default {
             // Delete user account
             if (url.pathname === '/api/auth/delete' && request.method === 'POST') {
                 return this.deleteUser(request, env, corsHeaders);
+            }
+
+            // Register/remove a browser Web Push subscription (Task 22)
+            if (url.pathname === '/api/auth/webpush' && request.method === 'POST') {
+                return this.handleWebPushSubscription(request, env, corsHeaders);
+            }
+
+            // Update the Expo push token of an existing user (mobile contract)
+            if (url.pathname === '/api/auth/update-push-token' && request.method === 'POST') {
+                return this.handleUpdatePushToken(request, env, corsHeaders);
             }
 
             // User search
@@ -586,6 +601,9 @@ export default {
                 await env.ROOMS_KV.delete(`user:username:${u.username}:${u.discriminator}`);
             }
 
+            // 4. Delete web push subscriptions (browsers) for this user
+            await deleteWebPushSubscriptions(env, userId);
+
             await env.ROOMS_KV.delete(`user:id:${userId}`);
 
             return new Response(JSON.stringify({
@@ -597,6 +615,158 @@ export default {
 
         } catch (error) {
             console.error('Error deleting user:', error);
+            return new Response(JSON.stringify({
+                success: false,
+                error: error.message
+            }), {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
+    },
+
+    /**
+     * Register or remove a browser Web Push subscription (Task 22).
+     * Body: { userId, deviceId, action: 'register'|'remove', subscription? }
+     * subscription: { endpoint, expirationTime?, keys: { p256dh, auth } }
+     * Almacenado en KV como `user:<userId>:webpush:<deviceId>` (ver WebPush.js).
+     */
+    async handleWebPushSubscription(request, env, corsHeaders) {
+        try {
+            const body = await request.json();
+            const { userId, deviceId, action, subscription } = body || {};
+
+            if (!userId || typeof userId !== 'string' || !deviceId || typeof deviceId !== 'string') {
+                return new Response(JSON.stringify({
+                    success: false,
+                    error: 'userId y deviceId son obligatorios'
+                }), {
+                    status: 400,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                });
+            }
+
+            if (!['register', 'remove'].includes(action)) {
+                return new Response(JSON.stringify({
+                    success: false,
+                    error: 'action debe ser "register" o "remove"'
+                }), {
+                    status: 400,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                });
+            }
+
+            const key = webPushKey(userId, deviceId);
+
+            if (action === 'remove') {
+                await env.ROOMS_KV.delete(key);
+                return new Response(JSON.stringify({ success: true }), {
+                    status: 200,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                });
+            }
+
+            if (!subscription || typeof subscription !== 'object' || typeof subscription.endpoint !== 'string') {
+                return new Response(JSON.stringify({
+                    success: false,
+                    error: 'subscription inválida: se espera { endpoint, keys: { p256dh, auth } }'
+                }), {
+                    status: 400,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                });
+            }
+
+            if (!/^https:\/\/.+/.test(subscription.endpoint)) {
+                return new Response(JSON.stringify({
+                    success: false,
+                    error: 'endpoint debe ser una URL https:// válida'
+                }), {
+                    status: 400,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                });
+            }
+
+            const { keys } = subscription;
+            if (!keys || typeof keys !== 'object' || !keys.p256dh || !keys.auth) {
+                return new Response(JSON.stringify({
+                    success: false,
+                    error: 'subscription inválida: faltan keys.p256dh / keys.auth'
+                }), {
+                    status: 400,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                });
+            }
+
+            // Una suscripción por usuario/dispositivo; TTL 180 días (refresco
+            // del navegador cuando el push service la da de baja).
+            await env.ROOMS_KV.put(key, JSON.stringify(subscription), { expirationTtl: 15552000 });
+
+            return new Response(JSON.stringify({ success: true }), {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        } catch (error) {
+            console.error('Error in webpush handler:', error);
+            return new Response(JSON.stringify({
+                success: false,
+                error: error.message
+            }), {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
+    },
+
+    /**
+     * Update the Expo push token of an existing user (mobile contract).
+     * Body: { userId, deviceId, expoPushToken } — espejo del contrato en
+     * src/services/AuthService.js. También refresca el índice user:device del
+     * propio dispositivo.
+     */
+    async handleUpdatePushToken(request, env, corsHeaders) {
+        try {
+            const body = await request.json();
+            const { userId, deviceId, expoPushToken } = body || {};
+
+            if (!userId || !deviceId || !expoPushToken) {
+                return new Response(JSON.stringify({
+                    success: false,
+                    error: 'userId, deviceId y expoPushToken son obligatorios'
+                }), {
+                    status: 400,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                });
+            }
+
+            const userDataString = await env.ROOMS_KV.get(`user:id:${userId}`);
+            if (!userDataString) {
+                return new Response(JSON.stringify({
+                    success: false,
+                    error: 'Usuario no encontrado'
+                }), {
+                    status: 404,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                });
+            }
+
+            const userData = JSON.parse(userDataString);
+            userData.expoPushToken = expoPushToken;
+            userData.deviceId = deviceId;
+
+            await Promise.all([
+                env.ROOMS_KV.put(`user:id:${userId}`, JSON.stringify(userData)),
+                env.ROOMS_KV.put(`user:device:${deviceId}`, JSON.stringify(userData)),
+            ]);
+
+            return new Response(JSON.stringify({
+                success: true,
+                message: 'Push token actualizado correctamente'
+            }), {
+                status: 200,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        } catch (error) {
+            console.error('Error updating push token:', error);
             return new Response(JSON.stringify({
                 success: false,
                 error: error.message

@@ -1,6 +1,6 @@
 # Chatti Web — Web Push Notifications (Task 22)
 
-Status: **FE implemented · BE contract defined (Worker change pending in the separate backend repo) · VAPID runbook documented (§5)**
+Status: **FE implemented · BE implemented en `backend/` (monorepo, PR #33) · VAPID runbook documented (§5) — pendiente de secrets/infra, deploy y QA end-to-end**
 
 Task: `docs/WEB-TASKS.md` #22 — *Web Push notifications: Service Worker + VAPID + backend endpoint* — Owner: **BE + FE**.
 
@@ -20,7 +20,24 @@ Task: `docs/WEB-TASKS.md` #22 — *Web Push notifications: Service Worker + VAPI
 
 No mobile file (`App.js`, `src/`, `index.js`, `app.json`, `eas.json`) was touched.
 
-## 2. Backend contract (for the separate Cloudflare Worker repo)
+## 1b. What shipped on the backend side (`backend/`, Task 22 BE)
+
+| Piece | Location | Notes |
+|-------|----------|-------|
+| VAPID + cifrado aes128gcm zero-dep | `backend/src/WebPush.js` | RFC 8188/8291/8292 sobre WebCrypto, fijado byte-a-byte al vector del RFC 8291 |
+| Endpoint `POST /api/auth/webpush` | `backend/src/index.js` | register/remove, validación de subscription, KV `user:<userId>:webpush:<deviceId>` |
+| Endpoint `POST /api/auth/update-push-token` | `backend/src/index.js` | Contrato móvil pendiente que también faltaba (AuthService.js) |
+| Purga al enviar `404/410 Gone` | `backend/src/ChatRoom.js` / `DirectMessage.js` | Auto-limpieza de suscripciones muertas |
+| Hook salas (room) | `backend/src/ChatRoom.js` | Fan-out web push a no conectados, deep link `/room/:id` |
+| Hook DMs (opaco) | `backend/src/DirectMessage.js` | Solo "🔒 <sender>/New encrypted message", deep link `/dm/:id` |
+| Purga al borrar cuenta | `backend/src/index.js` (`deleteUser`) | Elimina todas las suscripciones del usuario |
+| Tests | `backend/src/WebPush.test.js`, `index.test.js` | Known-answer RFC 8291 + round-trip + endpoints |
+
+> Nota: la crypto de `WebPush.js` está probada contra el vector del RFC 8291
+> (ciphertext idéntico byte a byte). Reto pendiente de infra: generar el keypair
+> VAPID y fijar los secrets del worker (ver §5).
+
+## 2. Backend contract (merged in `backend/`, monorepo)
 
 ### 2.1 Endpoint — `POST /api/auth/webpush`
 
@@ -166,13 +183,8 @@ Output (example):
 }
 ```
 
-> Nota: `backend/` está ya en el monorepo, pero `backend/src/WebPush.js`
-> todavía no está mergeado en `dev` (va en el PR del backend Web Push). Hasta
-> entonces, ejecuta el mismo snippet contra tu copia local del worker legacy
-> (`chatti/workers/`) o usa cualquier generador VAPID
-> (`npx web-push generate-vapid-keys --json`) — el formato es base64url
-> estándar y las funciones aceptan valores de la longitud correcta (65 bytes
-> pública / 32 bytes privada) sea cual sea su origen.
+> Nota: `backend/src/WebPush.js` ya está mergeado en `dev` (PR #33, monorepo).
+> El snippet de arriba funciona directamente desde el repo.
 
 Generate the **keys once, keep them privately**, and reuse them across worker
 and build. Do not commit them.
@@ -237,10 +249,18 @@ the Profile UI shows the *"not configured"* state.
 
 ## 8. Remaining backend work (Worker repo)
 
-1. Implement `POST /api/auth/webpush` (register/remove) storing the subscription
-   under `user:<userId>:webpush:<deviceId>` in KV.
+1. ~~Implement `POST /api/auth/webpush` (register/remove) storing the subscription
+   under `user:<userId>:webpush:<deviceId>` in KV.~~ **DONE** en `backend/`.
 2. Generate VAPID keypair as Worker secret; expose the public key for the build.
    → **Procedimiento completo en §5** (generación, secrets, `VITE_VAPID_PUBLIC_KEY`).
-3. Hook room events (and DM events, opaque body) to push recipients.
-4. Keep mobile (`expoPushToken` path) untouched — mobile regression must stay
-   green.
+3. ~~Hook room events (and DM events, opaque body) to push recipients.~~ **DONE**.
+4. ~~Keep mobile (`expoPushToken` path) untouched~~ **DONE** (camino Expo intacto;
+   `update-push-token` que también faltaba quedó implementado).
+
+Pendientes para cerrar Task 22 (DoD):
+1. **Staff/infra**: generar keypair VAPID y fijar los secrets del worker real
+   (`VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, ver §5); publicar
+   `VITE_VAPID_PUBLIC_KEY` en el build web.
+2. **QA end-to-end**: navegador → suscripción → mensaje en sala/DM → notificación
+   → click deep-link. Evidencia en `docs/QA-PR27-TASK22.md` o similar.
+3. **Sign-off** CTO/Staff antes de marcar DONE.
