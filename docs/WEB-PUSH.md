@@ -1,6 +1,6 @@
 # Chatti Web — Web Push Notifications (Task 22)
 
-Status: **FE implemented · BE implemented in `backend/` (monorepo) — pending VAPID secrets, deploy y QA end-to-end**
+Status: **FE implemented · BE implemented en `backend/` (monorepo, PR #33) · VAPID runbook documented (§5) — pendiente de secrets/infra, deploy y QA end-to-end**
 
 Task: `docs/WEB-TASKS.md` #22 — *Web Push notifications: Service Worker + VAPID + backend endpoint* — Owner: **BE + FE**.
 
@@ -37,7 +37,7 @@ No mobile file (`App.js`, `src/`, `index.js`, `app.json`, `eas.json`) was touche
 > (ciphertext idéntico byte a byte). Reto pendiente de infra: generar el keypair
 > VAPID y fijar los secrets del worker (ver §5).
 
-## 2. Backend contract (implemented in `backend/`)
+## 2. Backend contract (merged in `backend/`, monorepo)
 
 ### 2.1 Endpoint — `POST /api/auth/webpush`
 
@@ -142,32 +142,90 @@ Classic worker copied verbatim to `dist/` by Vite and registered at `/sw.js`
 - `message` → ping/pong handshake (`{type:'ping'}` → `{type:'pong'}`) for
   tooling/tests.
 
-## 5. VAPID keys
+## 5. VAPID keys — runbook (Staff/BE)
 
-- The **public key** must be injected at build time:
-  `VITE_VAPID_PUBLIC_KEY` (base64url, no padding). `web/.env.example`
-  documents it. Without it the Profile UI shows the *"not configured"* state.
-- The **private key** stays in the backend Worker (secret) and signs the VAPID
-  JWT; the matching public key is what ships in the web build.
-- Backend secrets a fijar por Staff/infra (mismo estilo que los secrets ya
-  usados en el worker):
+VAPID (RFC 8292) is how the app server proves its identity to the browser push
+services (FCM, Safari/APNs, Mozilla). Without it the browser refuses to
+subscribe and the push service rejects sends. Because of this, Web Push is
+**non-functional until the full keypair + secrets + build key exist** — the
+backend degrades gracefully (it registers subscriptions but does not send)
+and the Profile UI shows the *"not configured"* state.
 
-  ```bash
-  cd backend
-  wrangler secret put VAPID_SUBJECT      # mailto:admin@domain.com (mailto:/https: obligatorio)
-  wrangler secret put VAPID_PUBLIC_KEY   # base64url P-256 pública (65 bytes)
-  wrangler secret put VAPID_PRIVATE_KEY  # base64url P-256 privada (escalar 32 bytes)
-  ```
+### 5.1 What each key is for
 
-- Generación del keypair:
+| Key | Visibility | Purpose |
+|-----|-----------|---------|
+| `VAPID_PUBLIC_KEY` | Public (worker + web build) | P-256 public key (65 bytes, uncompressed, base64url). Signs the JWT server-side **and** is what the browser injects at subscribe time |
+| `VAPID_PRIVATE_KEY` | Secret — **backend only** | P-256 private scalar (32 bytes, base64url). Signs the `Authorization: vapid t=..., k=...` JWT that FCM validates on every send |
+| `VAPID_SUBJECT` | Public | `mailto:` or `https://` URI identifying the operator (goes inside the JWT) |
+| `VITE_VAPID_PUBLIC_KEY` | Public (web build env) | Same public key as `VAPID_PUBLIC_KEY`, baked into the web build |
 
-  ```bash
-  pnpm --dir backend exec node -e "import('./src/WebPush.js').then(async m => console.log(JSON.stringify(await m.generateVapidKeys(), null, 2)))"
-  ```
+> **Critical:** the public and private keys must be a **single generated pair**,
+> and the **same public key** must be used in the worker and the web build.
+> If they don't match, the browser receives the push but cannot decrypt it.
 
-- Sin secrets configurados, el worker degrada controladamente (registra
-  suscripciones pero no envía) — comportamiento documentado en
-  `backend/README.md`.
+### 5.2 Generate the keypair
+
+The repo's backend ships a zero-dependency generator (`backend/src/WebPush.js`,
+`generateVapidKeys()`, ECDSA P-256 export public/private as base64url).
+
+```bash
+cd backend
+node --input-type=module -e "import('./src/WebPush.js').then(async m => console.log(JSON.stringify(await m.generateVapidKeys(), null, 2)))"
+```
+
+Output (example):
+
+```json
+{
+  "publicKey": "BPAeKq…",
+  "privateKey": "xZOxu…"
+}
+```
+
+> Nota: `backend/src/WebPush.js` ya está mergeado en `dev` (PR #33, monorepo).
+> El snippet de arriba funciona directamente desde el repo.
+
+Generate the **keys once, keep them privately**, and reuse them across worker
+and build. Do not commit them.
+
+### 5.3 Store the secrets in the backend Worker
+
+Set three Worker secrets (values are prompted interactively; never hardcode
+them in `wrangler.toml`):
+
+```bash
+cd backend
+wrangler secret put VAPID_SUBJECT       # value: mailto:admin@chatti.app (mailto:/https: obligatorio)
+wrangler secret put VAPID_PUBLIC_KEY    # value: publicKey from §5.2
+wrangler secret put VAPID_PRIVATE_KEY   # value: privateKey from §5.2
+```
+
+Local dev (`wrangler dev`) reads them from `backend/.dev.vars` instead:
+
+```
+VAPID_SUBJECT=mailto:admin@chatti.app
+VAPID_PUBLIC_KEY=BPAeKq…
+VAPID_PRIVATE_KEY=xZOxu…
+```
+
+### 5.4 Publish the public key to the web build
+
+```bash
+cd web
+echo 'VITE_VAPID_PUBLIC_KEY=BPAeKq…' >> .env.local
+```
+
+`.env.local` is git-ignored; `.env.example` documents the variable. Without it
+the Profile UI shows the *"not configured"* state.
+
+> **Cloudflare deploy build:** Cloudflare Workers Builds clones the repo and
+> runs `pnpm run build` (Vite, mode=production) — `.env.local` **no existe** ahí.
+> Vite solo lee ficheros `.env*` del repo, no variables de entorno del shell, así
+> que la clave pública debe commitearse en `web/.env.production` (el valor es
+> público por diseño; es la misma clave que va en el worker). Si un día se
+> quisiera dejar de commitear, habría que inyectar la var en el trigger y cargarla
+> con `loadEnv` en `vite.config.ts`.
 
 ## 6. Browser behavior notes
 
@@ -191,19 +249,18 @@ Classic worker copied verbatim to `dist/` by Vite and registered at `/sw.js`
 
 ## 8. Remaining backend work (Worker repo)
 
-~~1. Implement `POST /api/auth/webpush` (register/remove) storing the subscription
+1. ~~Implement `POST /api/auth/webpush` (register/remove) storing the subscription
    under `user:<userId>:webpush:<deviceId>` in KV.~~ **DONE** en `backend/`.
-~~2. Generate VAPID keypair as Worker secret; expose the public key for the build.~~
-   Pendiente solo de infra (fijar secrets, ver §5).
-~~3. Hook room events (and DM events, opaque body) to push recipients.~~ **DONE**.
-~~4. Keep mobile (`expoPushToken` path) untouched — mobile regression must stay
-   green.~~ **DONE** (el camino Expo push se mantiene intacto; `update-push-token`
-   que también faltaba quedó implementado).
+2. Generate VAPID keypair as Worker secret; expose the public key for the build.
+   → **Procedimiento completo en §5** (generación, secrets, `VITE_VAPID_PUBLIC_KEY`).
+3. ~~Hook room events (and DM events, opaque body) to push recipients.~~ **DONE**.
+4. ~~Keep mobile (`expoPushToken` path) untouched~~ **DONE** (camino Expo intacto;
+   `update-push-token` que también faltaba quedó implementado).
 
 Pendientes para cerrar Task 22 (DoD):
-1. **Staff/infra**: generar keypair VAPID y fijar los secrets
-   `VAPID_SUBJECT`/`VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` en el entorno real;
-   publicar `VITE_VAPID_PUBLIC_KEY` en el build web.
+1. **Staff/infra**: generar keypair VAPID y fijar los secrets del worker real
+   (`VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, ver §5); publicar
+   `VITE_VAPID_PUBLIC_KEY` en el build web.
 2. **QA end-to-end**: navegador → suscripción → mensaje en sala/DM → notificación
    → click deep-link. Evidencia en `docs/QA-PR27-TASK22.md` o similar.
 3. **Sign-off** CTO/Staff antes de marcar DONE.
