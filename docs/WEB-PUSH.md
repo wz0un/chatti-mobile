@@ -226,6 +226,11 @@ the Profile UI shows the *"not configured"* state.
 > público por diseño; es la misma clave que va en el worker). Si un día se
 > quisiera dejar de commitear, habría que inyectar la var en el trigger y cargarla
 > con `loadEnv` en `vite.config.ts`.
+>
+> **Estado 2026-09-20:** `web/.env.production` ya contiene el `VITE_VAPID_PUBLIC_KEY`
+> válido (commit `f6097a8`, mergeado a `master` vía PR #27). DevOps solo debe fijar
+> los tres secrets del worker **emparejados** con esa misma clave pública
+> (`VAPID_PUBLIC_KEY` = la del `.env.production`; `VAPID_PRIVATE_KEY` = su par).
 
 ## 6. Browser behavior notes
 

@@ -1,10 +1,10 @@
 # Chatti Mobile — Current Status
 
-Updated: 2026-09-20 (Task 22 BE implemented en monorepo — endpoints VAPID/WebPush + tests)
+Updated: 2026-09-20 (PRs #40/#41/#27 merged — Task 22 deployed a `master`, dev alineado con master; pendiente secrets VAPID (DevOps) + QA e2e)
 
 ## Repository
 
-`chatti-mobile` — Expo SDK 54, React Native 0.81.5, React 19.1.0
+`chatti-mobile` — Expo SDK 57 (upgrade traído a `dev` vía PR #41; en producción desde #22/hotfix), React Native, React 19
 
 ## Backend (integrated in this repo)
 
@@ -18,8 +18,10 @@ NO se migran).
 - Config: `backend/wrangler.toml` (DOs `ChatRoom`, `DirectMessage`; KV `ROOMS_KV`)
 - Tests: `backend/` → `pnpm test` (vitest + `@cloudflare/vitest-plugin`, 20/20)
 - CI: `.github/workflows/backend.yml` — **solo tests** en `backend/**`
-  (push/PR a dev/master). El deploy automático queda pendiente de DevOps/Staff
-  para configurar entornos Cloudflare (DOs staging, secretos).
+  (push/PR a dev/master). La verificación "Test Workers backend" pasó
+  (PR #40: `allowBuilds` para pnpm ≥11 + `onlyBuiltDependencies` para CF 10.11.1).
+  El deploy automático queda pendiente de DevOps/Staff para configurar entornos
+  Cloudflare (DOs staging, secretos).
 - Auth: device-based, no tokens, `userId` as parameter
 - Durable Objects: `ChatRoom` (rooms), `DirectMessage` (DMs)
 - KV: rooms, users, contacts, conversations
@@ -29,9 +31,9 @@ NO se migran).
 
 | Branch | Purpose | Key files |
 |--------|---------|-----------|
-| `master` | Production mobile app + web scaffold | `App.js`, `src/`, `web/`, `shared/`, `docs/` |
-| `dev` | master + Cloudflare deployment config | `.opencode.jsonc`, `web/wrangler.jsonc`, `web/public/_headers`, `docs/CLOUDFLARE-DEPLOYMENT.md` |
-| `feature/web-implementation` | Full web app implementation (13 commits) | All `web/` and `shared/` code |
+| `master` | Producción (app móvil + web + backend monorepo) | `App.js`, `src/`, `web/`, `shared/`, `backend/`, `docs/` |
+| `dev` | Desarrollo activo — **alineado con `master`** (sync #41) | Igual que master |
+| Ramas de trabajo | `feature/*`, `bugfix/*`, `chore/*`, `docs/*` — se fusionan a `dev` vía PR y se eliminan | — |
 
 ## Backend (separate repo, NOT this one)
 
@@ -67,19 +69,18 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | Deep-linkable routes | ❌ Not started | T16 |
 | RTL/a11y | ❌ Not started | T18 |
 | Dark mode | ❌ Not started | T19 |
-| Web Push notifications (SW + VAPID + toggle) | ✅ FE done · BE done (endpoints + hooks + crypto VAPID/aes128gcm) — pendiente secrets VAPID + QA e2e | T22 |
+| Web Push notifications (SW + VAPID + toggle) | ✅ FE done · BE done · **MERGEADO a producción (#27)** — pendiente secrets VAPID (DevOps) + QA e2e | T22 |
 
-### Cloudflare deployment (on `dev` branch)
+### Cloudflare deployment (en `dev` y `master`, ya alineados)
 - `chatti-web` Worker: deployed (production)
 - `chatti-web-staging` Worker: deployed (staging)
 - Config: `web/wrangler.jsonc`, `web/public/_headers`
-- **DevOps (2026-09-19): Workers Builds CI/CD arreglado.** Causa raíz del fallo sistémico
-  (todos los builds fallaban en ~2 s, incluidos los de `master`):
-  1. `web/pnpm-workspace.yaml` roto — eliminado en `master` (commit `756780b`).
-  2. `tsconfig.json` raíz extendía `expo/tsconfig.base` (no resoluble en el build de CF) —
-     inlineado en `master` (commit `f7c896f`).
-  Build de producción `51b03b57` **SUCCESS** sobre `master` `f7c896f`
-  (`npx wrangler deploy`, 2026-09-19 21:03). **Pendiente reintroducir ambos fixes en `dev`**.
+- **Pipeline Workers Builds OK (2026-09-20):** causa raíz histórica — `web/pnpm-workspace.yaml`
+  roto (sin `packages:`) eliminado en `master` (`756780b`), y `tsconfig.json` raíz inlineado
+  (`f7c896f`). Ambos devuelven a `dev` vía sync #41. Además PR #40 reintrodujo el workspace
+  **corregido** con `packages: - .` + `onlyBuiltDependencies` (CF pnpm 10.11.1) y `allowBuilds`
+  (GH Actions pnpm 11.27): checks "Workers Builds: chatti-web/chatti-workers" y
+  "Test Workers backend" **verdes**.
 
 ## QA status
 
@@ -95,7 +96,7 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | M1 Core chat | Full QA gate | ⚠️ Blocked sin confirmar — BUG-01 no reproducido en sesión 2026-09-15; queda validación Staff/formal |
 | M2 Rooms | Functional QA | ⚠️ NOT READY (live room/contact coverage and mobile interop not run) |
 | Regression suite | Task 20 (QA regression) | ✅ DONE — `npm run qa:regression` = 92/92 (85 unit + 5 interop + 2 reconnect), reproducible en clone limpio. Ver `docs/QA-REGRESSION.md` |
-| Task 22 Web Push — FE | PR #27 (`dev`→`master`) | ✅ QA CODE PASS — typecheck/lint/build OK, 109/109 tests, smoke 4/4, interop 5/5, i18n 11/11×4; merge simulado en CI: build+109 tests OK y SDK 57 conservado. ⛔ **Función NO operativa end-to-end**: backend `POST /api/auth/webpush` + VAPID pendientes. **Merge pendiente de aprobación Staff una vez el pipeline quede verde.** Ver `docs/QA-PR27-TASK22.md` |
+| Task 22 Web Push — FE | PR #27 (`dev`→`master`) | ✅ **MERGEADO 2026-09-20** (`a6381f9`) tras pipeline verde (#40) y sync dev (#41). QA CODE PASS previo: typecheck/lint/build OK, 109/109 tests, smoke 4/4, interop 5/5, i18n 11/11×4. ⛔ **Función NO operativa end-to-end**: secrets VAPID pendientes (DevOps/Staff). Ver `docs/QA-PR27-TASK22.md` |
 
 Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #27: `docs/QA-PR27-TASK22.md`
 
@@ -103,7 +104,12 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 
 1. **BUG-01 (CRITICAL, backend):** ⚠️ **NOT REPRODUCED en sesión QA 2026-09-15** — probe dedicado 90/90 intentos OK (3 rondas × 10 register+login), smoke 4/4 ×2, cero 503/1102. Veredicto: `docs/QA-BUG01-RETEST.md`. Sigue pendiente re-apertura formal del gate de auth M1 (Staff/BE) y confirmación BE de la causa raíz.
 2. **Backend deploy automático:** pendiente de DevOps/Staff — configurar DOs/entornos de staging en Cloudflare antes de habilitar el deploy de `backend/` desde CI.
-2. **Task 22 (backend web) — ahora implementado en `backend/`:** `POST /api/auth/webpush` (register/remove, KV `user:<userId>:webpush:<deviceId>`), `POST /api/auth/update-push-token` (contrato móvil pendiente) y hooks de envío room/DM con VAPID + aes128gcm (`backend/src/WebPush.js`, RFC 8291 byte-a-byte, tests 20/20). **Pendiente de infra (Staff):** generar keypair VAPID y fijar secrets `VAPID_SUBJECT`/`VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` + publicar `VITE_VAPID_PUBLIC_KEY` en el build web. Sin secrets el worker degrada (registra pero no envía). Contract en `docs/WEB-PUSH.md`.
+2. **Task 22 (Web Push) — secrets VAPID (único bloqueo de la feature):** el código
+   (FE + `backend/` + build key) ya está en `master`. Pendiente de **DevOps**:
+   generar el par y fijar los secrets del worker `VAPID_SUBJECT`/`VAPID_PUBLIC_KEY`/
+   `VAPID_PRIVATE_KEY` (que **deben coincidir** con `VITE_VAPID_PUBLIC_KEY` ya horneado
+   en `web/.env.production`, salvo que se publique un par nuevo vía PR). Runbook: `docs/WEB-PUSH.md` §5.
+   Sin secrets el worker degrada (registra pero no envía).
 
 ## Fixed (committed)
 
@@ -113,8 +119,11 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 
 ## Next steps
 
-1. **PR #27 (`dev`→`master`):** merge pendiente de Staff. Pipeline de producción ya verde (DevOps); merge simulado QA OK. Tras el merge, `chatti-web` se desplegará con el código de Task 22 (web push) sin tocar la app móvil (SDK 57 conservado).
-2. **Sync CI fixes `master`→`dev`:** traer a `dev` el tsconfig inline + eliminación de `web/pnpm-workspace.yaml` para que `dev` también buildee en CF (evitar divergencia).
+1. **DevOps (Staff): secrets VAPID** en el worker de producción (`wrangler secret put`
+   `VAPID_SUBJECT`/`VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`, emparejados con `VITE_VAPID_PUBLIC_KEY`
+   de `web/.env.production`), y `.dev.vars` para `wrangler dev`. Runbook: `docs/WEB-PUSH.md` §5.
+2. **QA end-to-end Task 22:** navegador → suscripción → mensaje en sala/DM → notificación → click
+   deep-link, con los secrets puestos. Evidencia en `docs/QA-PR27-TASK22.md` + actualización de `docs/WEB-PUSH.md` §1.
 3. Confirmar formalmente BUG-01 (backend) y re-aperturar el gate de auth de M1 — Staff/BE
 4. Re-run live contacts/rooms and web↔mobile room interoperability QA — QA (M2)
 5. Publicar `chatti-web-staging` only after an M2 staging-safe QA verdict; production remains out of scope
