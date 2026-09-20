@@ -3,13 +3,21 @@
  * logout and delete account (mobile ProfileScreen essentials).
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 
 import type { User } from '@shared/types';
 import { ApiService } from '@shared/api/ApiService';
 import type { LanguageCode } from '@shared/i18n/translations';
 import { useI18n } from '../../lib/useI18n';
+import {
+  disableWebPush,
+  enableWebPush,
+  isPushSubscribed,
+  isWebPushSupported,
+  pushPermissionState,
+  type WebPushFailureReason,
+} from '../../lib/webPush';
 
 import './profile.css';
 
@@ -38,11 +46,49 @@ const languageLabel = (code: LanguageCode): string => {
   }
 };
 
+type WebPushState = 'loading' | 'on' | 'off' | 'blocked' | 'unsupported';
+
+const webPushFailureKey = (reason: WebPushFailureReason): string => {
+  switch (reason) {
+    case 'permission-denied':
+      return 'profile.webPush.permissionDenied';
+    case 'vapid-missing':
+      return 'profile.webPush.vapidMissing';
+    case 'unsupported':
+      return 'profile.webPush.unsupported';
+    default:
+      return 'profile.webPush.error';
+  }
+};
+
 export default function ProfilePage({ user, onLogout }: ProfilePageProps) {
   const { t, language, setLanguage } = useI18n();
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [webPushState, setWebPushState] = useState<WebPushState>('loading');
+  const [webPushBusy, setWebPushBusy] = useState(false);
+  const [webPushError, setWebPushError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    const refreshWebPushState = async () => {
+      if (!isWebPushSupported()) {
+        if (active) setWebPushState('unsupported');
+        return;
+      }
+      if (pushPermissionState() === 'denied') {
+        if (active) setWebPushState('blocked');
+        return;
+      }
+      const subscribed = await isPushSubscribed();
+      if (active) setWebPushState(subscribed ? 'on' : 'off');
+    };
+    void refreshWebPushState();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const copyDeviceId = async () => {
     try {
@@ -70,6 +116,28 @@ export default function ProfilePage({ user, onLogout }: ProfilePageProps) {
       console.error('Error deleting account:', error);
       setDeleteError(t('profile.deleteError'));
       setDeleting(false);
+    }
+  };
+
+  const handleWebPushToggle = async () => {
+    if (webPushBusy || webPushState === 'loading') return;
+    setWebPushBusy(true);
+    setWebPushError('');
+    try {
+      if (webPushState === 'on') {
+        const result = await disableWebPush(user.userId, user.deviceId);
+        if (result.ok) setWebPushState('off');
+        else setWebPushError(t(webPushFailureKey(result.reason)));
+      } else {
+        const result = await enableWebPush(user.userId, user.deviceId);
+        if (result.ok) setWebPushState('on');
+        else setWebPushError(t(webPushFailureKey(result.reason)));
+      }
+    } catch (error) {
+      console.error('Error toggling web push:', error);
+      setWebPushError(t('profile.webPush.error'));
+    } finally {
+      setWebPushBusy(false);
     }
   };
 
@@ -108,6 +176,46 @@ export default function ProfilePage({ user, onLogout }: ProfilePageProps) {
             ))}
           </select>
         </div>
+      </div>
+
+      <div className="profile__card">
+        <div className="profile__webPush">
+          <div className="profile__webPushInfo">
+            <p className="profile__webPushLabel">{t('profile.webPush.title')}</p>
+            <p className="profile__webPushHint">{t('profile.webPush.hint')}</p>
+          </div>
+          {webPushState !== 'unsupported' && webPushState !== 'loading' && (
+            <span className={`profile__webPushBadge profile__webPushBadge--${webPushState}`}>
+              {webPushState === 'on' || webPushState === 'blocked'
+                ? t('profile.webPush.statusEnabled')
+                : t('profile.webPush.statusDisabled')}
+            </span>
+          )}
+        </div>
+        {webPushState === 'unsupported' ? (
+          <p className="profile__webPushStatus">{t('profile.webPush.unsupported')}</p>
+        ) : (
+          <>
+            {webPushBusy || webPushState === 'loading' ? (
+              <p className="profile__webPushStatus">{t('profile.webPush.busy')}</p>
+            ) : (
+              <button
+                type="button"
+                className="profile__webPushButton"
+                onClick={handleWebPushToggle}
+                disabled={webPushState === 'blocked'}
+              >
+                {webPushState === 'on'
+                  ? t('profile.webPush.disable')
+                  : t('profile.webPush.enable')}
+              </button>
+            )}
+            {webPushState === 'blocked' && (
+              <p className="profile__webPushStatus">{t('profile.webPush.permissionDenied')}</p>
+            )}
+          </>
+        )}
+        {webPushError && <p className="profile__webPushError">{webPushError}</p>}
       </div>
 
       <button

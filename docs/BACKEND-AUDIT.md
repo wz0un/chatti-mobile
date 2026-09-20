@@ -1,5 +1,12 @@
 # Deep Technical Audit — Backend
 
+> **2026-09-19 (monorepo):** el backend se movió del repo `wz0un/chatti`
+> (carpeta `workers/`) a **`backend/`** de este repo. Las referencias de rutas
+> de este documento quedan mapeadas:
+> - Worker/ChatRoom/DirectMessage → `backend/src/{index,ChatRoom,DirectMessage}.js`
+> - Server Socket.IO legacy (`server/`, repo `chatti`) → **NO se migra**; deprecado.
+> - Frontend CRA legacy (`src/`, repo `chatti`) → **NO se migra**; superado por `web/` de este repo.
+
 ## 1) Architecture Overview
 
 ### Topology

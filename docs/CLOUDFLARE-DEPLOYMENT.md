@@ -1,7 +1,24 @@
 # Chatti Web — Cloudflare Deployment
 
-Status: **DEPLOYED (staging + production) 2026-08-11** · Owner: DevOps / Cloudflare · Updated: 2026-08-11
-Target app: `web/` (Vite + React 19 + TypeScript SPA) of `chatti-mobile`.
+Status: **DEPLOYED (staging + production) 2026-08-11** · Owner: DevOps / Cloudflare · Updated: 2026-09-19
+Target app: `web/` (Vite + React 19 + TypeScript SPA) of `chatti-mobile`. Backend: `backend/`.
+
+## 0. Monorepo layout
+
+Desde `chore/monorepo-backend` (PR a `dev`, 2026-09-19) el backend de Cloudflare
+Workers vive en **`backend/`** del mismo repo (antes: repo independiente
+`wz0un/chatti`, carpeta `workers/`). El repo `chatti` queda archivado como
+referencia.
+
+| Código | Ruta | Deploy |
+|--------|------|--------|
+| Frontend (SPA) | `web/` (`web/wrangler.jsonc`) | Workers `chatti-web` (prod) / `chatti-web-staging` |
+| Backend (Workers API + DOs) | `backend/` (`backend/wrangler.toml`) | Worker `chatti-workers` (prod); staging pendiente DevOps |
+| Contratos compartidos | `shared/` | tips/contratos usados por web, móvil y backend |
+
+CI: `.github/workflows/backend.yml` ejecuta **solo tests** (`backend/**`).
+Deploy automático del backend pendiente de que DevOps/Staff configuren los
+entornos (DOs de staging, secretos). Referencia: `docs/STATUS.md`, `backend/README.md`.
 
 ## 1. Architecture
 
@@ -37,7 +54,7 @@ Cloudflare Worker `chatti-workers`  (backend, Durable Objects + KV — UNCHANGED
 |----------|------|--------|
 | Worker (assets) PROD | `chatti-web` | **DEPLOYED 2026-08-11** (was empty Hello-World stub) — live at chatti-web.wz0un.workers.dev |
 | Worker (assets) STAGING | `chatti-web-staging` | **DEPLOYED 2026-08-11** — live at chatti-web-staging.wz0un.workers.dev |
-| Worker (backend) | `chatti-workers` | PRODUCTION backend — do not touch |
+| Worker (backend) | `chatti-workers` | PRODUCTION backend — source now at `backend/` (monorepo); no deploy automático aún |
 | Worker (legacy) | `chat-ti` | Legacy CRA app (Workers assets) — unrelated, do not touch |
 | Worker (legacy) | `ai-chatti-llm` | Old prototype (quick editor) — do not touch |
 | Pages projects | `weather-app`, `mohsine`, `ai-chat-assistant`, `wz0un` | Unrelated projects — do not touch |
@@ -168,9 +185,9 @@ Manual deployment is validated (2026-08-11). Next step when approved:
 ## 14. Known issues / notes
 
 1. Backend CORS is `*` (permissive). Restricting to `https://chatti-web*.wz0un.workers.dev`
-   requires a backend change (BE agent) — reported, not actioned.
+   requires a backend change (`backend/src/index.js`) — reported, not actioned.
 2. DM WebSocket does not emit `history` on join (documented in WEB-PARITY.md;
-   mobile has the same dead path) — backend finding, reported to BE.
+   mobile has the same dead path) — backend finding (`backend/src/DirectMessage.js`), reported to BE.
 3. No rate limiting / WAF rules for the API — backend/zone concern, reported.
 4. `style-src 'unsafe-inline'` in CSP due to one inline avatar style
    (ConversationListItem.tsx:108) — refactor to a CSS class to tighten later.
@@ -181,3 +198,7 @@ Manual deployment is validated (2026-08-11). Next step when approved:
    related): `scripts/interop-mobile.test.ts` (react-native Flow syntax —
    needs mobile toolchain) and `scripts/reconnect-probe.test.ts` (DM listener
    survival probe). Unit suite: 83/83 pass.
+8. **Backend staging:** no existe DO/KV/env de staging aún. Antes de habilitar
+   deploy de `backend/` desde CI, DevOps debe configurar DOs + KV de staging en
+   Cloudflare y un `[env.staging]` en `backend/wrangler.toml`. Producción sigue
+   manual vía `cd backend && pnpm deploy`.

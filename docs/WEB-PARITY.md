@@ -45,7 +45,7 @@ Legend:
 | Copy device ID | ✅ | ✅ | DONE | `navigator.clipboard.writeText` + copied-state feedback. |
 | Language selector | ⚠️ | ✅ | DONE | Profile selector supports en/es/ar/fr through the existing immediate, persisted i18n path. |
 | i18n translation coverage | ✅ | ✅ | DONE | Dictionary extracted verbatim; `interpolate` helper; login/conversations/profile/DM keys verified. |
-| Notifications (push) | ✅ | ❌ | DEFERRED | Expo push requires native; web needs Web Push + Service Worker + backend endpoint (Backend Agent change). |
+| Notifications (push) | ✅ | ⚠️ | IN PROGRESS | FE done (Task 22): Service Worker + VAPID subscription + `/api/auth/webpush` contract + Profile toggle. Expo push stays mobile-only; web delivery needs the BE endpoint (separate Worker repo) + `VITE_VAPID_PUBLIC_KEY` + live QA. Spec: `docs/WEB-PUSH.md`. |
 | In-app notification toasts | ❌ | ❌ | TODO | Mobile shows local notifications only. Web can add in-app toasts (Web-only enhancement, no backend change). |
 | Unread conversations badge (tab) | ✅ | ✅ | DONE | `useSectionBadges` — 30s polling + focus refresh, 99+ cap. |
 | Pending requests badge (tab) | ✅ | ✅ | DONE | Same `useSectionBadges` polling. |

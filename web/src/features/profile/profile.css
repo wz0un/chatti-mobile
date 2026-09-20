@@ -128,6 +128,89 @@
   cursor: pointer;
 }
 
+/* Web push notifications card (Task 22) */
+
+.profile__webPush {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.profile__webPushInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  text-align: left;
+}
+
+.profile__webPushLabel {
+  margin: 0;
+  font-weight: 600;
+}
+
+.profile__webPushHint {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-caption);
+}
+
+.profile__webPushBadge {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-caption);
+  font-weight: 700;
+}
+
+.profile__webPushBadge--on {
+  background-color: rgba(76, 205, 196, 0.15);
+  color: #0e9f8b;
+}
+
+.profile__webPushBadge--off,
+.profile__webPushBadge--blocked {
+  background-color: rgba(120, 130, 150, 0.15);
+  color: var(--color-text-tertiary);
+}
+
+.profile__webPushButton {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.profile__webPushButton:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.profile__webPushButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.profile__webPushStatus {
+  margin: var(--space-xs) 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-caption);
+  text-align: center;
+}
+
+.profile__webPushError {
+  margin: var(--space-xs) 0 0;
+  color: var(--color-error);
+  font-size: var(--font-body-small);
+  text-align: center;
+}
+
 .profile__delete {
   padding: 14px;
   border: 2px solid var(--color-error);

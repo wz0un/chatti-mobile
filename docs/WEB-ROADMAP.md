@@ -75,7 +75,7 @@ Goal: remove duplicated business logic while keeping mobile regression-free.
 
 1. Point mobile services at `shared/` (encryption, ApiService, WS protocol, i18n dictionary) — one copy of business logic.
 2. QA: full mobile regression suite against production backend.
-3. Push notifications research: Web Push + Service Worker + Backend Agent endpoint (`/api/auth/update-push-token` variant or new `/api/auth/webpush`), VAPID keys.
+3. Push notifications: Web Push + Service Worker + Backend Agent endpoint (`POST /api/auth/webpush`), VAPID keys — **FE shipped + contract defined in `docs/WEB-PUSH.md` (Task 22); Worker endpoint + VAPID delivery pending BE.**
 4. CI: lint + typecheck + tests for `web/` and `shared/`; E2E smoke tests (Playwright) for core flows.
 
 **Exit criteria:** mobile regression green; optional push notifications shipped; no duplicated business logic.

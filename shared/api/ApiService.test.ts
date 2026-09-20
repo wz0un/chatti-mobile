@@ -187,6 +187,66 @@ describe('ApiService', () => {
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ userId: 'u1', deviceId: 'dev1' });
   });
 
+  it('registerWebPush posts the web push subscription to /api/auth/webpush', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ success: true }));
+    const subscription = {
+      endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
+      expirationTime: null,
+      keys: { p256dh: 'p256dh-b64', auth: 'auth-b64' },
+    };
+    const ok = await ApiService.registerWebPush('u1', 'dev1', subscription);
+    expect(ok).toBe(true);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      'https://chatti-workers.wz0un.workers.dev/api/auth/webpush',
+    );
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      userId: 'u1',
+      deviceId: 'dev1',
+      action: 'register',
+      subscription,
+    });
+  });
+
+  it('registerWebPush returns false when the backend rejects (200 + success:false)', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ success: false, error: 'VAPID not configured' }));
+    expect(
+      await ApiService.registerWebPush('u1', 'dev1', {
+        endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
+        expirationTime: null,
+        keys: { p256dh: 'b64', auth: 'b64' },
+      }),
+    ).toBe(false);
+  });
+
+  it('registerWebPush throws on HTTP error', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'boom' }, 500));
+    await expect(ApiService.registerWebPush('u1', 'dev1', {
+      endpoint: 'ep',
+      expirationTime: null,
+      keys: { p256dh: 'b64', auth: 'b64' },
+    })).rejects.toThrow('boom');
+  });
+
+  it('removeWebPush posts the remove action with the endpoint', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ success: true }));
+    const ok = await ApiService.removeWebPush('u1', 'dev1', 'https://fcm.googleapis.com/fcm/send/abc');
+    expect(ok).toBe(true);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      'https://chatti-workers.wz0un.workers.dev/api/auth/webpush',
+    );
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      userId: 'u1',
+      deviceId: 'dev1',
+      action: 'remove',
+      endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
+    });
+  });
+
+  it('removeWebPush throws on HTTP error', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ error: 'boom' }, 500));
+    await expect(ApiService.removeWebPush('u1', 'dev1', 'ep')).rejects.toThrow('boom');
+  });
+
   it('configure strips trailing slashes', () => {
     ApiService.configure('https://example.com/api/');
     expect(ApiService.baseUrl).toBe('https://example.com/api');
