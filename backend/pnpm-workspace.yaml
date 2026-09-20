@@ -1,7 +1,15 @@
 packages:
   - .
 
+# pnpm 10.x (Cloudflare Workers Builds usa 10.11.1): único campo soportado.
 onlyBuiltDependencies:
   - esbuild
   - sharp
   - workerd
+
+# pnpm >=10.26 / 11 / 12 (GitHub Actions usa 11.27, dev local 11.3): este
+# campo sustituye a onlyBuiltDependencies en v11.
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true
