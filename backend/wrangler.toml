@@ -15,7 +15,7 @@ class_name = "DirectMessage"
 # KV namespace for room registry
 [[kv_namespaces]]
 binding = "ROOMS_KV"
-id = "1824a2df4c6e466a9034a7b1ccb59185"
+id = "0ae0392dcb32452baeeee399e7486a13"
 
 # Migrations para Durable Objects
 [[migrations]]
