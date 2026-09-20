@@ -1,6 +1,6 @@
 # Chatti Mobile — Current Status
 
-Updated: 2026-09-19 (Task 22 FE shipped + QA PR #27 + DevOps pipeline fix)
+Updated: 2026-09-20 (Task 22 BE implemented en monorepo — endpoints VAPID/WebPush + tests)
 
 ## Repository
 
@@ -16,7 +16,7 @@ NO se migran).
 
 - Worker de producción `chatti-workers` en `https://chatti-workers.wz0un.workers.dev`
 - Config: `backend/wrangler.toml` (DOs `ChatRoom`, `DirectMessage`; KV `ROOMS_KV`)
-- Tests: `backend/` → `pnpm test` (vitest + `@cloudflare/vitest-plugin`, 6/6)
+- Tests: `backend/` → `pnpm test` (vitest + `@cloudflare/vitest-plugin`, 20/20)
 - CI: `.github/workflows/backend.yml` — **solo tests** en `backend/**`
   (push/PR a dev/master). El deploy automático queda pendiente de DevOps/Staff
   para configurar entornos Cloudflare (DOs staging, secretos).
@@ -67,7 +67,7 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | Deep-linkable routes | ❌ Not started | T16 |
 | RTL/a11y | ❌ Not started | T18 |
 | Dark mode | ❌ Not started | T19 |
-| Web Push notifications (SW + VAPID + toggle) | ✅ FE done — BE endpoint pending | T22 |
+| Web Push notifications (SW + VAPID + toggle) | ✅ FE done · BE done (endpoints + hooks + crypto VAPID/aes128gcm) — pendiente secrets VAPID + QA e2e | T22 |
 
 ### Cloudflare deployment (on `dev` branch)
 - `chatti-web` Worker: deployed (production)
@@ -103,7 +103,7 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 
 1. **BUG-01 (CRITICAL, backend):** ⚠️ **NOT REPRODUCED en sesión QA 2026-09-15** — probe dedicado 90/90 intentos OK (3 rondas × 10 register+login), smoke 4/4 ×2, cero 503/1102. Veredicto: `docs/QA-BUG01-RETEST.md`. Sigue pendiente re-apertura formal del gate de auth M1 (Staff/BE) y confirmación BE de la causa raíz.
 2. **Backend deploy automático:** pendiente de DevOps/Staff — configurar DOs/entornos de staging en Cloudflare antes de habilitar el deploy de `backend/` desde CI.
-2. **Task 22 (backend web, BLOQUEA la feature end-to-end):** `POST /api/auth/webpush` **no existe** en el producción (`chatti-workers`) — verificado live 2026-09-19 (devuelve el JSON raíz con HTTP 200). El toggle de Web Push en Profile fallará con "Could not update push notifications" hasta que el backend implemente registro/borrado de suscripciones + keypair VAPID + envío. Contract en `docs/WEB-PUSH.md` §2. Fuera del repo actual (Worker repo), requiere Staff/BE.
+2. **Task 22 (backend web) — ahora implementado en `backend/`:** `POST /api/auth/webpush` (register/remove, KV `user:<userId>:webpush:<deviceId>`), `POST /api/auth/update-push-token` (contrato móvil pendiente) y hooks de envío room/DM con VAPID + aes128gcm (`backend/src/WebPush.js`, RFC 8291 byte-a-byte, tests 20/20). **Pendiente de infra (Staff):** generar keypair VAPID y fijar secrets `VAPID_SUBJECT`/`VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` + publicar `VITE_VAPID_PUBLIC_KEY` en el build web. Sin secrets el worker degrada (registra pero no envía). Contract en `docs/WEB-PUSH.md`.
 
 ## Fixed (committed)
 

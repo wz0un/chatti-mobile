@@ -15,7 +15,7 @@ class_name = "DirectMessage"
 # KV namespace for room registry
 [[kv_namespaces]]
 binding = "ROOMS_KV"
-id = "1824a2df4c6e466a9034a7b1ccb59185"
+id = "0ae0392dcb32452baeeee399e7486a13"
 
 # Migrations para Durable Objects
 [[migrations]]
@@ -29,4 +29,14 @@ new_sqlite_classes = ["DirectMessage"]
 # Variables de entorno
 [vars]
 ENVIRONMENT = "production"
+
+# ── Web Push (Task 22) ─────────────────────────────────────────────
+# VAPID subject del backend: mailto: o https:// del dominio (obligatorio).
+# Las claves VAN como secretos (no en este archivo en git):
+#   wrangler secret put VAPID_SUBJECT    -> "mailto:admin@example.com"
+#   wrangler secret put VAPID_PUBLIC_KEY -> base64url de la clave pública P-256 (65 bytes)
+#   wrangler secret put VAPID_PRIVATE_KEY-> base64url de la clave privada P-256 (escalar 32 bytes)
+# Generar con: pnpm --dir backend exec node -e "import('./src/WebPush.js').then(async m => console.log(await m.generateVapidKeys()))"
+# Sin estos secretos el worker degrada: las suscripciones se guardan pero no se envían.
+#
 
