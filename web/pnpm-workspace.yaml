@@ -1,4 +1,7 @@
 # pnpm 10.x (Cloudflare Workers Builds usa 10.11.1): único campo soportado.
+packages:
+  - .
+
 onlyBuiltDependencies:
   - esbuild
 
