@@ -207,6 +207,14 @@ echo 'VITE_VAPID_PUBLIC_KEY=BPAeKq…' >> .env.local
 `.env.local` is git-ignored; `.env.example` documents the variable. Without it
 the Profile UI shows the *"not configured"* state.
 
+> **Cloudflare deploy build:** Cloudflare Workers Builds clones the repo and
+> runs `pnpm run build` (Vite, mode=production) — `.env.local` **no existe** ahí.
+> Vite solo lee ficheros `.env*` del repo, no variables de entorno del shell, así
+> que la clave pública debe commitearse en `web/.env.production` (el valor es
+> público por diseño; es la misma clave que va en el worker). Si un día se
+> quisiera dejar de commitear, habría que inyectar la var en el trigger y cargarla
+> con `loadEnv` en `vite.config.ts`.
+
 ## 6. Browser behavior notes
 
 - Web Push requires a **secure context** (https) except on `localhost`.
