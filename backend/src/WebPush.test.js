@@ -13,6 +13,7 @@ import {
     generateVapidKeys,
     urlBase64ToUint8Array,
     uint8ArrayToUrlBase64,
+    listKeysPaginated,
 } from './WebPush.js';
 
 /* ------------------------------------------------------------------ */
@@ -255,5 +256,54 @@ describe('VAPID', () => {
                 privateKey,
             })
         ).rejects.toThrow('mailto');
+    });
+});
+
+/* ------------------------------------------------------------------ */
+/* listKeysPaginated — paginación del KV (P1 QA 2026-09-21)            */
+/* ------------------------------------------------------------------ */
+
+describe('listKeysPaginated', () => {
+    it('recorre todas las páginas hasta que list_complete es true', async () => {
+        const page1Keys = [
+            { name: 'user:a:webpush:1' },
+            { name: 'user:a:webpush:2' },
+            { name: 'user:b:webpush:3' },
+        ];
+        const page2Keys = [
+            { name: 'user:c:webpush:4' },
+            { name: 'user:d:webpush:5' },
+        ];
+        const calls = [];
+        const kv = {
+            list: async ({ cursor, prefix, limit }) => {
+                calls.push({ cursor, prefix, limit });
+                if (cursor === 'cursor-2') {
+                    return { keys: [], list_complete: true, cursor: undefined };
+                }
+                if (cursor === 'cursor-1') {
+                    return { keys: page2Keys, list_complete: false, cursor: 'cursor-2' };
+                }
+                return { keys: page1Keys, list_complete: false, cursor: 'cursor-1' };
+            },
+        };
+
+        const keys = await listKeysPaginated({ ROOMS_KV: kv }, 'user:');
+
+        expect(keys).toEqual([...page1Keys, ...page2Keys]);
+        expect(calls).toHaveLength(3);
+        expect(calls[0]).toEqual({ cursor: undefined, prefix: 'user:', limit: 1000 });
+        expect(calls[1]).toEqual({ cursor: 'cursor-1', prefix: 'user:', limit: 1000 });
+        expect(calls[2]).toEqual({ cursor: 'cursor-2', prefix: 'user:', limit: 1000 });
+    });
+
+    it('devuelve lista vacía cuando el KV ya está completo en la primera página', async () => {
+        const kv = {
+            list: async () => ({ keys: [], list_complete: true, cursor: undefined }),
+        };
+
+        const keys = await listKeysPaginated({ ROOMS_KV: kv }, 'user:');
+
+        expect(keys).toEqual([]);
     });
 });

@@ -186,9 +186,11 @@ export default function ProfilePage({ user, onLogout }: ProfilePageProps) {
           </div>
           {webPushState !== 'unsupported' && webPushState !== 'loading' && (
             <span className={`profile__webPushBadge profile__webPushBadge--${webPushState}`}>
-              {webPushState === 'on' || webPushState === 'blocked'
+              {webPushState === 'on'
                 ? t('profile.webPush.statusEnabled')
-                : t('profile.webPush.statusDisabled')}
+                : webPushState === 'blocked'
+                  ? t('profile.webPush.statusBlocked')
+                  : t('profile.webPush.statusDisabled')}
             </span>
           )}
         </div>
