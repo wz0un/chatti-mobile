@@ -107,7 +107,7 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 
 1. **BUG-01 (CRITICAL, backend):** ⚠️ **NOT REPRODUCED en sesión QA 2026-09-15** — probe dedicado 90/90 intentos OK (3 rondas × 10 register+login), smoke 4/4 ×2, cero 503/1102. Veredicto: `docs/QA-BUG01-RETEST.md`. Sigue pendiente re-apertura formal del gate de auth M1 (Staff/BE) y confirmación BE de la causa raíz.
 2. **Backend deploy automático:** pendiente de DevOps/Staff — configurar DOs/entornos de staging en Cloudflare antes de habilitar el deploy de `backend/` desde CI.
-3. **Task 22 Web Push — QA de entrega (último pendiente de la task):** bloqueos 1 y 2 resueltos y verificados en prod (2026-09-21). ⏳ **Pendiente:** prueba manual de entrega en navegador real (Chrome/Firefox): usuario B envía un mensaje a un usuario A con web push activo y sin conexión; debe llegar la notificación del SO y deep-link al chat. El entorno sandbox de QA no puede recibir push (`push service not available`). Procedimiento en `docs/QA-PR27-TASK22.md` §7.2. DoD: requiere este sign-off + CTO/Staff.
+3. **Task 22 Web Push — QA de entrega (último pendiente de la task):** bloqueos 1 y 2 resueltos y verificados en prod (2026-09-21). ⏳ **Pendiente:** prueba manual de entrega en navegador real (Chrome/Firefox): usuario B envía un mensaje a un usuario A con web push activo y sin conexión; debe llegar la notificación del SO y deep-link al chat. El entorno sandbox de QA no puede recibir push (`push service not available`). Procedimiento en `docs/QA-PR27-TASK22.md` §7.2. DoD: requiere este sign-off + CTO/Staff. *Hallazgos QA §7.3: P1 (paginación fan-out) y P3 (badge blocked) resueltos en PR #44; P2 (endpoint sin auth) aceptado by design (nota `docs/WEB-PUSH.md` §2.1).*
 
 ## Fixed (committed)
 
