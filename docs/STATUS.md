@@ -1,6 +1,6 @@
 # Chatti Mobile — Current Status
 
-Updated: 2026-09-20 (Task 22 BE implemented en monorepo — endpoints VAPID/WebPush + tests)
+Updated: 2026-09-21 (Task 22 Web Push **EN PROD**: endpoint `/api/auth/webpush` + VAPID live — verificado QA; pendiente entrega manual navegador real + sign-off CTO)
 
 ## Repository
 
@@ -67,7 +67,7 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | Deep-linkable routes | ❌ Not started | T16 |
 | RTL/a11y | ❌ Not started | T18 |
 | Dark mode | ❌ Not started | T19 |
-| Web Push notifications (SW + VAPID + toggle) | ✅ FE done · BE done (endpoints + hooks + crypto VAPID/aes128gcm) — pendiente secrets VAPID + QA e2e | T22 |
+| Web Push notifications (SW + VAPID + toggle) | ✅ **EN PROD** (backend + web + secrets VAPID live; verificado QA 2026-09-21) — pendiente QA manual de entrega en navegador real + sign-off CTO | T22 |
 
 ### Cloudflare deployment (on `dev` branch)
 - `chatti-web` Worker: deployed (production)
@@ -79,7 +79,11 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
   2. `tsconfig.json` raíz extendía `expo/tsconfig.base` (no resoluble en el build de CF) —
      inlineado en `master` (commit `f7c896f`).
   Build de producción `51b03b57` **SUCCESS** sobre `master` `f7c896f`
-  (`npx wrangler deploy`, 2026-09-19 21:03). **Pendiente reintroducir ambos fixes en `dev`**.
+  (`npx wrangler deploy`, 2026-09-19 21:03). Fixes reintroducidos en `dev` (PRs #40/#41).
+- **2026-09-20/21:** Task 22 promovida a producción (PR #27 → `master` `a6381f9`)
+  con el backend Web Push (PR #33), runbook VAPID (PR #37) y CI del backend (PR #38).
+  `chatti-web` y `chatti-workers` desplegados: endpoint `/api/auth/webpush` operativo
+  + VAPID key horneada en el bundle web (verificado por QA 2026-09-21, `docs/QA-PR27-TASK22.md` §7).
 
 ## QA status
 
@@ -95,7 +99,7 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | M1 Core chat | Full QA gate | ⚠️ Blocked sin confirmar — BUG-01 no reproducido en sesión 2026-09-15; queda validación Staff/formal |
 | M2 Rooms | Functional QA | ⚠️ NOT READY (live room/contact coverage and mobile interop not run) |
 | Regression suite | Task 20 (QA regression) | ✅ DONE — `npm run qa:regression` = 92/92 (85 unit + 5 interop + 2 reconnect), reproducible en clone limpio. Ver `docs/QA-REGRESSION.md` |
-| Task 22 Web Push — FE | PR #27 (`dev`→`master`) | ✅ QA CODE PASS — typecheck/lint/build OK, 109/109 tests, smoke 4/4, interop 5/5, i18n 11/11×4; merge simulado en CI: build+109 tests OK y SDK 57 conservado. ⛔ **Función NO operativa end-to-end**: backend `POST /api/auth/webpush` + VAPID pendientes. **Merge pendiente de aprobación Staff una vez el pipeline quede verde.** Ver `docs/QA-PR27-TASK22.md` |
+| Task 22 Web Push — FE+BE | PR #27 → `master` (`a6381f9`) | ✅ QA CODE PASS (gates §1, `docs/QA-PR27-TASK22.md`). ✅ **Bloqueo 1 resuelto** (pipeline verde). ✅ **Bloqueo 2 resuelto EN PROD (2026-09-21)**: endpoint `/api/auth/webpush` live (register/refresh/remove/validaciones OK), VAPID public key horneada y aceptada por el navegador, SW activo. ⏳ Pendiente: QA manual de entrega en navegador real (el entorno sandbox no accede al push service) + sign-off CTO/Staff |
 
 Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #27: `docs/QA-PR27-TASK22.md`
 
@@ -103,7 +107,7 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 
 1. **BUG-01 (CRITICAL, backend):** ⚠️ **NOT REPRODUCED en sesión QA 2026-09-15** — probe dedicado 90/90 intentos OK (3 rondas × 10 register+login), smoke 4/4 ×2, cero 503/1102. Veredicto: `docs/QA-BUG01-RETEST.md`. Sigue pendiente re-apertura formal del gate de auth M1 (Staff/BE) y confirmación BE de la causa raíz.
 2. **Backend deploy automático:** pendiente de DevOps/Staff — configurar DOs/entornos de staging en Cloudflare antes de habilitar el deploy de `backend/` desde CI.
-2. **Task 22 (backend web) — ahora implementado en `backend/`:** `POST /api/auth/webpush` (register/remove, KV `user:<userId>:webpush:<deviceId>`), `POST /api/auth/update-push-token` (contrato móvil pendiente) y hooks de envío room/DM con VAPID + aes128gcm (`backend/src/WebPush.js`, RFC 8291 byte-a-byte, tests 20/20). **Pendiente de infra (Staff):** generar keypair VAPID y fijar secrets `VAPID_SUBJECT`/`VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` + publicar `VITE_VAPID_PUBLIC_KEY` en el build web. Sin secrets el worker degrada (registra pero no envía). Contract en `docs/WEB-PUSH.md`.
+3. **Task 22 Web Push — QA de entrega (último pendiente de la task):** bloqueos 1 y 2 resueltos y verificados en prod (2026-09-21). ⏳ **Pendiente:** prueba manual de entrega en navegador real (Chrome/Firefox): usuario B envía un mensaje a un usuario A con web push activo y sin conexión; debe llegar la notificación del SO y deep-link al chat. El entorno sandbox de QA no puede recibir push (`push service not available`). Procedimiento en `docs/QA-PR27-TASK22.md` §7.2. DoD: requiere este sign-off + CTO/Staff.
 
 ## Fixed (committed)
 
@@ -113,11 +117,12 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 
 ## Next steps
 
-1. **PR #27 (`dev`→`master`):** merge pendiente de Staff. Pipeline de producción ya verde (DevOps); merge simulado QA OK. Tras el merge, `chatti-web` se desplegará con el código de Task 22 (web push) sin tocar la app móvil (SDK 57 conservado).
-2. **Sync CI fixes `master`→`dev`:** traer a `dev` el tsconfig inline + eliminación de `web/pnpm-workspace.yaml` para que `dev` también buildee en CF (evitar divergencia).
-3. Confirmar formalmente BUG-01 (backend) y re-aperturar el gate de auth de M1 — Staff/BE
-4. Re-run live contacts/rooms and web↔mobile room interoperability QA — QA (M2)
-5. Publicar `chatti-web-staging` only after an M2 staging-safe QA verdict; production remains out of scope
+1. ✅ **PR #27 (`dev`→`master`):** mergeado por Staff (`master` `a6381f9`, 2026-09-20); `chatti-web` desplegado con Task 22 (sin tocar la app móvil; SDK 57 conservado).
+2. ✅ **Sync CI fixes `master`→`dev`:** reintroducido en `dev` (PRs #40/#41); `dev` buildea en CF y el CI de backend corre (GHA, 20/20 verde).
+3. **QA manual entrega web push en navegador real** (Chrome/Firefox de escritorio) — procedimiento `docs/QA-PR27-TASK22.md` §7.2. Tras el OK, sign-off CTO/Staff → marcar Task 22 **DONE** (Trello).
+4. Confirmar formalmente BUG-01 (backend) y re-aperturar el gate de auth de M1 — Staff/BE
+5. Re-run live contacts/rooms and web↔mobile room interoperability QA — QA (M2)
+6. Publicar `chatti-web-staging` only after an M2 staging-safe QA verdict; production remains out of scope
 
 ## Docs index
 
