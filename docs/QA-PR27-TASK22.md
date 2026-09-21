@@ -104,6 +104,19 @@ Verificación del build web en prod (`chatti-web`):
 
 El `subscribe()` del navegador de prueba lanzó **`AbortError: Registration failed - push service not available`**: el entorno sandbox no tiene conectividad/backing del push service (FCM/Mozilla). La suscripción no llegó a crearse, por lo que **no se pudo validar la entrega real** (envío worker → push service → SW → `showNotification`).
 
+#### 7.2.1 Hallazgo FE post-prod (2026-09-21) — click en notificación no navega
+
+**Reportado por Staff en pruebas reales de navegador** (usuario A, prod `chatti-web.wz0un.workers.dev`): la notificación **sí llega** y se muestra, pero al hacer **click no redirige a los mensajes** (no abre el chat `/room/:id` ni `/dm/:id`).
+
+**Estado de la investigación (no concluida — pasa al equipo):**
+- ✔️ `sw.js` desplegado en prod contiene el handler `notificationclick` (coincide con `web/public/sw.js`).
+- ✔️ La SPA sirve correctamente las rutas profundas: `/room/<id>` responde `index.html` (fallback `single-page-application` de `web/wrangler.jsonc`), y `App.tsx` define las rutas `/room/:roomId` y `/dm/:conversationId`.
+- ✔️ El backend manda `data: { kind:'room', roomId }` (o `kind:'dm'`) → `notificationUrlFor()` produce la deep link correcta.
+- ❓ **Causa raíz sin confirmar.** Sospechas a validar en el navegador:
+  1. `Client.navigate()` en una pestaña **no controlada** por el SW lanza error (el handler usa `appWindow.navigate()`); o bien `focus()` roba el foco sin navegación si la comparación `client.url === target.href` no acierta por `trailing slash`/query.
+  2. El SW registrado/activo en el navegador del usuario es una versión previa en caché (aunque `/sw.js` de prod ya es el nuevo; un `skipWaiting`/recarga forzada puede resolverlo).
+- Recomendación: reproducir en Chrome con DevTools (Application → Service Workers → Push) o usando `self.clients.matchAll` + fallback a `openWindow` si `navigate` falla; opcional: simplificar el click a `clients.openWindow(target.href)` siempre que no exista pestaña ya en ese chat.
+
 **Verificación manual requerida (1–2 min, Chrome/Firefox de escritorio):**
 1. Abrir `https://chatti-web.wz0un.workers.dev`, registrarse/loguearse como usuario A.
 2. Profile → Push Notifications → **Enable notifications** (aceptar el permiso del navegador). El badge debe pasar a "On".
