@@ -1,6 +1,6 @@
 # Chatti Mobile — Current Status
 
-Updated: 2026-09-20 (PRs #40/#41/#27 merged — Task 22 deployed a `master`, dev alineado con master; pendiente secrets VAPID (DevOps) + QA e2e)
+Updated: 2026-09-20 (Task 22 a `master`, dev alineado; **secrets VAPID aplicados en producción por DevOps** — único pendiente de la feature: QA e2e)
 
 ## Repository
 
@@ -69,7 +69,7 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | Deep-linkable routes | ❌ Not started | T16 |
 | RTL/a11y | ❌ Not started | T18 |
 | Dark mode | ❌ Not started | T19 |
-| Web Push notifications (SW + VAPID + toggle) | ✅ FE done · BE done · **MERGEADO a producción (#27)** — pendiente secrets VAPID (DevOps) + QA e2e | T22 |
+| Web Push notifications (SW + VAPID + toggle) | ✅ FE done · BE done · **MERGEADO a producción (#27)** · secrets VAPID **aplicados (DevOps, 2026-09-20)** — pendiente QA e2e | T22 |
 
 ### Cloudflare deployment (en `dev` y `master`, ya alineados)
 - `chatti-web` Worker: deployed (production)
@@ -103,30 +103,29 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 ## Blockers
 
 1. **BUG-01 (CRITICAL, backend):** ⚠️ **NOT REPRODUCED en sesión QA 2026-09-15** — probe dedicado 90/90 intentos OK (3 rondas × 10 register+login), smoke 4/4 ×2, cero 503/1102. Veredicto: `docs/QA-BUG01-RETEST.md`. Sigue pendiente re-apertura formal del gate de auth M1 (Staff/BE) y confirmación BE de la causa raíz.
-2. **Backend deploy automático:** pendiente de DevOps/Staff — configurar DOs/entornos de staging en Cloudflare antes de habilitar el deploy de `backend/` desde CI.
-2. **Task 22 (Web Push) — secrets VAPID (único bloqueo de la feature):** el código
-   (FE + `backend/` + build key) ya está en `master`. Pendiente de **DevOps**:
-   generar el par y fijar los secrets del worker `VAPID_SUBJECT`/`VAPID_PUBLIC_KEY`/
-   `VAPID_PRIVATE_KEY` (que **deben coincidir** con `VITE_VAPID_PUBLIC_KEY` ya horneado
-   en `web/.env.production`, salvo que se publique un par nuevo vía PR). Runbook: `docs/WEB-PUSH.md` §5.
-   Sin secrets el worker degrada (registra pero no envía).
+2. **Backend deploy automático:** pendiente de DevOps/Staff — configurar DOs/entornos de staging en Cloudflare antes de habilitar el deploy de `backend/` desde CI.<!-- 2. deleted: Task 22 VAPID secrets — RESUELTO (ver Fixed) -->
 
 ## Fixed (committed)
 
+- **Task 22 — secrets VAPID (infra, DevOps 2026-09-20):** par P-256 (RFC 8292)
+  generado y fijado en el worker de **producción** `chatti-workers` (versión live
+  `1e93cd9e`, deployment `93a64718`, build `23d2103f` sobre master `a6381f9`,
+  2026-09-20T17:12Z): `VAPID_SUBJECT=mailto:contact@mohsine.com`,
+  `VAPID_PUBLIC_KEY` + `VAPID_PRIVATE_KEY` (mismo par). Emparejados con
+  `VITE_VAPID_PUBLIC_KEY` de `web/.env.production` (`f6097a8`, merge #27).
+  `backend/.dev.vars` creado (git-ignored) para `wrangler dev`. Evidencia API:
+  bindings `secret_text VAPID_*` en la versión desplegada. Sin cambios de código.
 - **BUG-02 (HIGH):** WebSocket reconnect wipes `listeners` Map — fixed in `shared/ws/DirectMessageSocket.ts` (commit `673832a`); regression cubierta por `npm run qa:reconnect`
 - **BUG-04 (MEDIUM):** `lastSeen` not updated on incoming DM messages — fixed in `web/src/features/dm/DirectMessagePage.tsx` (commit `673832a`)
 - **BUG-06 (LOW):** i18n key mismatch in empty-search subtext — fixed in `web/src/features/conversations/ConversationsPage.tsx` (commit `673832a`)
 
 ## Next steps
 
-1. **DevOps (Staff): secrets VAPID** en el worker de producción (`wrangler secret put`
-   `VAPID_SUBJECT`/`VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`, emparejados con `VITE_VAPID_PUBLIC_KEY`
-   de `web/.env.production`), y `.dev.vars` para `wrangler dev`. Runbook: `docs/WEB-PUSH.md` §5.
-2. **QA end-to-end Task 22:** navegador → suscripción → mensaje en sala/DM → notificación → click
-   deep-link, con los secrets puestos. Evidencia en `docs/QA-PR27-TASK22.md` + actualización de `docs/WEB-PUSH.md` §1.
-3. Confirmar formalmente BUG-01 (backend) y re-aperturar el gate de auth de M1 — Staff/BE
-4. Re-run live contacts/rooms and web↔mobile room interoperability QA — QA (M2)
-5. Publicar `chatti-web-staging` only after an M2 staging-safe QA verdict; production remains out of scope
+1. **QA end-to-end Task 22:** navegador → suscripción → mensaje en sala/DM → notificación → click
+   deep-link. Evidencia en `docs/QA-PR27-TASK22.md` + actualización de `docs/WEB-PUSH.md` §1.
+2. Confirmar formalmente BUG-01 (backend) y re-aperturar el gate de auth de M1 — Staff/BE
+3. Re-run live contacts/rooms and web↔mobile room interoperability QA — QA (M2)
+4. Publicar `chatti-web-staging` only after an M2 staging-safe QA verdict; production remains out of scope
 
 ## Docs index
 

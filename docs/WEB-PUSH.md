@@ -1,6 +1,6 @@
 # Chatti Web — Web Push Notifications (Task 22)
 
-Status: **FE implemented · BE implemented en `backend/` (monorepo, PR #33) · VAPID runbook documented (§5) — pendiente de secrets/infra, deploy y QA end-to-end**
+Status: **FE + BE en producción (PR #27) · secrets VAPID aplicados (DevOps, 2026-09-20) — pendiente QA end-to-end**
 
 Task: `docs/WEB-TASKS.md` #22 — *Web Push notifications: Service Worker + VAPID + backend endpoint* — Owner: **BE + FE**.
 
@@ -209,6 +209,13 @@ VAPID_PUBLIC_KEY=BPAeKq…
 VAPID_PRIVATE_KEY=xZOxu…
 ```
 
+> **Estado 2026-09-20:** los tres secrets están **aplicados en el worker de
+> producción** `chatti-workers` — versión live `1e93cd9e` over master `a6381f9`
+> (deployment `93a64718`, build `23d2103f`, 2026-09-20T17:12Z). `VAPID_SUBJECT` es
+> `mailto:contact@mohsine.com` y `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` son el par
+> emparejado con `VITE_VAPID_PUBLIC_KEY` de `web/.env.production`. `backend/.dev.vars`
+> creado localmente (git-ignored). Pendiente solo QA end-to-end (§8.2).
+
 ### 5.4 Publish the public key to the web build
 
 ```bash
@@ -263,9 +270,10 @@ the Profile UI shows the *"not configured"* state.
    `update-push-token` que también faltaba quedó implementado).
 
 Pendientes para cerrar Task 22 (DoD):
-1. **Staff/infra**: generar keypair VAPID y fijar los secrets del worker real
+1. ~~**Staff/infra**: generar keypair VAPID y fijar los secrets del worker real
    (`VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, ver §5); publicar
-   `VITE_VAPID_PUBLIC_KEY` en el build web.
+   `VITE_VAPID_PUBLIC_KEY` en el build web.~~ **HECHO** (DevOps, 2026-09-20): secrets
+   live + `.dev.vars`; runbook §5.3.
 2. **QA end-to-end**: navegador → suscripción → mensaje en sala/DM → notificación
    → click deep-link. Evidencia en `docs/QA-PR27-TASK22.md` o similar.
 3. **Sign-off** CTO/Staff antes de marcar DONE.
