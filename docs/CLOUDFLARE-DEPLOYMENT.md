@@ -42,7 +42,7 @@ Cloudflare Worker `chatti-workers`  (backend, Durable Objects + KV — UNCHANGED
 ## 2. Cloudflare account
 
 - **Name:** wz0un
-- **ID:** `513628580fa6f627f416bca847d189bb`
+- **ID:** managed privately outside the repository
 - **workers.dev subdomain:** `wz0un` (enabled) → URLs are `{worker}.wz0un.workers.dev`
 - **Zone:** `mohsine.com` (active, account zone). No chatti subdomains exist in DNS.
 - **Auth:** Cloudflare OAuth/API credentials are managed outside the repository. Scopes include workers/pages
@@ -143,7 +143,7 @@ npx wrangler deploy -c wrangler.jsonc --name chatti-web-staging   # staging
 ## 10. DNS / custom domain
 
 - **No DNS changes required** for workers.dev deployment.
-- Custom domain (e.g. `chatti.mohsine.com`) — **blocked by current token scope**
+- Custom domain (e.g. `chatti.example.com`) — **blocked by current token scope**
   (zone read-only). Requires a token with `zone` write / DNS edit to add a CNAME
   `chatti.example.com → chatti-web.wz0un.workers.dev` (proxied). Deferred.
 
@@ -165,7 +165,6 @@ npx wrangler deploy -c wrangler.jsonc --name chatti-web-staging   # staging
   are visible in the dashboard (chatti-web → Logs) only. Application-level
   errors surface in the backend worker (`chatti-workers`), which IS tail-able.
 - Dashboard: Cloudflare Dashboard → Workers → `chatti-web` → Logs.
-  → chatti-web → Logs.
 - Backend (`chatti-workers`) observability already enabled (unchanged).
 
 ## 13. CI/CD (proposed, NOT implemented)
