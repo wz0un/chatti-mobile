@@ -45,8 +45,8 @@ Cloudflare Worker `chatti-workers`  (backend, Durable Objects + KV — UNCHANGED
 - **ID:** `513628580fa6f627f416bca847d189bb`
 - **workers.dev subdomain:** `wz0un` (enabled) → URLs are `{worker}.wz0un.workers.dev`
 - **Zone:** `mohsine.com` (active, account zone). No chatti subdomains exist in DNS.
-- **Auth:** OAuth token (mohsine14zaga@hotmail.com). Scopes include workers/pages
-  write, zone **read-only** → **DNS record creation is NOT possible with this token.**
+- **Auth:** Cloudflare OAuth/API credentials are managed outside the repository. Scopes include workers/pages
+  write and zone **read-only**; DNS record creation is therefore not available with the deployment credential.
 
 ## 3. Cloudflare resources
 
@@ -145,7 +145,7 @@ npx wrangler deploy -c wrangler.jsonc --name chatti-web-staging   # staging
 - **No DNS changes required** for workers.dev deployment.
 - Custom domain (e.g. `chatti.mohsine.com`) — **blocked by current token scope**
   (zone read-only). Requires a token with `zone` write / DNS edit to add a CNAME
-  `chatti.mohsine.com → chatti-web.wz0un.workers.dev` (proxied). Deferred.
+  `chatti.example.com → chatti-web.wz0un.workers.dev` (proxied). Deferred.
 
 ## 11. Rollback
 
@@ -164,7 +164,7 @@ npx wrangler deploy -c wrangler.jsonc --name chatti-web-staging   # staging
   (API code 100311 "Cannot tail a Worker which only has assets"). Request logs
   are visible in the dashboard (chatti-web → Logs) only. Application-level
   errors surface in the backend worker (`chatti-workers`), which IS tail-able.
-- Dashboard: https://dash.cloudflare.com/513628580fa6f627f416bca847d189bb/workers/
+- Dashboard: Cloudflare Dashboard → Workers → `chatti-web` → Logs.
   → chatti-web → Logs.
 - Backend (`chatti-workers`) observability already enabled (unchanged).
 
