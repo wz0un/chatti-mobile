@@ -1,6 +1,6 @@
 # Chatti Mobile — Current Status
 
-Updated: 2026-09-21 (Task 22 Web Push **EN PROD**: endpoint `/api/auth/webpush` + VAPID live — verificado QA; pendiente entrega manual navegador real + sign-off CTO)
+Updated: 2026-11-01 (BUG-01 source parity: PBKDF2 restaurado en `backend/src/index.js` + migración bcrypt legacy; tests backend 25/25 — pendiente QA/Staff. Task 22 Web Push **EN PROD**: endpoint `/api/auth/webpush` + VAPID live — verificado QA; pendiente entrega manual navegador real + sign-off CTO)
 
 ## Repository
 
@@ -16,14 +16,15 @@ NO se migran).
 
 - Worker de producción `chatti-workers` en `https://chatti-workers.wz0un.workers.dev`
 - Config: `backend/wrangler.toml` (DOs `ChatRoom`, `DirectMessage`; KV `ROOMS_KV`)
-- Tests: `backend/` → `pnpm test` (vitest + `@cloudflare/vitest-plugin`, 20/20)
+- Tests: `backend/` → `pnpm test` (vitest + `@cloudflare/vitest-plugin`, 25/25)
 - CI: `.github/workflows/backend.yml` — **solo tests** en `backend/**`
   (push/PR a dev/master). El deploy automático queda pendiente de DevOps/Staff
   para configurar entornos Cloudflare (DOs staging, secretos).
 - Auth: device-based, no tokens, `userId` as parameter
 - Durable Objects: `ChatRoom` (rooms), `DirectMessage` (DMs)
 - KV: rooms, users, contacts, conversations
-- Known issues: ver `docs/BACKEND-AUDIT.md` y `docs/QA-BUG01-RETEST.md`
+- Known issues: ver `docs/BACKEND-AUDIT.md`, `docs/QA-BUG01-RETEST.md` y
+  `docs/QA-BUG01-SOURCE-PARITY.md` (fix PBKDF2 en código, pendiente QA/Staff)
 
 ## Branches
 
