@@ -7,6 +7,91 @@ import {
     deleteWebPushSubscriptions,
 } from './WebPush.js';
 
+const PBKDF2_ITERATIONS = 100000;
+const PBKDF2_HASH = 'SHA-256';
+const textEncoder = new TextEncoder();
+
+function encodeB64(bytes) {
+    let binary = '';
+    for (const byte of bytes) {
+        binary += String.fromCharCode(byte);
+    }
+    return btoa(binary);
+}
+
+function decodeB64(value) {
+    let normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+    while (normalized.length % 4 !== 0) {
+        normalized += '=';
+    }
+    const binary = atob(normalized);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+}
+
+function timingSafeEqual(a, b) {
+    if (a.length !== b.length) {
+        return false;
+    }
+    let diff = 0;
+    for (let i = 0; i < a.length; i += 1) {
+        diff |= a[i] ^ b[i];
+    }
+    return diff === 0;
+}
+
+async function derivePbkdf2(password, salt, iterations) {
+    const keyMaterial = await crypto.subtle.importKey(
+        'raw',
+        textEncoder.encode(password),
+        'PBKDF2',
+        false,
+        ['deriveBits'],
+    );
+    const bits = await crypto.subtle.deriveBits(
+        { name: 'PBKDF2', salt, iterations, hash: PBKDF2_HASH },
+        keyMaterial,
+        256,
+    );
+    return new Uint8Array(bits);
+}
+
+/**
+ * Hash compatible con el desplegado en producción para BUG-01:
+ * pbkdf2$sha256$<iterations>$<saltB64>$<derivedB64>
+ */
+async function derivePasswordHash(password) {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const derived = await derivePbkdf2(password, salt, PBKDF2_ITERATIONS);
+    return `pbkdf2$sha256$${PBKDF2_ITERATIONS}$${encodeB64(salt)}$${encodeB64(derived)}`;
+}
+
+async function verifyPassword(password, storedHash) {
+    if (typeof storedHash !== 'string') {
+        return false;
+    }
+
+    if (storedHash.startsWith('pbkdf2$')) {
+        const parts = storedHash.split('$');
+        if (parts.length !== 5 || parts[1].toLowerCase() !== 'sha256') {
+            return false;
+        }
+        const iterations = Number.parseInt(parts[2], 10);
+        if (!Number.isFinite(iterations) || iterations <= 0) {
+            return false;
+        }
+        const salt = decodeB64(parts[3]);
+        const expected = decodeB64(parts[4]);
+        const actual = await derivePbkdf2(password, salt, iterations);
+        return timingSafeEqual(actual, expected);
+    }
+
+    return bcrypt.compare(password, storedHash);
+}
+
 /**
  * Worker principal de Chatti
  * Maneja routing, creación de salas, registro global en KV y mensajería privada
@@ -373,8 +458,8 @@ export default {
             const discriminator = await this.generateDiscriminator(username, env);
             const fullUsername = `${username}#${discriminator}`;
 
-            // Hash password
-            const passwordHash = await bcrypt.hash(password, 10);
+            // Hash password (PBKDF2, Workers-native; bcrypt caused BUG-01 CPU 1102)
+            const passwordHash = await derivePasswordHash(password);
 
             const user = {
                 username,
@@ -476,8 +561,8 @@ export default {
 
             const user = JSON.parse(userData);
 
-            // Verify password
-            const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+            // Verify password (PBKDF2 with legacy bcrypt fallback)
+            const isValidPassword = await verifyPassword(password, user.passwordHash);
 
             if (!isValidPassword) {
                 return new Response(JSON.stringify({
@@ -489,9 +574,15 @@ export default {
                 });
             }
 
-            // Update push token and public key if provided
             let needsUpdate = false;
 
+            // Progressive migration: legacy bcrypt hashes are rehashed on first successful login
+            if (!user.passwordHash.startsWith('pbkdf2$')) {
+                user.passwordHash = await derivePasswordHash(password);
+                needsUpdate = true;
+            }
+
+            // Update push token and public key if provided
             if (expoPushToken && user.expoPushToken !== expoPushToken) {
                 user.expoPushToken = expoPushToken;
                 needsUpdate = true;
@@ -505,6 +596,9 @@ export default {
             if (needsUpdate) {
                 await env.ROOMS_KV.put(key, JSON.stringify(user));
                 await env.ROOMS_KV.put(`user:id:${user.userId}`, JSON.stringify(user));
+                if (user.deviceId) {
+                    await env.ROOMS_KV.put(`user:device:${user.deviceId}`, JSON.stringify(user));
+                }
             }
 
             console.log(`User logged in: ${user.fullUsername}`);
