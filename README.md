@@ -26,7 +26,7 @@ Aplicación móvil React Native para Chat-Ti, desarrollada con Expo.
 
 1. **Navegar al directorio del proyecto:**
    ```bash
-   cd /home/mohsine/Proyectos/chatti/chatti-mobile
+   cd chatti-mobile
    ```
 
 2. **Instalar dependencias:**
@@ -184,7 +184,7 @@ La app se conecta al mismo backend de Cloudflare Workers que la versión web:
 
 ## 📄 Licencia
 
-Proyecto personal - Mohsine
+Este proyecto se distribuye bajo la [Licencia MIT](LICENSE).
 
 ## 🆘 Soporte
 
