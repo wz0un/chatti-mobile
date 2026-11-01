@@ -11,6 +11,14 @@ describe('translations', () => {
     expect(Object.keys(translations)).toEqual(['en', 'es', 'ar', 'fr']);
   });
 
+  it('webPush statusBlocked is present in all languages (P3 QA 2026-09-21)', () => {
+    for (const lang of Object.keys(translations) as Array<keyof typeof translations>) {
+      expect(translate(lang, 'profile.webPush.statusBlocked')).not.toBe(
+        'profile.webPush.statusBlocked',
+      );
+    }
+  });
+
   it('translates known keys per language', () => {
     expect(translate('en', 'tabs.chats')).toBe('Chats');
     expect(translate('es', 'tabs.chats')).toBe('Chats');
