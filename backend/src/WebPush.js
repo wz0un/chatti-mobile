@@ -399,11 +399,27 @@ export const vapidConfigFromEnv = (env) => {
 /** Prefijo KV donde se indexan las suscripciones web push de un usuario. */
 export const webPushKey = (userId, deviceId) => `user:${userId}:webpush:${deviceId}`;
 
+/**
+ * Listar todas las claves KV que matchean un prefijo, paginando con `cursor`
+ * en paquetes de `limit` (hasta 1000). Sin paginación, `KV.list()` solo
+ * devuelve la primera página y el resto se pierde en silencio.
+ */
+export const listKeysPaginated = async (env, prefix, limit = 1000) => {
+    const keys = [];
+    let cursor;
+    do {
+        const page = await env.ROOMS_KV.list({ prefix, limit, cursor });
+        keys.push(...page.keys);
+        cursor = page.list_complete ? null : page.cursor;
+    } while (cursor);
+    return keys;
+};
+
 /** Listar todas las suscripciones web push registradas para un usuario. */
 export const listWebPushSubscriptions = async (env, userId) => {
-    const list = await env.ROOMS_KV.list({ prefix: `user:${userId}:webpush:`, limit: 100 });
+    const list = await listKeysPaginated(env, `user:${userId}:webpush:`, 100);
     const subs = [];
-    for (const key of list.keys) {
+    for (const key of list) {
         const data = await env.ROOMS_KV.get(key.name);
         if (!data) continue;
         try {
@@ -417,6 +433,6 @@ export const listWebPushSubscriptions = async (env, userId) => {
 
 /** Eliminar todas las suscripciones web push de un usuario (baja de cuenta). */
 export const deleteWebPushSubscriptions = async (env, userId) => {
-    const list = await env.ROOMS_KV.list({ prefix: `user:${userId}:webpush:`, limit: 100 });
-    await Promise.all(list.keys.map((key) => env.ROOMS_KV.delete(key.name)));
+    const list = await listKeysPaginated(env, `user:${userId}:webpush:`, 100);
+    await Promise.all(list.map((key) => env.ROOMS_KV.delete(key.name)));
 };

@@ -1,6 +1,6 @@
 # Chatti Web — Web Push Notifications (Task 22)
 
-Status: **FE implemented · BE implemented en `backend/` (monorepo, PR #33) · VAPID runbook documented (§5) — pendiente de secrets/infra, deploy y QA end-to-end**
+Status: **FE + BE en producción (PR #27, `master` `a6381f9`) · secrets VAPID aplicados en prod (DevOps 2026-09-20) · verificado QA live (§7 de `QA-PR27-TASK22.md`) — pendiente QA de entrega en navegador real + sign-off CTO/Staff**
 
 Task: `docs/WEB-TASKS.md` #22 — *Web Push notifications: Service Worker + VAPID + backend endpoint* — Owner: **BE + FE**.
 
@@ -79,6 +79,16 @@ Responses:
 ```
 
 Non-OK HTTP → the web app surfaces the error string in the Profile UI.
+
+> **Seguridad (P2 QA 2026-09-21):** el endpoint no autentica al llamante — confía
+> en el `userId`/`deviceId` aportados por el cliente (cualquiera puede
+> registrar/borrar suscripciones ajenas). Es **consistente con el modelo actual
+> del backend** (auth device-based sin sesión stateful, `userId` como parámetro en
+> `/api/auth/update-push-token`), por lo que se acepta **by design**. Si en el
+> futuro se introduce una sesión/cookie autenticada en el web, este endpoint debe
+> validar que `userId === session.userId`. El riesgo práctico es bajo (un atacante
+> con un `userId` ajeno puede suscribir su propio navegador a las push de la
+> víctima o borrarlas, pero no lee contenido de chats).
 
 Types live in `shared/api/contracts.ts` (`WebPushSubscription`, `WebPushAction`,
 `WebPushRegisterPayload`, `WebPushRemovePayload`, `WebPushResponse`).
@@ -209,6 +219,13 @@ VAPID_PUBLIC_KEY=BPAeKq…
 VAPID_PRIVATE_KEY=xZOxu…
 ```
 
+> **Estado 2026-09-20:** los tres secrets están **aplicados en el worker de
+> producción** `chatti-workers` — versión live `1e93cd9e` over master `a6381f9`
+> (deployment `93a64718`, build `23d2103f`, 2026-09-20T17:12Z). `VAPID_SUBJECT` es
+> `mailto:contact@mohsine.com` y `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` son el par
+> emparejado con `VITE_VAPID_PUBLIC_KEY` de `web/.env.production`. `backend/.dev.vars`
+> creado localmente (git-ignored). Pendiente solo QA end-to-end (§8.2).
+
 ### 5.4 Publish the public key to the web build
 
 ```bash
@@ -226,6 +243,11 @@ the Profile UI shows the *"not configured"* state.
 > público por diseño; es la misma clave que va en el worker). Si un día se
 > quisiera dejar de commitear, habría que inyectar la var en el trigger y cargarla
 > con `loadEnv` en `vite.config.ts`.
+
+> **Estado 2026-09-20:** `web/.env.production` ya contiene el `VITE_VAPID_PUBLIC_KEY`
+> válido (commit `f6097a8`, mergeado a `master` vía PR #27). Los secrets del worker
+> `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` están **emparejados** con esa misma clave
+> pública (verificación live QA 2026-09-21).
 
 ## 6. Browser behavior notes
 

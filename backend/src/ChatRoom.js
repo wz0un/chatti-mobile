@@ -3,7 +3,7 @@
  * Cada sala de chat es una instancia de este Durable Object
  * Maneja WebSocket connections, broadcasting de mensajes y persistencia en SQLite
  */
-import { vapidConfigFromEnv, sendWebPush } from './WebPush.js';
+import { vapidConfigFromEnv, sendWebPush, listKeysPaginated } from './WebPush.js';
 
 export class ChatRoom {
     constructor(state, env) {
@@ -481,11 +481,15 @@ export class ChatRoom {
      * Fan-out web push a todos los usuarios con suscripción de navegador que
      * no estén conectados a la sala. Purgando suscripciones 410 Gone (el
      * navegador ya la desregistró o el push service la invalidó).
+     *
+     * El listado es paginado (`listKeysPaginated`): con más de `limit` claves
+     * `user:*` en KV, las suscripciones de las páginas siguientes se perdían
+     * en silencio (P1 QA 2026-09-21).
      */
     async sendWebPushNotificationsToOfflineUsers(message, roomId, vapid) {
         const senderId = message.userId || null;
-        const list = await this.env.ROOMS_KV.list({ prefix: 'user:', limit: 1000 });
-        const webPushKeys = list.keys.filter((key) => /^user:[^:]+:webpush:[^:]+$/.test(key.name));
+        const keys = await listKeysPaginated(this.env, 'user:');
+        const webPushKeys = keys.filter((key) => /^user:[^:]+:webpush:[^:]+$/.test(key.name));
 
         const sendPromises = webPushKeys.map(async (key) => {
             try {
