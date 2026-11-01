@@ -98,7 +98,7 @@ Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev`
 | M1 Core chat | Contacts screen | ✅ DONE (Task 11 implemented + validated) |
 | M1 Core chat | Profile controls + conversation delete | ✅ DONE (Task 12 + BUG-03; typecheck/lint/85 tests pass) |
 | M1 Core chat | Full QA gate | ⚠️ Blocked sin confirmar — BUG-01 no reproducido en sesión 2026-09-15; queda validación Staff/formal |
-| M2 Rooms | Functional QA | ⚠️ NOT READY (live room/contact coverage and mobile interop not run) |
+| M2 Rooms | Functional QA | ✅ LIVE PASS 2026-09-15: interop web⇄móvil real con mohsine#0001 (sala `m2webmu2yaa75-sala`: join+presencia+typing+«hola» móvil→web; DM «hi» móvil→web; bienvenida+DM cifrado web→móvil). Ver `docs/QA-M2-INTEROP.md`. Pendiente: contacto web→móvil (backend 404 deviceId stale — hallazgo BE) |
 | Regression suite | Task 20 (QA regression) | ✅ DONE — `npm run qa:regression` = 92/92 (85 unit + 5 interop + 2 reconnect), reproducible en clone limpio. Ver `docs/QA-REGRESSION.md` |
 | Task 22 Web Push — FE+BE | PR #27 → `master` (`a6381f9`) | ✅ QA CODE PASS (gates §1, `docs/QA-PR27-TASK22.md`). ✅ **Bloqueo 1 resuelto** (pipeline verde). ✅ **Bloqueo 2 resuelto EN PROD (2026-09-21)**: endpoint `/api/auth/webpush` live (register/refresh/remove/validaciones OK), VAPID public key horneada y aceptada por el navegador, SW activo. ⏳ Pendiente: QA manual de entrega en navegador real (el entorno sandbox no accede al push service) + sign-off CTO/Staff |
 
@@ -122,7 +122,7 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 2. ✅ **Sync CI fixes `master`→`dev`:** reintroducido en `dev` (PRs #40/#41); `dev` buildea en CF y el CI de backend corre (GHA, 20/20 verde).
 3. **QA manual entrega web push en navegador real** (Chrome/Firefox de escritorio) — procedimiento `docs/QA-PR27-TASK22.md` §7.2. Tras el OK, sign-off CTO/Staff → marcar Task 22 **DONE** (Trello).
 4. Confirmar formalmente BUG-01 (backend) y re-aperturar el gate de auth de M1 — Staff/BE
-5. Re-run live contacts/rooms and web↔mobile room interoperability QA — QA (M2)
+5. ✅ DONE 2026-09-15: live rooms + web↔mobile interoperability QA — QA (M2), ver `docs/QA-M2-INTEROP.md`. Resta: contacto web→móvil bloqueado por inconsistencia backend users/find vs by-device-id (para BE)
 6. Publicar `chatti-web-staging` only after an M2 staging-safe QA verdict; production remains out of scope
 
 ## Docs index
