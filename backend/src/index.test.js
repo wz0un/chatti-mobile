@@ -1,5 +1,8 @@
 import { env, createExecutionContext, waitOnExecutionContext, SELF } from 'cloudflare:test';
 import { describe, it, expect } from 'vitest';
+import bcrypt from 'bcryptjs';
+import { pbkdf2Sync } from 'node:crypto';
+import { Buffer } from 'node:buffer';
 import worker from '../src/index.js';
 
 describe('Chatti Workers API', () => {
@@ -315,6 +318,141 @@ describe('Chatti Workers API', () => {
             expect(response.status).toBe(400);
             const data = await response.json();
             expect(data.success).toBe(false);
+        });
+    });
+
+    describe('Auth password hashing (BUG-01 source parity)', () => {
+        const call = async (path, body) => {
+            const request = new Request(`http://example.com${path}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(request, env, ctx);
+            await waitOnExecutionContext(ctx);
+            return response;
+        };
+
+        it('stores PBKDF2 hashes on register and verifies login', async () => {
+            const register = await call('/api/auth/register', {
+                username: 'pbkdf2user',
+                password: 'secret123',
+                deviceId: 'device-pbkdf2-1'
+            });
+            expect(register.status).toBe(200);
+            const regData = await register.json();
+            expect(regData.success).toBe(true);
+
+            const stored = JSON.parse(await env.ROOMS_KV.get(
+                `user:username:pbkdf2user:${regData.user.discriminator}`
+            ));
+            expect(stored.passwordHash).toMatch(/^pbkdf2\$sha256\$100000\$/);
+            expect(stored.passwordHash).not.toMatch(/^\$2[aby]\$/);
+
+            const login = await call('/api/auth/login', {
+                fullUsername: regData.user.fullUsername,
+                password: 'secret123'
+            });
+            expect(login.status).toBe(200);
+            expect((await login.json()).success).toBe(true);
+
+            const wrong = await call('/api/auth/login', {
+                fullUsername: regData.user.fullUsername,
+                password: 'wrong-pass'
+            });
+            expect(wrong.status).toBe(401);
+        });
+
+        it('accepts legacy bcrypt users and migrates them to PBKDF2', async () => {
+            const legacyPassword = 'legacy-pass';
+            const legacyHash = await bcrypt.hash(legacyPassword, 4);
+            const legacyUser = {
+                username: 'legacyuser',
+                discriminator: '0001',
+                fullUsername: 'legacyuser#0001',
+                passwordHash: legacyHash,
+                deviceId: 'device-legacy-1',
+                userId: 'user-legacy-1',
+                createdAt: Date.now(),
+                expoPushToken: null,
+                publicKey: null
+            };
+
+            await env.ROOMS_KV.put('user:username:legacyuser:0001', JSON.stringify(legacyUser));
+            await env.ROOMS_KV.put('user:id:user-legacy-1', JSON.stringify(legacyUser));
+            await env.ROOMS_KV.put('user:device:device-legacy-1', JSON.stringify(legacyUser));
+
+            const login = await call('/api/auth/login', {
+                fullUsername: 'legacyuser#0001',
+                password: legacyPassword
+            });
+            expect(login.status).toBe(200);
+            expect((await login.json()).success).toBe(true);
+
+            const migrated = JSON.parse(await env.ROOMS_KV.get('user:username:legacyuser:0001'));
+            expect(migrated.passwordHash).toMatch(/^pbkdf2\$sha256\$100000\$/);
+
+            const byId = JSON.parse(await env.ROOMS_KV.get('user:id:user-legacy-1'));
+            expect(byId.passwordHash).toBe(migrated.passwordHash);
+
+            const byDevice = JSON.parse(await env.ROOMS_KV.get('user:device:device-legacy-1'));
+            expect(byDevice.passwordHash).toBe(migrated.passwordHash);
+
+            const relogin = await call('/api/auth/login', {
+                fullUsername: 'legacyuser#0001',
+                password: legacyPassword
+            });
+            expect(relogin.status).toBe(200);
+
+            const wrong = await call('/api/auth/login', {
+                fullUsername: 'legacyuser#0001',
+                password: 'nope'
+            });
+            expect(wrong.status).toBe(401);
+        });
+
+        it('verifies PBKDF2 hashes from an independent implementation (standard and URL-safe base64)', async () => {
+            const password = 'vector-pass';
+            const salt = Buffer.from('0123456789abcdef');
+            const derived = pbkdf2Sync(password, salt, 100000, 32, 'sha256');
+            const standard = `pbkdf2$sha256$100000$${salt.toString('base64')}$${derived.toString('base64')}`;
+            const urlSafe = standard
+                .split('$')
+                .map((part, index) => (index < 3 ? part : part.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')))
+                .join('$');
+
+            const makeUser = (suffix, hash) => ({
+                username: `vectoruser${suffix}`,
+                discriminator: '0001',
+                fullUsername: `vectoruser${suffix}#0001`,
+                passwordHash: hash,
+                deviceId: `device-vector-${suffix}`,
+                userId: `user-vector-${suffix}`,
+                createdAt: Date.now(),
+                expoPushToken: null,
+                publicKey: null
+            });
+
+            for (const [suffix, hash] of [['std', standard], ['url', urlSafe]]) {
+                const user = makeUser(suffix, hash);
+                await env.ROOMS_KV.put(`user:username:${user.username}:0001`, JSON.stringify(user));
+                await env.ROOMS_KV.put(`user:id:${user.userId}`, JSON.stringify(user));
+                await env.ROOMS_KV.put(`user:device:${user.deviceId}`, JSON.stringify(user));
+
+                const login = await call('/api/auth/login', {
+                    fullUsername: user.fullUsername,
+                    password
+                });
+                expect(login.status).toBe(200);
+                expect((await login.json()).success).toBe(true);
+
+                const wrong = await call('/api/auth/login', {
+                    fullUsername: user.fullUsername,
+                    password: 'wrong-vector-pass'
+                });
+                expect(wrong.status).toBe(401);
+            }
         });
     });
 });
