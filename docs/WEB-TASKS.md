@@ -1,6 +1,6 @@
 # Chatti Web — Task Board
 
-Status: **Active** · Updated: 2026-09-10
+Status: **Active** · Updated: 2026-11-02 (Wave 2 close-out; PR #56/#57 merged into `dev`; QA-WAVE-2 verdicts)
 
 Owners: **[FE]** Frontend Agent · **[BE]** Backend Agent · **[QA]** QA Agent
 
@@ -111,18 +111,18 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 
 | # | Task | Owner | Status | Notes |
 |---|------|-------|--------|-------|
-| 16 | Deep-linkable routes + browser history | FE | ☐ TODO | BUG-05: BrowserRouter refresh = blank page |
+| 16 | Deep-linkable routes + browser history | FE | ◐ IMPLEMENTED (code), QA/CTO pendiente | `room/:roomId` y `dm/:conversationId` en `web/src/app/App.tsx`; SPA fallback `single-page-application` en `web/wrangler.jsonc`. BUG-05: no reproducido en código actual; validación live pendiente. |
 | 17 | In-app notification toasts (web replacement for push) | FE | ☐ TODO | |
 | 18 | Arabic RTL layout + full a11y pass | FE | ☐ TODO | BUG-07: contrast issues found in QA |
 | 19 | Real dark mode (CSS variables swap) | FE | ☐ TODO | |
 | 21 | QA: Playwright E2E smoke | QA | ☐ TODO | |
-| 24 | CI pipeline: lint + typecheck + unit tests | FE | ☐ TODO | |
+| 24 | CI pipeline: lint + typecheck + unit tests | FE | ◐ IMPLEMENTED (code), QA/CTO pendiente | `.github/workflows/web.yml` (PR #50/#53): typecheck, lint, tests, build en dev/master. Verde en ambas ramas. |
 
 ## P3 tasks (M4 — TODO)
 
 | # | Task | Owner | Status | Notes |
 |---|------|-------|--------|-------|
-| 22 | Web Push notifications: Service Worker + VAPID + backend endpoint | BE + FE | ◐ IN PROGRESS | FE done (SW + VAPID subscription + `/api/auth/webpush` contract + Profile toggle, 109 tests/build OK). BE DONE en `backend/` (`WebPush.js` VAPID+aes128gcm RFC 8291 + endpoints `/api/auth/webpush` y `/api/auth/update-push-token` + hooks room/DM, tests 20/20). Pendiente: secrets VAPID (Staff), deploy y QA end-to-end. Spec: `docs/WEB-PUSH.md` |
+| 22 | Web Push notifications: Service Worker + VAPID + backend endpoint | BE + FE | ◐ IN PROGRESS (no DONE) | Wave 2: click fix sw-2 mergeado en `dev` (PR #57, swNotificationClick.test.ts 9/9, web 119/119). Producción sirve `sw-1` (BUG-NEW-01). QA técnica sobre `dev` `d6608d9` PASS; entrega manual NOT RUN; sign-off CTO/Staff pendiente. Spec: `docs/WEB-PUSH.md`, `docs/QA-PR27-TASK22.md` §8. |
 | 23 | Consolidate mobile onto `shared/` (remove duplicated logic) | FE + QA | ☐ TODO | QA-gated, optional for web delivery |
 
 ---
@@ -131,13 +131,16 @@ Legend: ☐ open · ◐ in progress · ☑ done · ⚠️ blocked
 
 | ID | Severity | Task | Description | Owner | Status |
 |----|----------|------|-------------|-------|--------|
-| BUG-01 | 🔴 CRITICAL | 7 | Backend auth 503 (`error code: 1102`) — registration/login intermittently fail | BE | ⚠️ NOT REPRODUCED 2026-09-15 — probe 90/90 OK + smoke 4/4×2; ver `docs/QA-BUG01-RETEST.md`; formal re-open pending Staff/BE |
+| BUG-01 | 🔴 CRITICAL | 7 | Backend auth 503 (`error code: 1102`) — registration/login intermittently fail | BE | ⚠️ QA PARITY FAIL 2026-11-02: probe live 126/126 sin 5xx, pero producción ejecuta bcrypt de `master` (truncación 72 B, `deviceId` no adoptado). Código PBKDF2 en `dev` (PR #52/#56); PR #58 abierto a `master`. Ver `docs/QA-BUG01-SOURCE-PARITY.md`, `.mece/cells/QA-WAVE-2/BUG01-LIVE.md`. |
 | BUG-02 | 🟠 HIGH | 6 | WebSocket reconnect wipes `listeners` Map — DM reconnect silently breaks | FE | ☑ FIXED |
 | BUG-03 | 🟡 MEDIUM | 9 | Conversation delete was context-menu-only | FE | ☑ FIXED (visible touch/hover control + keyboard route) |
 | BUG-04 | 🟡 MEDIUM | 10 | `lastSeen` not updated on incoming messages in DM chat | FE | ☑ FIXED |
-| BUG-05 | 🟡 MEDIUM | 16 | No deep-linkable routes — SPA refresh = blank page | FE | ☐ TODO (M3) |
+| BUG-05 | 🟡 MEDIUM | 16 | No deep-linkable routes — SPA refresh = blank page | FE | ◐ Implementado en código (rutas + SPA fallback), pendiente QA/CTO |
 | BUG-06 | 🟢 LOW | 9 | i18n key mismatch in empty-search subtext | FE | ☑ FIXED |
 | BUG-07 | 🟢 LOW | 18 | Insufficient color contrast on DM composer placeholder | FE | ☐ TODO (M3) |
+| BUG-NEW-01 | 🔴 P1 | 22 | Producción `chatti-web` sirve `sw-1`; el fix `sw-2` no desplegado; usuarios siguen con #45 | Staff/DevOps | ⚠️ OPEN — requiere PR `dev → master` + despliegue de `chatti-web` |
+| BUG-NEW-02 | 🔴 P1 | 22 | `chatti-web-staging` devuelve HTML en `/sw.js` (543 B); el SW no se registra; prueba manual inválida | DevOps | ⚠️ OPEN — redesplegar `d6608d9` en staging y verificar `sw-2` + `application/javascript` |
+| BUG-NEW-03 | 🟡 P2 | 22 | Harness sin casos hash/query en target (6 casos faltantes); regla search/hash exacta sin CI | FE | ⚠️ OPEN — añadir 6 tests; no bloquea merge, sí DONE |
 
 ---
 
