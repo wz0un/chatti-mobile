@@ -29,7 +29,7 @@ Legend:
 | DM: start conversation | ✅ | ✅ | DONE | Live-verified. `conversationId` (e.g. `dm_xxxx_v2`) + `url`. StartConversation uses `findUserByUsername` → publicKey → start (mobile workaround pattern). |
 | DM: conversation list | ✅ | ✅ | DONE | Dedupe + sort + recipient normalization ported; 30s polling; unread from `lastSeen_{userId}`. |
 | DM: delete conversation | ✅ | ✅ | DONE | Confirm dialog + `POST /api/dm/delete` (deleteConversation port). |
-| DM: encrypted chat (WebSocket) | ✅ | ✅ | DONE | `wss://.../api/dm/{conversationId}`. Events: join (with publicKey), encrypted_message, user_joined, user_left. **Worker does NOT send `history` on join** (verified via raw-protocol probe: first join, join-while-peer-connected, solo rejoin, and rejoin after 100s inactivity all receive no history event — mobile `handleHistory` path appears dead in production; report to BE). Live smoke: encrypted round-trip both directions (web ⇄ web) passing. |
+| DM: encrypted chat (WebSocket) | ✅ | ✅ | DONE | `wss://.../api/dm/{conversationId}`. Events: join (with publicKey), encrypted_message, user_joined, user_left. **Worker envía `history` en `handleWebSocket` (antes del `join`), no en `handleJoin`** (BE-AUTH-CLOSE §Item 3): móvil registra `onmessage` antes del `onopen` que envía `join` y añade sin deduplicar; web reemplaza la lista. Contrato pendiente de decisión Staff (recomendación (a): mover `history` a `handleJoin`). Live smoke: encrypted round-trip both directions (web ⇄ web) passing. |
 | DM: E2E encryption (DH Group 14 + SHA-256 + XOR) | ✅ | ✅ | DONE | WebCrypto port; fixed-vector unit tests; live round-trip decrypts `isEncrypted:false` in both directions. Byte-compatible with mobile (fixed vectors). See ARCHITECTURE §5. |
 | DM: fetch recipient public key | ✅ | ✅ | DONE | `GET /api/users/public-key?userId` (no auth). Live-verified in smoke test. |
 | DM: last-seen / unread markers | ✅ | ✅ | DONE | Written on DM open, history and incoming message (mobile parity); `Number(timestamp) > Number(lastSeen)` comparison. |
@@ -45,7 +45,7 @@ Legend:
 | Copy device ID | ✅ | ✅ | DONE | `navigator.clipboard.writeText` + copied-state feedback. |
 | Language selector | ⚠️ | ✅ | DONE | Profile selector supports en/es/ar/fr through the existing immediate, persisted i18n path. |
 | i18n translation coverage | ✅ | ✅ | DONE | Dictionary extracted verbatim; `interpolate` helper; login/conversations/profile/DM keys verified. |
-| Notifications (push) | ✅ | ⚠️ | IN PROGRESS | FE done (Task 22): Service Worker + VAPID subscription + `/api/auth/webpush` contract + Profile toggle. Expo push stays mobile-only; web delivery needs the BE endpoint (separate Worker repo) + `VITE_VAPID_PUBLIC_KEY` + live QA. Spec: `docs/WEB-PUSH.md`. |
+| Notifications (push) | ✅ | ⚠️ | IN PROGRESS (no DONE) | Wave 2: sw-2 mergeado en `dev` (PR #57); producción sirve `sw-1` (BUG-NEW-01). QA técnica sobre `dev` `d6608d9` PASS (119/119 tests, harness 9/9, push headless 5/5); entrega manual NOT RUN; sign-off CTO/Staff pendiente. Spec: `docs/WEB-PUSH.md`, `docs/QA-PR27-TASK22.md` §8. |
 | In-app notification toasts | ❌ | ❌ | TODO | Mobile shows local notifications only. Web can add in-app toasts (Web-only enhancement, no backend change). |
 | Unread conversations badge (tab) | ✅ | ✅ | DONE | `useSectionBadges` — 30s polling + focus refresh, 99+ cap. |
 | Pending requests badge (tab) | ✅ | ✅ | DONE | Same `useSectionBadges` polling. |
@@ -61,4 +61,5 @@ Legend:
 - **Blocked:** user directory (backend disabled — do not implement).
 - **Deferred (needs backend change):** push notifications.
 - **Critical constraint:** DM encryption must remain byte-compatible with mobile's `EncryptionService` (fixed-vector tests enforce this).
-- **Worker finding (report to BE):** the DM WebSocket never emits `history` on join — web and mobile both have the dead handler path; history decrypt is unit-tested via FakeWebSocket instead of live.
+- **Worker finding (BE):** the DM WebSocket sends `history` at connection time (before `join`), not on `join`; contract undecided (BE-AUTH-CLOSE §Item 3). Mobile appends without dedupe; web replaces the list. Do not duplicate `history` (connect + join) without deciding the contract.
+- **Deep links (Task 16):** ◐ implementado en código (`room/:roomId`, `dm/:conversationId` + SPA fallback), pendiente QA/CTO.
