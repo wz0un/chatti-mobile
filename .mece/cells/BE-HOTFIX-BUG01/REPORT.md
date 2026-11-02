@@ -3,7 +3,8 @@
 **Session:** `be-hotfix-bug01-2026-11-02`
 **Branch:** `hotfix/bug01-pbkdf2-prod` (desde `origin/master` @ `6221d4c`)
 **PR:** https://github.com/wz0un/chatti-mobile/pull/58
-**Head SHA:** `16aab98` (report añadido en un commit posterior)
+**Code commit SHA:** `16aab98`
+**Head SHA final:** `bfa7ae2` (incluye este report)
 **Status global:** QA live post-deploy + sign-off CTO/Staff pendientes. Nada se declara DONE (AGENTS.md).
 
 ## Objetivo
