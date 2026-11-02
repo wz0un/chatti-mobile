@@ -94,4 +94,27 @@ describe('sw notificationclick', () => {
     expect(client.focus).toHaveBeenCalled();
     expect(client.navigate).not.toHaveBeenCalled();
   });
+
+  it('skips clients with unparseable urls', async () => {
+    const bad = makeClient('not a url', { controlled: true });
+    const good = makeClient('https://example.com/rooms', { controlled: true });
+    const { listeners, openWindow } = loadSw([bad, good]);
+    let pending: any;
+    const event: any = { notification: { close: vi.fn(), data: { url: '/room/r1' } }, waitUntil: (p: any) => { pending = p; } };
+    listeners.notificationclick(event);
+    await pending;
+    expect(good.focus).toHaveBeenCalled();
+    expect(openWindow).not.toHaveBeenCalled();
+  });
+
+  it('continues when focus() rejects', async () => {
+    const client = makeClient('https://example.com/rooms', { controlled: true });
+    client.focus.mockRejectedValue(new Error('focus failed'));
+    const { listeners } = loadSw([client]);
+    let pending: any;
+    const event: any = { notification: { close: vi.fn(), data: { url: '/room/r1' } }, waitUntil: (p: any) => { pending = p; } };
+    listeners.notificationclick(event);
+    await pending;
+    expect(client.navigate).toHaveBeenCalledWith('https://example.com/room/r1');
+  });
 });

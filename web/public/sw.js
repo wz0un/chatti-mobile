@@ -93,12 +93,21 @@ self.addEventListener('notificationclick', (event) => {
       //    trailing-slash and query/hash differences so we don't navigate
       //    (and flicker) when the page is essentially already there.
       for (const client of clientList) {
-        const clientUrl = new URL(client.url);
-        if (
-          clientUrl.origin === target.origin &&
-          clientUrl.pathname.replace(/\/$/, '') === target.pathname.replace(/\/$/, '')
-        ) {
-          await client.focus();
+        let clientUrl = null;
+        try {
+          clientUrl = new URL(client.url);
+        } catch (err) {
+          continue;
+        }
+        const samePath = clientUrl.pathname.replace(/\/$/, '') === target.pathname.replace(/\/$/, '');
+        const sameSearch = target.search === '' ? true : clientUrl.search === target.search;
+        const sameHash = target.hash === '' ? true : clientUrl.hash === target.hash;
+        if (clientUrl.origin === target.origin && samePath && sameSearch && sameHash) {
+          try {
+            await client.focus();
+          } catch (err) {
+            console.warn('[sw] focus() failed on already-open window:', err);
+          }
           return;
         }
       }
@@ -114,7 +123,11 @@ self.addEventListener('notificationclick', (event) => {
         }
       });
       if (appWindow) {
-        await appWindow.focus();
+        try {
+          await appWindow.focus();
+        } catch (err) {
+          console.warn('[sw] focus() failed on app window:', err);
+        }
         if (typeof appWindow.navigate === 'function') {
           try {
             await appWindow.navigate(target.href);

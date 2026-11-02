@@ -150,8 +150,9 @@ Classic worker copied verbatim to `dist/` by Vite and registered at `/sw.js`
 - `notificationclick` (SW_VERSION `sw-2`) → algorithm:
   1. Parse target URL from `notification.data.url` (fallback `/rooms`).
   2. `matchAll({type:'window', includeUncontrolled:true})`.
-  3. If a client is already on the target path (trailing slash / query / hash
-     tolerated), `focus()` it and return.
+  3. If a client is already on the target: when target has no search/hash, path
+     equality (trailing slash tolerated) suffices; when target has search or
+     hash, they must match exactly. Then `focus()` and return.
   4. Else if an app window (same origin) exists, `focus()` it and
      `navigate(target.href)`; if `navigate()` is missing or rejects, fall
      back to `clients.openWindow(target.href)`.
