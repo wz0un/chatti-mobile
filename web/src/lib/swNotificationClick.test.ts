@@ -95,6 +95,75 @@ describe('sw notificationclick', () => {
     expect(client.navigate).not.toHaveBeenCalled();
   });
 
+  it('navigates when the target query differs from the client query', async () => {
+    const client = makeClient('https://example.com/room/r1?tab=members', { controlled: true });
+    const { listeners } = loadSw([client]);
+    let pending: any;
+    const event: any = { notification: { close: vi.fn(), data: { url: '/room/r1?tab=thread' } }, waitUntil: (p: any) => { pending = p; } };
+    listeners.notificationclick(event);
+    await pending;
+    expect(client.focus).toHaveBeenCalled();
+    expect(client.navigate).toHaveBeenCalledWith('https://example.com/room/r1?tab=thread');
+  });
+
+  it('focuses without navigating when the target query matches the client query', async () => {
+    const client = makeClient('https://example.com/room/r1?tab=thread', { controlled: true });
+    const { listeners } = loadSw([client]);
+    let pending: any;
+    const event: any = { notification: { close: vi.fn(), data: { url: '/room/r1?tab=thread' } }, waitUntil: (p: any) => { pending = p; } };
+    listeners.notificationclick(event);
+    await pending;
+    expect(client.focus).toHaveBeenCalled();
+    expect(client.navigate).not.toHaveBeenCalled();
+  });
+
+  it('navigates when the target hash differs from the client hash', async () => {
+    const client = makeClient('https://example.com/room/r1#msg-9', { controlled: true });
+    const { listeners } = loadSw([client]);
+    let pending: any;
+    const event: any = { notification: { close: vi.fn(), data: { url: '/room/r1#msg-5' } }, waitUntil: (p: any) => { pending = p; } };
+    listeners.notificationclick(event);
+    await pending;
+    expect(client.focus).toHaveBeenCalled();
+    expect(client.navigate).toHaveBeenCalledWith('https://example.com/room/r1#msg-5');
+  });
+
+  it('focuses without navigating when the target hash matches the client hash', async () => {
+    const client = makeClient('https://example.com/room/r1#msg-5', { controlled: true });
+    const { listeners } = loadSw([client]);
+    let pending: any;
+    const event: any = { notification: { close: vi.fn(), data: { url: '/room/r1#msg-5' } }, waitUntil: (p: any) => { pending = p; } };
+    listeners.notificationclick(event);
+    await pending;
+    expect(client.focus).toHaveBeenCalled();
+    expect(client.navigate).not.toHaveBeenCalled();
+  });
+
+  it('focuses without navigating when target and client match on query and hash', async () => {
+    const client = makeClient('https://example.com/room/r1?tab=thread#msg-5', { controlled: true });
+    const { listeners } = loadSw([client]);
+    let pending: any;
+    const event: any = { notification: { close: vi.fn(), data: { url: '/room/r1?tab=thread#msg-5' } }, waitUntil: (p: any) => { pending = p; } };
+    listeners.notificationclick(event);
+    await pending;
+    expect(client.focus).toHaveBeenCalled();
+    expect(client.navigate).not.toHaveBeenCalled();
+  });
+
+  // Intentional: sw.js only requires search/hash to match when the target has
+  // them (see sameSearch/sameHash in public/sw.js). A bare target therefore
+  // matches the path regardless of the client's query or hash.
+  it('treats extra query/hash on the client as already on target when the target has neither', async () => {
+    const client = makeClient('https://example.com/room/r1/?tab=thread#msg-5', { controlled: true });
+    const { listeners } = loadSw([client]);
+    let pending: any;
+    const event: any = { notification: { close: vi.fn(), data: { url: '/room/r1' } }, waitUntil: (p: any) => { pending = p; } };
+    listeners.notificationclick(event);
+    await pending;
+    expect(client.focus).toHaveBeenCalled();
+    expect(client.navigate).not.toHaveBeenCalled();
+  });
+
   it('skips clients with unparseable urls', async () => {
     const bad = makeClient('not a url', { controlled: true });
     const good = makeClient('https://example.com/rooms', { controlled: true });
