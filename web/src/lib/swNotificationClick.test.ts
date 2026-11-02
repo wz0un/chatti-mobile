@@ -117,4 +117,15 @@ describe('sw notificationclick', () => {
     await pending;
     expect(client.navigate).toHaveBeenCalledWith('https://example.com/room/r1');
   });
+  it('falls through when already-on-target focus() rejects', async () => {
+    const client = makeClient('https://example.com/room/r1', { controlled: true });
+    client.focus.mockRejectedValue(new Error('focus failed'));
+    const { listeners } = loadSw([client]);
+    let pending: any;
+    const event: any = { notification: { close: vi.fn(), data: { url: '/room/r1' } }, waitUntil: (p: any) => { pending = p; } };
+    listeners.notificationclick(event);
+    await pending;
+    expect(client.navigate).toHaveBeenCalledWith('https://example.com/room/r1');
+  });
+
 });

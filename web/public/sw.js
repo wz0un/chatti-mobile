@@ -105,10 +105,10 @@ self.addEventListener('notificationclick', (event) => {
         if (clientUrl.origin === target.origin && samePath && sameSearch && sameHash) {
           try {
             await client.focus();
+            return;
           } catch (err) {
-            console.warn('[sw] focus() failed on already-open window:', err);
+            console.warn('[sw] focus() failed on already-open window, falling through:', err);
           }
-          return;
         }
       }
 
