@@ -454,6 +454,63 @@ describe('Chatti Workers API', () => {
                 expect(wrong.status).toBe(401);
             }
         });
+
+        it('rejects malformed PBKDF2 hashes without returning 500', async () => {
+            const user = {
+                username: 'malformeduser',
+                discriminator: '0001',
+                fullUsername: 'malformeduser#0001',
+                passwordHash: 'pbkdf2$sha256$100000$!!!$!!!',
+                deviceId: 'device-malformed',
+                userId: 'user-malformed',
+                createdAt: Date.now(),
+                expoPushToken: null,
+                publicKey: null
+            };
+            await env.ROOMS_KV.put('user:username:malformeduser:0001', JSON.stringify(user));
+            await env.ROOMS_KV.put('user:id:user-malformed', JSON.stringify(user));
+
+            const response = await call('/api/auth/login', {
+                fullUsername: 'malformeduser#0001',
+                password: 'whatever'
+            });
+            expect(response.status).toBe(401);
+        });
+
+        it('handles concurrent first logins of a legacy bcrypt account', async () => {
+            const password = 'legacy-race-pass';
+            const legacyHash = await bcrypt.hash(password, 4);
+            const user = {
+                username: 'legacyrace',
+                discriminator: '0001',
+                fullUsername: 'legacyrace#0001',
+                passwordHash: legacyHash,
+                deviceId: 'device-race',
+                userId: 'user-race',
+                createdAt: Date.now(),
+                expoPushToken: null,
+                publicKey: null
+            };
+            await env.ROOMS_KV.put('user:username:legacyrace:0001', JSON.stringify(user));
+            await env.ROOMS_KV.put('user:id:user-race', JSON.stringify(user));
+            await env.ROOMS_KV.put('user:device:device-race', JSON.stringify(user));
+
+            const [first, second] = await Promise.all([
+                call('/api/auth/login', { fullUsername: user.fullUsername, password }),
+                call('/api/auth/login', { fullUsername: user.fullUsername, password })
+            ]);
+            expect(first.status).toBe(200);
+            expect(second.status).toBe(200);
+
+            const stored = JSON.parse(await env.ROOMS_KV.get('user:username:legacyrace:0001'));
+            expect(stored.passwordHash).toMatch(/^pbkdf2\$sha256\$100000\$/);
+
+            const relogin = await call('/api/auth/login', {
+                fullUsername: user.fullUsername,
+                password
+            });
+            expect(relogin.status).toBe(200);
+        });
     });
 
     describe('Contact recipient resolution after device change (M2 finding #4)', () => {

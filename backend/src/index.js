@@ -75,21 +75,29 @@ async function verifyPassword(password, storedHash) {
     }
 
     if (storedHash.startsWith('pbkdf2$')) {
-        const parts = storedHash.split('$');
-        if (parts.length !== 5 || parts[1].toLowerCase() !== 'sha256') {
+        try {
+            const parts = storedHash.split('$');
+            if (parts.length !== 5 || parts[1].toLowerCase() !== 'sha256') {
+                return false;
+            }
+            const iterations = Number.parseInt(parts[2], 10);
+            if (!Number.isFinite(iterations) || iterations <= 0) {
+                return false;
+            }
+            const salt = decodeB64(parts[3]);
+            const expected = decodeB64(parts[4]);
+            const actual = await derivePbkdf2(password, salt, iterations);
+            return timingSafeEqual(actual, expected);
+        } catch {
             return false;
         }
-        const iterations = Number.parseInt(parts[2], 10);
-        if (!Number.isFinite(iterations) || iterations <= 0) {
-            return false;
-        }
-        const salt = decodeB64(parts[3]);
-        const expected = decodeB64(parts[4]);
-        const actual = await derivePbkdf2(password, salt, iterations);
-        return timingSafeEqual(actual, expected);
     }
 
-    return bcrypt.compare(password, storedHash);
+    try {
+        return await bcrypt.compare(password, storedHash);
+    } catch {
+        return false;
+    }
 }
 
 /**
