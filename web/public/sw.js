@@ -14,6 +14,7 @@
 
 const DEFAULT_ICON = '/icons/chatti-icon-192.png';
 const FALLBACK_PATH = '/rooms';
+const SW_VERSION = 'sw-2';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -87,19 +88,46 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     (async () => {
       const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+
+      // 1. A window already showing the target URL: just focus it. Tolerate
+      //    trailing-slash and query/hash differences so we don't navigate
+      //    (and flicker) when the page is essentially already there.
       for (const client of clientList) {
-        if (client.url === target.href) {
+        const clientUrl = new URL(client.url);
+        if (
+          clientUrl.origin === target.origin &&
+          clientUrl.pathname.replace(/\/$/, '') === target.pathname.replace(/\/$/, '')
+        ) {
           await client.focus();
           return;
         }
       }
-      // Reuse any open window of the app instead of stacking tabs.
-      const appWindow = clientList.find((client) => new URL(client.url).origin === target.origin);
+
+      // 2. Reuse any open app window: focus + navigate, falling back to
+      //    openWindow when navigate() is missing or rejects (uncontrolled
+      //    clients, cross-origin restrictions, etc.).
+      const appWindow = clientList.find((client) => {
+        try {
+          return new URL(client.url).origin === target.origin;
+        } catch (err) {
+          return false;
+        }
+      });
       if (appWindow) {
         await appWindow.focus();
-        await appWindow.navigate(target.href);
+        if (typeof appWindow.navigate === 'function') {
+          try {
+            await appWindow.navigate(target.href);
+            return;
+          } catch (err) {
+            console.warn('[sw] navigate() failed, falling back to openWindow:', err);
+          }
+        }
+        await self.clients.openWindow(target.href);
         return;
       }
+
+      // 3. No window open: open a new one.
       await self.clients.openWindow(target.href);
     })(),
   );
@@ -107,6 +135,6 @@ self.addEventListener('notificationclick', (event) => {
 
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'ping' && event.source) {
-    event.source.postMessage({ type: 'pong', version: 'sw-1' });
+    event.source.postMessage({ type: 'pong', version: SW_VERSION });
   }
 });
