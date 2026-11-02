@@ -455,4 +455,102 @@ describe('Chatti Workers API', () => {
             }
         });
     });
+
+    describe('Contact recipient resolution after device change (M2 finding #4)', () => {
+        const call = async (path, body, method = 'POST') => {
+            const request = new Request(`http://example.com${path}`, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                ...(body ? { body: JSON.stringify(body) } : {})
+            });
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(request, env, ctx);
+            await waitOnExecutionContext(ctx);
+            return response;
+        };
+
+        const register = async (username, deviceId) => {
+            const response = await call('/api/auth/register', {
+                username,
+                password: 'secret123',
+                deviceId,
+                publicKey: `pk-${username}`
+            });
+            expect(response.status).toBe(200);
+            return (await response.json()).user;
+        };
+
+        it('keeps users/find and contacts/request consistent after update-push-token changes deviceId', async () => {
+            const user = await register('m2recipient', 'device-old');
+
+            // Simulate the M2 stale mapping: the old device index is gone.
+            await env.ROOMS_KV.delete('user:device:device-old');
+
+            const update = await call('/api/auth/update-push-token', {
+                userId: user.userId,
+                deviceId: 'device-new',
+                expoPushToken: 'ExponentPushToken[new]'
+            });
+            expect(update.status).toBe(200);
+
+            const usernameEntry = JSON.parse(await env.ROOMS_KV.get(
+                `user:username:${user.username}:${user.discriminator}`
+            ));
+            expect(usernameEntry.deviceId).toBe('device-new');
+            expect(await env.ROOMS_KV.get('user:device:device-old')).toBeNull();
+            expect(await env.ROOMS_KV.get('user:device:device-new')).toBeTruthy();
+
+            const found = await call(
+                `/api/users/find?username=${encodeURIComponent(user.fullUsername)}`,
+                null,
+                'GET'
+            );
+            expect(found.status).toBe(200);
+            const foundUser = (await found.json()).user;
+            expect(foundUser.deviceId).toBe('device-new');
+            expect(foundUser.publicKey).toBe('pk-m2recipient');
+
+            const byDevice = await call('/api/users/by-device-id?deviceId=device-new', null, 'GET');
+            expect(byDevice.status).toBe(200);
+            expect((await byDevice.json()).user.userId).toBe(user.userId);
+
+            const contact = await call('/api/contacts/request', {
+                senderId: 'user-sender-1',
+                recipientDeviceId: 'device-new',
+                senderUsername: 'sender#0001'
+            });
+            expect(contact.status).toBe(200);
+            expect(await env.ROOMS_KV.get(
+                `contact:request:user-sender-1:${user.userId}`
+            )).toBeTruthy();
+        });
+
+        it('lets login adopt a new deviceId and refresh all indices', async () => {
+            const user = await register('m2relogin', 'device-before');
+
+            const login = await call('/api/auth/login', {
+                fullUsername: user.fullUsername,
+                password: 'secret123',
+                deviceId: 'device-after'
+            });
+            expect(login.status).toBe(200);
+
+            const usernameEntry = JSON.parse(await env.ROOMS_KV.get(
+                `user:username:${user.username}:${user.discriminator}`
+            ));
+            expect(usernameEntry.deviceId).toBe('device-after');
+
+            const byId = JSON.parse(await env.ROOMS_KV.get(`user:id:${user.userId}`));
+            expect(byId.deviceId).toBe('device-after');
+            expect(await env.ROOMS_KV.get('user:device:device-before')).toBeNull();
+            expect(await env.ROOMS_KV.get('user:device:device-after')).toBeTruthy();
+
+            const found = await call(
+                `/api/users/find?username=${encodeURIComponent(user.fullUsername)}`,
+                null,
+                'GET'
+            );
+            expect((await found.json()).user.deviceId).toBe('device-after');
+        });
+    });
 });

@@ -522,7 +522,7 @@ export default {
     async loginUser(request, env, corsHeaders) {
         try {
             const body = await request.json();
-            const { fullUsername, password, expoPushToken, publicKey } = body;
+            const { fullUsername, password, expoPushToken, publicKey, deviceId } = body;
 
             if (!fullUsername || !password) {
                 return new Response(JSON.stringify({
@@ -574,11 +574,18 @@ export default {
                 });
             }
 
+            const previousDeviceId = user.deviceId;
             let needsUpdate = false;
 
             // Progressive migration: legacy bcrypt hashes are rehashed on first successful login
             if (!user.passwordHash.startsWith('pbkdf2$')) {
                 user.passwordHash = await derivePasswordHash(password);
+                needsUpdate = true;
+            }
+
+            // Login from a reinstalled/new device: refresh the device mapping.
+            if (deviceId && user.deviceId !== deviceId) {
+                user.deviceId = deviceId;
                 needsUpdate = true;
             }
 
@@ -598,6 +605,9 @@ export default {
                 await env.ROOMS_KV.put(`user:id:${user.userId}`, JSON.stringify(user));
                 if (user.deviceId) {
                     await env.ROOMS_KV.put(`user:device:${user.deviceId}`, JSON.stringify(user));
+                }
+                if (previousDeviceId && previousDeviceId !== user.deviceId) {
+                    await env.ROOMS_KV.delete(`user:device:${previousDeviceId}`);
                 }
             }
 
@@ -844,13 +854,28 @@ export default {
             }
 
             const userData = JSON.parse(userDataString);
+            const previousDeviceId = userData.deviceId;
             userData.expoPushToken = expoPushToken;
             userData.deviceId = deviceId;
 
-            await Promise.all([
+            const writes = [
                 env.ROOMS_KV.put(`user:id:${userId}`, JSON.stringify(userData)),
                 env.ROOMS_KV.put(`user:device:${deviceId}`, JSON.stringify(userData)),
-            ]);
+            ];
+
+            // Keep the username index canonical too; users/find reads it.
+            if (userData.username && userData.discriminator) {
+                writes.push(env.ROOMS_KV.put(
+                    `user:username:${userData.username}:${userData.discriminator}`,
+                    JSON.stringify(userData)
+                ));
+            }
+
+            if (previousDeviceId && previousDeviceId !== deviceId) {
+                writes.push(env.ROOMS_KV.delete(`user:device:${previousDeviceId}`));
+            }
+
+            await Promise.all(writes);
 
             return new Response(JSON.stringify({
                 success: true,
@@ -1008,26 +1033,22 @@ export default {
                 });
             }
 
-            const parsed = JSON.parse(userData);
+            const usernameIndexUser = JSON.parse(userData);
 
-            // Get full user data including public key from user:id index
-            const fullUserData = await env.ROOMS_KV.get(`user:id:${parsed.userId}`);
-            let publicKey = null;
-
-            if (fullUserData) {
-                const fullUser = JSON.parse(fullUserData);
-                publicKey = fullUser.publicKey;
-            }
+            // Canonical record is user:id; the username index can be stale after
+            // a device reinstall/relogin (M2 finding: users/find vs by-device-id).
+            const canonicalData = await env.ROOMS_KV.get(`user:id:${usernameIndexUser.userId}`);
+            const user = canonicalData ? JSON.parse(canonicalData) : usernameIndexUser;
 
             return new Response(JSON.stringify({
                 success: true,
                 user: {
-                    username,
-                    discriminator,
-                    fullUsername,
-                    userId: parsed.userId,
-                    deviceId: parsed.deviceId,
-                    publicKey: publicKey
+                    username: user.username,
+                    discriminator: user.discriminator,
+                    fullUsername: user.fullUsername,
+                    userId: user.userId,
+                    deviceId: user.deviceId,
+                    publicKey: user.publicKey
                 }
             }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' }
