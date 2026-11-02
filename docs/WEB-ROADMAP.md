@@ -1,6 +1,6 @@
 # Chatti Web — Roadmap
 
-Status: **In Progress** · Owner: CTO · Updated: 2026-09-10
+Status: **In Progress** · Owner: CTO · Updated: 2026-11-02 (Wave 2 close-out)
 
 Guiding principles:
 1. **Mobile is the source of truth** — it keeps working; nothing in `App.js`/`src/` is rewritten for web delivery.
@@ -39,7 +39,7 @@ Goal: the daily-driver path — login → Chats → DM chat → Contacts.
 
 | Bug | Severity | Status | Description | Impact |
 |-----|----------|--------|-------------|--------|
-| BUG-01 | 🔴 CRITICAL | ☐ BLOCKED (backend) | Backend auth 503 (`error code: 1102`) — registration and login intermittently fail | All auth-dependent flows broken; mobile affected too |
+| BUG-01 | 🔴 CRITICAL | ☐ BLOCKED (backend) | Backend auth 503 (`error code: 1102`) — código PBKDF2 en `dev` (PR #52/#56), pero producción ejecuta bcrypt de `master` (paridad QA FAIL); PR #58 abierto | All auth-dependent flows broken; mobile affected too |
 | BUG-02 | 🟠 HIGH | ☑ FIXED | WebSocket reconnect wipes `listeners` Map | DM reconnection breaks silently; messages stop rendering |
 | BUG-04 | 🟡 MEDIUM | ☑ FIXED | `lastSeen` not updated on incoming DM messages | Unread markers drift from actual read state |
 | BUG-06 | 🟢 LOW | ☑ FIXED | i18n key mismatch in empty-search subtext | Cosmetic, but leaks raw key |
@@ -60,7 +60,7 @@ Goal: room feature parity.
 
 Goal: take advantage of desktop/web while preserving parity (no backend changes).
 
-1. Deep-linkable routes + browser history (`/chat/:roomId`, `/dm/:conversationId`).
+1. Deep-linkable routes + browser history (`/room/:roomId`, `/dm/:conversationId`) — ◐ implementado en código (rutas + SPA fallback), pendiente QA/CTO.
 2. Keyboard shortcuts (Enter to send, Ctrl+K search, Esc to close).
 3. In-app notification toasts (replaces local push notifications on web).
 4. RTL layout for Arabic; accessibility pass (aria-live, focus management, semantic HTML).
@@ -75,8 +75,8 @@ Goal: remove duplicated business logic while keeping mobile regression-free.
 
 1. Point mobile services at `shared/` (encryption, ApiService, WS protocol, i18n dictionary) — one copy of business logic.
 2. QA: full mobile regression suite against production backend.
-3. Push notifications: Web Push + Service Worker + Backend Agent endpoint (`POST /api/auth/webpush`), VAPID keys — **FE shipped + contract defined in `docs/WEB-PUSH.md` (Task 22); Worker endpoint + VAPID delivery pending BE.**
-4. CI: lint + typecheck + tests for `web/` and `shared/`; E2E smoke tests (Playwright) for core flows.
+3. Push notifications: Web Push + Service Worker + Backend endpoint (`POST /api/auth/webpush`), VAPID keys — **FE shipped (sw-2 en `dev`, PR #57); producción sirve `sw-1` (BUG-NEW-01); QA técnica PASS, entrega manual NOT RUN; sign-off CTO/Staff pendiente.**
+4. CI: lint + typecheck + tests for `web/` and `shared/` — **implementado (`web.yml`, PR #50/#53) y `backend.yml` (PR #38); pendiente QA/CTO.** E2E smoke tests (Playwright) siguen TODO.
 
 **Exit criteria:** mobile regression green; optional push notifications shipped; no duplicated business logic.
 
@@ -85,10 +85,10 @@ Goal: remove duplicated business logic while keeping mobile regression-free.
 | Milestone | Scope | Status | Owner | Depends on |
 |-----------|-------|--------|-------|------------|
 | M0 | Foundations + shared core | ✅ DONE | Frontend | — |
-| M1 | Auth, DMs, Contacts, Profile | ⚠️ BLOCKED (BUG-01) | Frontend | M0 + backend auth fix |
-| M2 | Rooms | ⚠️ IMPLEMENTED — QA NOT READY | Frontend + QA | live auth/session + room interop verification |
-| M3 | Web UX upgrades | 🔲 TODO | Frontend | M2 |
-| M4 | Consolidation, push, CI | 🔲 TODO | Frontend + Backend + QA | M3 |
+| M1 | Auth, DMs, Contacts, Profile | ⚠️ BLOCKED (BUG-01, producción ejecuta bcrypt) | Frontend | M0 + deploy PBKDF2 (PR #58) |
+| M2 | Rooms | ⚠️ IMPLEMENTED — live interop PASS 2026-09-15; contacto web→móvil pendiente (finding 4 corregido en código) | Frontend + QA | live auth/session + room interop verification |
+| M3 | Web UX upgrades | 🔲 TODO (deep links ◐ implementados en código) | Frontend | M2 |
+| M4 | Consolidation, push, CI | 🔲 TODO (push sw-2 en `dev`, CI implementado) | Frontend + Backend + QA | M3 |
 
 ## Risk gates
 

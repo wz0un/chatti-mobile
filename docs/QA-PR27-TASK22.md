@@ -132,3 +132,65 @@ El `subscribe()` del navegador de prueba lanzó **`AbortError: Registration fail
 3. **P3 (UX, ya documentado §3):** badge "On" cuando el permiso está bloqueado (`webPushState === 'blocked'`) — mostrar "Off/Blocked".
    - **Resuelto (PR #44):** badge ahora muestra **"Blocked"/"Bloqueadas"/etc.** (nueva clave i18n `profile.webPush.statusBlocked` en en/es/ar/fr) para el estado `blocked`; test de paridad i18n añadido.
 4. ✅ **Resuelto:** CI del backend (antes inexistente) — workflow `.github/workflows/backend.yml` mergeado vía PR #38; runs "Backend Tests" en `dev` **verdes** (Node 22 + vitest 20/20).
+
+## 8. QA-WAVE-2 — consolidación Fase B (2026-11-02)
+
+**Base:** `dev` @ `d6608d9e3f3630a408c98bd401516365c95b34df` (merge PR #56; PR #57 = `2d7d798`). **Entorno:** Linux, Node v24.13.1, pnpm 11.9.0, worktree `t3-504e388b`. **Hora:** 13:34–13:36 CET (12:34–12:36 UTC). **Modo:** read-only sobre producto y Git; no se repitió el probe live.
+
+### 8.1 Resultado por item
+
+| Item | Resultado | Evidencia |
+|------|-----------|-----------|
+| Task 22 — deep link on click (QA sobre `dev` mergeado) | ✅ **PASS** técnico | Gates web PASS (typecheck, lint, **119/119**, build); `dist/sw.js` con `sw-2` + fallback; harness 9/9; push headless 5/5 con `data.url` correcto y 0 excepciones; contrato 7/7; invariantes #44 OK. Fuente: `.mece/cells/QA-WAVE-2/WEBPUSH-PRE-MERGE.md`. |
+| Task 22 — prueba manual real Chrome/Firefox | ⚠️ **NOT RUN** | El headless no puede enfocar ventanas; tabla §6.4 del informe fuente preparada y vacía. Requiere Staff + despliegue de `d6608d9` en staging. |
+| Task 22 — cobertura del harness (query/hash) | ❌ **FAIL (solo test)** | 9 casos, sin target con hash ni query exacta; comportamiento correcto por sonda, pero sin CI (BUG-NEW-03). |
+| BUG-01 — source parity (PR #52/#56) | ❌ **FAIL de paridad** | Probe live **126/126** HTTP 200, 0 5xx/1102 (12:20–12:22 UTC), **pero producción ejecuta bcrypt de `master`**: truncación a 72 B → 200; control <72 B → 401; `deviceId` nuevo no adoptado. `master` L377 `bcrypt.hash` / L480 `bcrypt.compare`; `dev` `verifyPassword` L72 + PBKDF2. Fuente: `.mece/cells/QA-WAVE-2/BUG01-LIVE.md`. |
+| device-id — `users/find` vs `users/by-device-id` (M2 finding 4) | ✅ **PASS local** · ⚠️ **NOT RUN live** | Tests `keeps users/find and contacts/request consistent after update-push-token changes deviceId` (L540) y `lets login adopt a new deviceId and refresh all indices` (L585), dentro de 29/29. Live no ejecutado: fix no desplegado. |
+| DM history — contrato Staff | ⚠️ **NOT RUN** | Sin decisión Staff; recomendación (a) de BE-AUTH-CLOSE no implementada. No hay contrato que validar. |
+
+### 8.2 Evidencia ejecutada (2026-11-02)
+
+| Hora UTC | Comando | Resultado |
+|----------|---------|-----------|
+| 12:34:46–12:34:50 | `cd backend && pnpm test` | **2 files · 29/29 tests PASS** · 2.60 s |
+| 12:34:46–12:34:48 | `cd web && pnpm test` | **9 files · 119/119 tests PASS** · 974 ms |
+| 12:35:07 | `curl https://chatti-web.wz0un.workers.dev/sw.js` | HTTP 200 · 3 701 B · `text/javascript` · **`sw-1`** |
+| 12:35:07 | `curl https://chatti-web-staging.wz0un.workers.dev/sw.js` | HTTP 200 · 543 B · **`text/html`** (index.html) |
+| 12:35 | `grep SW_VERSION web/public/sw.js` | `sw-2` (L17); `sameSearch`/`sameHash` L103–105 |
+| 12:35 | `git show origin/master:backend/src/index.js` | `bcrypt.hash` L377 · `bcrypt.compare` L480 |
+
+Los números de los informes fuente se sostienen por muestreo: backend 29/29 y web 119/119. No se crearon cuentas ni se envió tráfico de escritura en esta sesión.
+
+### 8.3 Bugs nuevos
+
+| ID | Severidad | Bug | Acción |
+|----|-----------|-----|--------|
+| BUG-NEW-01 | **P1 — release blocker** | Producción `chatti-web` sirve **`sw-1`**; el fix `sw-2` de `d6608d9` no está desplegado. Los usuarios reales siguen con el bug #45. | Staff: PR `dev → master` + despliegue de `chatti-web`. |
+| BUG-NEW-02 | **P1 — entorno** | `chatti-web-staging` devuelve **HTML** en `/sw.js` (543 B, `text/html`); el SW no se registra y la prueba manual no validaría nada. | DevOps: publicar `d6608d9` en staging y verificar `sw-2` + `application/javascript`. |
+| BUG-NEW-03 | **P2 — tests** | El harness no cubre target con **hash** ni **query**: faltan 6 casos (hash ausente/distinto/igual, query distinta/igual, todos los clientes inválidos). La regla “search/hash exactos” queda sin CI. | FE: añadir los 6 tests en follow-up. No bloquea el merge; sí DONE. |
+
+Hallazgos P3 heredados: comentario del SW engañoso sobre query/hash; `new URL()` sin `try/catch` ni allowlist de esquema; `parsePushPayload` del SW descarta `conversationPartnerId`/`timestamp`.
+
+### 8.4 Riesgos residuales
+
+Click real sin verificar; producción stale (`sw-1`); staging sin SW; BUG-01 sigue vivo en producción (bcrypt, 1102 sensible a concurrencia); cuentas legacy ejecutan `bcrypt.compare` hasta migrar; sin cota de iteraciones PBKDF2; device-id live sin validar; DM history sin contrato (duplicar `history` rompería el móvil, que no deduplica); gap de cobertura hash/query; badge “Blocked” validado por i18n, no por DOM; 45 cuentas `bug01qa_` pendientes de purga; `/health` con `2.2.0` hardcodeada.
+
+### 8.5 STATUS delta
+
+- **Task 22 / #45:** QA técnica PASS sobre `dev` `d6608d9`; manual NOT RUN; sign-off pendiente. **No DONE.**
+- **BUG-01:** FAIL de paridad; probe live PASS pero producción ejecuta `master` (bcrypt). **No DONE.**
+- **device-id:** PASS local (2 tests); live NOT RUN. **No DONE.**
+- **DM history:** NOT RUN — sin decisión Staff. **No DONE.**
+- **Despliegues:** ninguno por QA; producción `sw-1`, staging HTML, `chatti-workers` con bcrypt.
+
+### 8.6 Veredictos
+
+Task 22 QA PASS pending manual delivery
+
+BUG-01 parity QA FAIL
+
+device-id NOT RUN live — PASS en tests locales (29/29)
+
+DM history NOT RUN — no hay decisión Staff
+
+**Informe completo:** `.mece/cells/QA-WAVE-2/REPORT.md`. **Cuentas desechables del probe BUG-01: 45** con prefijo `bug01qa_` (12 + 30 + 3 manuales), pendientes de purga por el Staff.
