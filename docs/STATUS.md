@@ -1,6 +1,6 @@
 # Chatti Mobile — Current Status
 
-Updated: 2026-11-09 (Wave 2 **desplegada y verificada en producción**: PR #62 → `master` `c5610c9`; BUG-01 post-deploy **PASS** (PBKDF2 live); `sw-2` live; device-id live **PASS**; Task 22 entrega manual **parcial**: notificación real PASS, caso negativo PASS, solo falta confirmar clic→deep link; mobile Phase 2 sigue LOCKED).
+Updated: 2026-11-09 (Wave 2 **desplegada y verificada en producción**: PR #62 → `master` `c5610c9`; BUG-01 post-deploy **PASS** (PBKDF2 live); `sw-2` live; device-id live **PASS**; Task 22 entrega manual **parcial**: pasos 1–6 PASS, bug nuevo de notificaciones espurias en refresh/presencia; mobile Phase 2 sigue LOCKED).
 
 ## Repository
 
@@ -95,8 +95,8 @@ NO se migran).
 | M1 Core chat | Full QA gate | ✅ **Desbloqueado** — BUG-01 resuelto en producción; gate formal pendiente de re-ejecución QA/CTO. |
 | M2 Rooms | Functional QA | ✅ LIVE PASS 2026-09-15: interop web⇄móvil real. ✅ Contacto web→móvil (finding 4): corregido y **verificado live 2026-11-08** (`deviceId` nuevo adoptado, viejo 404). |
 | Regression suite | Task 20 (QA regression) | ✅ DONE — `npm run qa:regression` = 92/92 (85 unit + 5 interop + 2 reconnect), reproducible en clone limpio. Ver `docs/QA-REGRESSION.md` |
-| Task 22 Web Push — FE+BE | producción `sw-2` | ✅ QA técnica PASS (125/125 tests, harness con hash/query, push headless). ✅ Bloqueos 1 y 2 resueltos (pipeline y VAPID en prod). ✅ `sw-2` desplegado y verificado live. ✅ **Entrega manual PASS** (2026-11-09: notificación real recibida en producción desde B). ✅ **Caso negativo PASS** (permiso denegado → toggle bloqueado). ⏳ Pendiente: confirmar clic→deep link y sign-off CTO/Staff. **No DONE.** |
-| Wave 2 — Task 22 (QA) | `master` `c5610c9` | ✅ QA técnica PASS · ⚠️ manual parcial (entrega PASS, caso negativo PASS; clic→deep link pendiente, ver `QA-PR27-TASK22.md` §10) · sign-off pendiente. No DONE. |
+| Task 22 Web Push — FE+BE | producción `sw-2` | ✅ QA técnica PASS (125/125 tests, harness con hash/query, push headless). ✅ Bloqueos 1 y 2 resueltos (pipeline y VAPID en prod). ✅ `sw-2` desplegado y verificado live. ✅ **Entrega manual PASS** (2026-11-09: notificación real recibida en producción desde B). ✅ **Clic→deep link PASS**. ✅ **Caso negativo PASS**. ⚠️ **Bug nuevo:** notificaciones espurias al refrescar conversaciones/solicitudes y en eventos de presencia (connect/disconnect) — sospecha backend. **No DONE.** |
+| Wave 2 — Task 22 (QA) | `master` `c5610c9` | ✅ QA técnica PASS · ⚠️ manual parcial (pasos 1–6 PASS; bug nuevo de notificaciones espurias, ver `QA-PR27-TASK22.md` §10.5) · sign-off pendiente. No DONE. |
 | Wave 2 — BUG-01 parity | `master` `c5610c9` | ✅ **QA post-deploy PASS** (2026-11-08). CTO verificado. Pendiente ack del Staff en tablero. |
 | Wave 2 — device-id (M2 finding 4) | `master` `c5610c9` | ✅ **PASS live** (2026-11-08): `users/find` y `by-device-id` adoptan el `deviceId` nuevo; el viejo 404. |
 | Wave 2 — DM history | `master` `c5610c9` | ⚠️ NOT RUN — sin decisión Staff. No DONE. |
@@ -105,7 +105,7 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 
 ## Open items
 
-1. **Task 22 Web Push — prueba manual (entrega PASS; faltan 2 comprobaciones):** la notificación del SO ya se recibió en producción (`sw-2`) con usuario B → usuario A el 2026-11-09. Queda por confirmar el **clic → deep link** (bug histórico de septiembre). El caso negativo (permiso denegado → toggle bloqueado) ya está **PASS** (§10.4). Procedimiento y evidencia en `docs/QA-PR27-TASK22.md` §9.6 y §10; veredicto actual `Task 22 QA técnica PASS, manual delivery PASS, click/negative NOT CONFIRMED`.
+1. **Task 22 Web Push — prueba manual (entrega PASS; faltan 2 comprobaciones):** la notificación del SO ya se recibió en producción (`sw-2`) con usuario B → usuario A el 2026-11-09. Bug nuevo abierto: notificaciones espurias al refrescar conversaciones/solicitudes y en eventos de presencia (connect/disconnect) — sospecha backend. Los pasos funcionales 1–6 de Task 22 están PASS. Ver `QA-PR27-TASK22.md` §10.5. Procedimiento y evidencia en `docs/QA-PR27-TASK22.md` §9.6 y §10; veredicto actual `Task 22 QA técnica PASS, pasos 1–6 PASS, bug nuevo de notificaciones espurias (§10.5)`.
 2. **DM history contract:** sin decisión Staff; recomendación (a) de BE-AUTH-CLOSE (emitir `history` en `join`) no implementada. No duplicar `history` sin decidir el contrato (el móvil no deduplica).
 3. **Mobile Phase 2:** LOCKED — no existe `.mece/STAFF-APPROVAL`. Planes listos: #16 (S) → #15 (M) → #14 (M). La validación verbal del Staff no sustituye el artefacto que exige AGENTS.md.
 4. **Purga KV (Staff):** quedan las **45 cuentas `bug01qa_*`** del probe pre-despliegue. Las cuentas nuevas del post-deploy (4 manuales + 24 del probe) se borraron best-effort.
@@ -124,7 +124,7 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 
 ## Next steps
 
-1. ⏳ Confirmar clic→deep link de Task 22 contra producción (`sw-2`) y firmar → Task 22 DONE.
+1. ⚠️ Analizar y corregir el bug de notificaciones espurias en refresh/presencia (backend) — bloquea el cierre de Task 22. Ver `QA-PR27-TASK22.md` §10.5.
 2. ⏳ Staff purga las 45 cuentas `bug01qa_*` en KV de producción.
 3. ⏳ Staff decide el contrato DM history (recomendación (a)).
 4. ⏳ Staff crea `.mece/STAFF-APPROVAL` para desbloquear mobile Phase 2 (#16 → #15 → #14).
@@ -155,7 +155,7 @@ Nothing is DONE without **QA sign-off + CTO/Staff sign-off**. Estado a 2026-11-0
 
 | Item | Sign-off pendiente |
 |------|--------------------|
-| Task 22 Web Push (#45) | ⏳ Entrega manual PASS + caso negativo PASS (2026-11-09). Falta clic→deep link y sign-off CTO/Staff. `sw-2` ya está live. |
+| Task 22 Web Push (#45) | ⚠️ Pasos 1–6 PASS (2026-11-09). Bug nuevo: notificaciones espurias en refresh/presencia (backend). No DONE. `sw-2` live. |
 | BUG-01 source parity (PR #52/#56/#58) | ✅ QA post-deploy PASS + CTO (2026-11-08). Pendiente ack del Staff en tablero. |
 | device-id (M2 finding 4) | ✅ QA live PASS (2026-11-08). Pendiente ack del Staff en tablero. |
 | DM history contract | ⏳ Decisión Staff + QA live + CTO/Staff |
