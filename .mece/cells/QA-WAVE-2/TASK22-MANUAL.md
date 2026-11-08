@@ -20,7 +20,7 @@ Origen: `/tmp/chrome-devtools-profile/Default/Platform Notifications/000003.log`
 | Tag | `room-poklx599` |
 | Icono | `https://chatti-web.wz0un.workers.dev/icons/chatti-icon-192.png` |
 | Payload | `"url":"/room/poklx599"`, `{"kind":"room","roomId":"poklx599"}` |
-| Registros | 3 (reintentos del mismo push) |
+| Registros | 3 (misma notificación) |
 
 ## 2. Sesión del usuario A (Local Storage)
 

@@ -290,7 +290,7 @@ Ya se puede ejecutar **en producción** (`https://chatti-web.wz0un.workers.dev`,
 |---|---|---|
 | 1. Login de A | ✅ **PASS** | `localStorage.userData` = `push_user_a#0001` con `deviceId` persistido; historial `/login → /rooms`. |
 | 2. Enable notifications | ✅ **PASS** | `Service Worker/Database` contiene `push_registration_id` para el origen de producción → suscripción push creada y registrada. |
-| 3–4. B envía a una sala que A no tiene abierta → notificación del SO | ✅ **PASS** | Registro en `Platform Notifications/000003.log`: título `💬 push_user_b#0001`, cuerpo `Hola User A! Prueba Web Push en vivo!`, tag `room-poklx599`, icono `/icons/chatti-icon-192.png`, payload con `"url":"/room/poklx599"` y `{"kind":"room","roomId":"poklx599"}`. 3 registros (reintentos del mismo push). El Staff confirma visualmente que la notificación llegó. |
+| 3–4. B envía a una sala que A no tiene abierta → notificación del SO | ✅ **PASS** | Registro en `Platform Notifications/000003.log`: título `💬 push_user_b#0001`, cuerpo `Hola User A! Prueba Web Push en vivo!`, tag `room-poklx599`, icono `/icons/chatti-icon-192.png`, payload con `"url":"/room/poklx599"` y `{"kind":"room","roomId":"poklx599"}`. 3 registros de la misma notificación. El Staff confirma visualmente que la notificación llegó. |
 | 5. Clic → deep link | ⚠️ **NO CONFIRMADO** | Historial: visita `LINK` a `/room/poklx599` a las `00:10:28`, inmediatamente después del registro de la notificación (`00:10`). Es consistente con el clic, pero no se puede atribuir con certeza: el resto de navegaciones de la sesión son `TYPED|FROM_API` (CDP). Falta confirmación explícita del ejecutor/Staff. |
 | 6. Permiso denegado → toggle bloqueado | ❌ **NOT RUN** | Sin evidencia en esta sesión. |
 
