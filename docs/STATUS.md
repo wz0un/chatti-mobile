@@ -105,13 +105,13 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 
 ## Open items
 
-1. **Task 22 Web Push — prueba manual de entrega (único pendiente de la task):** el entorno de QA no puede recibir push. Requiere un navegador real (Chrome/Firefox) contra producción (`sw-2` live): usuario B envía DM a usuario A sin conexión activa; debe llegar la notificación del SO y el click debe abrir el chat correcto. Procedimiento en `docs/QA-PR27-TASK22.md` §7.2; veredicto actual `Task 22 QA PASS pending manual delivery`.
+1. **Task 22 Web Push — prueba manual de entrega (único pendiente de la task):** el entorno de QA no puede recibir push. Requiere un navegador real (Chrome/Firefox) contra producción (`sw-2` live): usuario B envía DM a usuario A sin conexión activa; debe llegar la notificación del SO y el click debe abrir el chat correcto. Procedimiento en `docs/QA-PR27-TASK22.md` §9.6; veredicto actual `Task 22 QA técnica PASS, manual delivery NOT RUN`.
 2. **DM history contract:** sin decisión Staff; recomendación (a) de BE-AUTH-CLOSE (emitir `history` en `join`) no implementada. No duplicar `history` sin decidir el contrato (el móvil no deduplica).
 3. **Mobile Phase 2:** LOCKED — no existe `.mece/STAFF-APPROVAL`. Planes listos: #16 (S) → #15 (M) → #14 (M). La validación verbal del Staff no sustituye el artefacto que exige AGENTS.md.
 4. **Purga KV (Staff):** quedan las **45 cuentas `bug01qa_*`** del probe pre-despliegue. Las cuentas nuevas del post-deploy (4 manuales + 24 del probe) se borraron best-effort.
 5. **Staging:** `chatti-web-staging` sigue sirviendo HTML en `/sw.js` (BUG-NEW-02). Redesplegar `master`/`dev` si se quiere usar staging para la prueba manual.
 6. **Cuentas legacy:** siguen autenticándose con `bcrypt.compare` (fallback) hasta su siguiente login; no se probó una cuenta real legacy.
-7. **Ramas:** `dev` está 2 commits por delante de `master` (solo `pnpm-lock.yaml`, PR #64). No hay PRs abiertos salvo dependabot #63.
+7. **Ramas:** `dev` está 2 commits por delante de `master` (solo `pnpm-lock.yaml`, PR #64). PR abiertos: #65 (docs, este cierre) y #63 (dependabot).
 
 ## Fixed (committed)
 
