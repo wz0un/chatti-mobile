@@ -272,7 +272,7 @@ Ya se puede ejecutar **en producción** (`https://chatti-web.wz0un.workers.dev`,
 | device-id (M2 finding 4) | ✅ **PASS** — login con `deviceId` nuevo lo adopta; `users/find` lo devuelve; `by-device-id` nuevo 200 / viejo 404 |
 | Harness web | ✅ **125/125** tests (9 archivos) en `c5610c9` |
 
-Script de la verificación black-box: `/tmp/opencode/postdeploy_qa.py` (10/10 checks PASS, con cabeceras Chrome + `Origin` para evitar el 403 de Cloudflare). Reportes del probe: `/tmp/chatti-qa/bug01-2026-11-08T22-32-53-807Z.json` y `…T22-36-12-689Z.json`.
+Script de la verificación black-box: `/tmp/opencode/postdeploy_qa.py` (10/10 checks PASS, con cabeceras Chrome + `Origin` para evitar el 403 de Cloudflare). Reportes del probe: `/tmp/chatti-qa/bug01-2026-11-08T22-32-53-807Z.json` y `/tmp/chatti-qa/bug01-2026-11-08T22-36-12-689Z.json`.
 
 ### 9.2 Estado de los bugs de §8.3
 
