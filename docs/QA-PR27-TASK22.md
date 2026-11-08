@@ -241,11 +241,11 @@ Reportes: `/tmp/chatti-qa/bug01-2026-11-08T22-32-53-807Z.json` y `/tmp/chatti-qa
 | **device-id (M2 finding 4)** | ✅ **PASS live** — d2 adoptado; d1 → 404 |
 | **BUG-NEW-03** | ✅ **RESUELTO** — 125/125 tests |
 | **BUG-NEW-02 (staging)** | ⚠️ **OPEN** — staging sigue sirviendo HTML en `/sw.js`; ya no bloquea la prueba manual (se hace en producción) |
-| **Task 22 entrega manual** | ⚠️ **PARCIAL** — notificación real recibida en producción con `sw-2` (2026-11-09, ver §10); clic→deep link sin confirmar y caso negativo **NOT RUN**. **No DONE.** |
+| **Task 22 entrega manual** | ⚠️ **PARCIAL** — notificación real recibida en producción con `sw-2` (2026-11-09, ver §10); caso negativo **PASS**; clic→deep link sin confirmar. **No DONE.** |
 
 ### 9.6 Procedimiento manual pendiente (Task 22)
 
-> **Estado 2026-11-09:** los pasos 1–4 ya se ejecutaron en producción (entrega real de la notificación, ver §10). Quedan pendientes el **paso 5** (confirmar que el clic navega al deep link) y el **paso 6** (caso negativo). El procedimiento se mantiene como referencia.
+> **Estado 2026-11-09:** los pasos 1–4 ya se ejecutaron en producción (entrega real de la notificación, ver §10). Queda pendiente el **paso 5** (confirmar que el clic navega al deep link). El paso 6 (caso negativo) queda **PASS** (§10.4). El procedimiento se mantiene como referencia.
 
 Ya se puede ejecutar **en producción** (`https://chatti-web.wz0un.workers.dev`, `sw-2` live), sin esperar a staging:
 
@@ -268,7 +268,7 @@ Ya se puede ejecutar **en producción** (`https://chatti-web.wz0un.workers.dev`,
 
 ### 9.8 Riesgos residuales post-deploy
 
-- La prueba manual de entrega está **parcialmente ejecutada** (ver §10): la notificación del SO llega en producción con `sw-2`; el clic → deep link no está confirmado y el caso negativo (permiso denegado) sigue **NOT RUN**.
+- La prueba manual de entrega está **parcialmente ejecutada** (ver §10): la notificación del SO llega en producción con `sw-2`; el caso negativo (permiso denegado) **PASS**; el clic → deep link no está confirmado.
 - Cuentas legacy con hash bcrypt: se autentican por fallback (`bcrypt.compare`) hasta su siguiente login correcto, que re-hashea a PBKDF2.
 - Las 45 cuentas `bug01qa_*` de la QA del 2026-11-02 siguen en KV de producción; la purga es del Staff.
 - DM `history` sigue sin contrato decidido.
@@ -292,7 +292,25 @@ Ya se puede ejecutar **en producción** (`https://chatti-web.wz0un.workers.dev`,
 | 2. Enable notifications | ✅ **PASS** | `Service Worker/Database` contiene `push_registration_id` para el origen de producción → suscripción push creada y registrada. |
 | 3–4. B envía a una sala que A no tiene abierta → notificación del SO | ✅ **PASS** | Registro en `Platform Notifications/000003.log`: título `💬 push_user_b#0001`, cuerpo `Hola User A! Prueba Web Push en vivo!`, tag `room-poklx599`, icono `/icons/chatti-icon-192.png`, payload con `"url":"/room/poklx599"` y `{"kind":"room","roomId":"poklx599"}`. 3 registros de la misma notificación. El Staff confirma visualmente que la notificación llegó. |
 | 5. Clic → deep link | ⚠️ **NO CONFIRMADO** | Historial: visita `LINK` a `/room/poklx599` a las `00:10:28`, inmediatamente después del registro de la notificación (`00:10`). Es consistente con el clic, pero no se puede atribuir con certeza: el resto de navegaciones de la sesión son `TYPED|FROM_API` (CDP). Falta confirmación explícita del ejecutor/Staff. |
-| 6. Permiso denegado → toggle bloqueado | ❌ **NOT RUN** | Sin evidencia en esta sesión. |
+| 6. Permiso denegado → toggle bloqueado | ✅ **PASS** (2026-11-09) | Chrome headless + CDP `Browser.setPermission` (`notifications: denied`) sobre producción: badge = `Blocked`, botón `disabled`, texto de estado "Notifications are blocked in the browser. Allow them from the site settings, then try again.". Screenshot: `/tmp/opencode/task22-negative-blocked.png`. Reproducible: `/tmp/opencode/task22_negative.mjs`. |
+
+> El estado `blocked` se deriva de `pushPermissionState() === 'denied'` (i.e. `Notification.permission`) en `ProfilePage.tsx` **antes** de cualquier llamada al backend, por lo que la prueba es válida aunque la sesión inyectada sea sintética (`task22neg#0001`).
+
+### 10.4 Caso negativo — permiso denegado (2026-11-09)
+
+**Método:** Chrome headless `157.x` con CDP `Browser.setPermission` (`notifications: denied`) sobre el origen de producción, sesión inyectada en `localStorage` (`task22neg#0001`).
+
+**Comprobado en `/profile`:**
+
+- `Notification.permission` = `denied`.
+- Badge: `Blocked` (`profile__webPushBadge--blocked`).
+- Botón `Enable notifications`: `disabled = true`.
+- Texto de estado: "Notifications are blocked in the browser. Allow them from the site settings, then try again."
+- Screenshot: `/tmp/opencode/task22-negative-blocked.png`.
+
+**Validación de la prueba:** el estado `blocked` se deriva de `pushPermissionState() === 'denied'` (i.e. `Notification.permission`) en `ProfilePage.tsx` **antes** de cualquier llamada al backend, por lo que el resultado no depende de que la sesión exista en el backend.
+
+**Veredicto:** ✅ **PASS**. El caso negativo se cierra; Task 22 sigue `IN PROGRESS (no DONE)` únicamente por el paso 5 (clic→deep link) sin confirmar.
 
 ### 10.2 Artefactos crudos (fuera del repo, volátiles)
 
@@ -306,5 +324,5 @@ Ya se puede ejecutar **en producción** (`https://chatti-web.wz0un.workers.dev`,
 
 - **Entrega push real: PASS.** La notificación del SO llegó a A desde B con el título/cuerpo/URL correctos en producción con `sw-2`. El bloqueo histórico "la notificación no llega" queda cerrado.
 - **Clic → deep link: no demostrado.** El bug histórico de septiembre ("la notificación llega pero el clic no navega", §7.2.1) no queda descartado por esta sesión: la navegación observada es compatible con un clic, pero no concluyente.
-- **Caso negativo: NOT RUN.**
+- **Caso negativo: PASS** (2026-11-09, §10.4).
 - **Task 22 sigue `IN PROGRESS (no DONE)`** hasta: (a) confirmar el paso 5 con una notificación nueva (idealmente también DM), (b) ejecutar el paso 6, (c) sign-off QA + CTO/Staff.

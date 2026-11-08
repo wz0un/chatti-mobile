@@ -70,6 +70,23 @@ Origen: `/tmp/chrome-devtools-profile/Default/History`
 
 La visita `LINK` a `/room/poklx599` de las 00:10:28 es posterior al registro de la notificación (00:10) y es consistente con un clic, pero **no se puede atribuir con certeza** al clic de la notificación.
 
+## 6. Caso negativo — permiso denegado (2026-11-09)
+
+Método: Chrome headless + CDP `Browser.setPermission` (`notifications: denied`) sobre producción, sesión inyectada en `localStorage` (`task22neg#0001`).
+
+Resultado en `/profile`:
+
+- `Notification.permission` = `denied`.
+- Badge: `Blocked` (`profile__webPushBadge--blocked`).
+- Botón `Enable notifications`: `disabled = true`.
+- Texto de estado: "Notifications are blocked in the browser. Allow them from the site settings, then try again."
+- Screenshot: `/tmp/opencode/task22-negative-blocked.png`.
+- Reproducible: `/tmp/opencode/task22_negative.mjs`.
+
+El estado `blocked` se deriva de `pushPermissionState() === 'denied'` (i.e. `Notification.permission`) en `ProfilePage.tsx` **antes** de cualquier llamada al backend, por lo que la prueba es válida aunque la sesión inyectada sea sintética.
+
+Veredicto: ✅ **PASS**.
+
 ## 5. Veredicto
 
 | Paso §9.6 | Estado |
@@ -78,6 +95,6 @@ La visita `LINK` a `/room/poklx599` de las 00:10:28 es posterior al registro de 
 | 2. Enable notifications | ✅ PASS |
 | 3–4. Entrega de la notificación | ✅ PASS (Staff lo observó) |
 | 5. Clic → deep link | ⚠️ NO CONFIRMADO |
-| 6. Permiso denegado → bloqueado | ❌ NOT RUN |
+| 6. Permiso denegado → bloqueado | ✅ PASS (2026-11-09) |
 
-**Task 22:** `IN PROGRESS (no DONE)`.
+**Task 22:** `IN PROGRESS (no DONE)` — solo falta el paso 5 (clic→deep link).
