@@ -1,6 +1,6 @@
 # Chatti Web — Feature Parity Matrix
 
-**Source of truth:** `chatti-mobile` (Expo / React Native app). Backend: Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev` (verified live on 2026-08-11).
+**Source of truth:** `chatti-mobile` (Expo / React Native app). Backend: Cloudflare Worker at `https://chatti-workers.wz0un.workers.dev` (post-deploy verification on 2026-11-08, `master` `c5610c9`).
 
 Legend:
 - ✅ = implemented and working
@@ -45,7 +45,7 @@ Legend:
 | Copy device ID | ✅ | ✅ | DONE | `navigator.clipboard.writeText` + copied-state feedback. |
 | Language selector | ⚠️ | ✅ | DONE | Profile selector supports en/es/ar/fr through the existing immediate, persisted i18n path. |
 | i18n translation coverage | ✅ | ✅ | DONE | Dictionary extracted verbatim; `interpolate` helper; login/conversations/profile/DM keys verified. |
-| Notifications (push) | ✅ | ⚠️ | IN PROGRESS (no DONE) | Wave 2: sw-2 mergeado en `dev` (PR #57); producción sirve `sw-1` (BUG-NEW-01). QA técnica sobre `dev` `d6608d9` PASS (119/119 tests, harness 9/9, push headless 5/5); entrega manual NOT RUN; sign-off CTO/Staff pendiente. Spec: `docs/WEB-PUSH.md`, `docs/QA-PR27-TASK22.md` §8. |
+| Notifications (push) | ✅ | ⚠️ | IN PROGRESS (no DONE) | Wave 2: **producción sirve `sw-2`** (verificado 2026-11-08; BUG-NEW-01 cerrado) y el harness web está en **125/125**. QA técnica PASS (push headless 5/5); **falta la prueba manual de entrega** (notificación del SO + click → deep link) en navegador real y el sign-off CTO/Staff. Spec: `docs/WEB-PUSH.md`, `docs/QA-PR27-TASK22.md` §8–§9. |
 | In-app notification toasts | ❌ | ❌ | TODO | Mobile shows local notifications only. Web can add in-app toasts (Web-only enhancement, no backend change). |
 | Unread conversations badge (tab) | ✅ | ✅ | DONE | `useSectionBadges` — 30s polling + focus refresh, 99+ cap. |
 | Pending requests badge (tab) | ✅ | ✅ | DONE | Same `useSectionBadges` polling. |
@@ -56,10 +56,10 @@ Legend:
 
 ## Summary
 
-- **Web app implements Tasks 1–15 (P0–M2 core)** — Task 12/BUG-03 static QA passed; live contacts/rooms and mobile room interop remain unverified due to BUG-01/no session.
+- **Web app implements Tasks 1–15 (P0–M2 core)** — Task 12/BUG-03 static QA passed; rooms web⇄móvil live PASS 2026-09-15 y contacto web→móvil verificado 2026-11-08. Quedan pendientes de QA live los flujos autenticados de contacts/rooms que no se re-ejecutaron post-despliegue.
 - **Backend support exists for all core features** (verified live). No backend changes are required for parity of core features.
 - **Blocked:** user directory (backend disabled — do not implement).
-- **Deferred (needs backend change):** push notifications.
+- **Push notifications:** backend + `sw-2` desplegados y verificados en producción; pendiente únicamente la prueba manual de entrega + sign-off.
 - **Critical constraint:** DM encryption must remain byte-compatible with mobile's `EncryptionService` (fixed-vector tests enforce this).
 - **Worker finding (BE):** the DM WebSocket sends `history` at connection time (before `join`), not on `join`; contract undecided (BE-AUTH-CLOSE §Item 3). Mobile appends without dedupe; web replaces the list. Do not duplicate `history` (connect + join) without deciding the contract.
 - **Deep links (Task 16):** ◐ implementado en código (`room/:roomId`, `dm/:conversationId` + SPA fallback), pendiente QA/CTO.

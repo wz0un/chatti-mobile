@@ -20,6 +20,8 @@
 
 Conclusión QA: **código aprobado para promoción**, mergeado a `master` (`a6381f9`). Bloqueo 1 (pipeline) resuelto por DevOps; bloqueo 2 (backend + VAPID) **resuelto y verificado live en prod** (2026-09-21, §7). La task 22 **NO puede marcarse 100% DONE** hasta el sign-off de entrega manual en navegador real (este entorno de QA no puede recibir push) + CTO/Staff.
 
+> **Estado a 2026-11-08:** §8 es el registro histórico de la sesión del 2026-11-02 (veredictos de entonces: `sw-1` en producción, BUG-01 FAIL de paridad). **La verificación post-despliegue vigente es §9**: `sw-2` live, BUG-01 PASS, device-id PASS. Los FAIL de §8 quedan como histórico, no como estado actual.
+
 ---
 
 ## 1. Gates técnicos (head `f8a876a`, clone limpio)
@@ -194,3 +196,78 @@ device-id NOT RUN live — PASS en tests locales (29/29)
 DM history NOT RUN — no hay decisión Staff
 
 **Informe completo:** `.mece/cells/QA-WAVE-2/REPORT.md`. **Cuentas desechables del probe BUG-01: 45** con prefijo `bug01qa_` (12 + 30 + 3 manuales), pendientes de purga por el Staff.
+
+---
+
+## 9. POST-DEPLOY — verificación en producción (2026-11-08)
+
+**Base desplegada:** `origin/master` @ `c5610c9` — merge de PR #62 («chore: promote dev into master (Wave 2 complete)»), que incluye #56/#57 (Wave 2), #58 (hotfix PBKDF2), #59/#60/#61. `origin/dev` @ `4118ae2` (#64); la única diferencia con `master` es `pnpm-lock.yaml`.
+**Ejecutor:** CTO (verificación directa) — sin cambios de producto ni de Git; solo cuentas desechables de QA.
+**Informe de evidencia:** `.mece/cells/QA-WAVE-2/POST-DEPLOY.md`.
+
+### 9.1 Estado del despliegue
+
+| Comprobación | Resultado |
+|---|---|
+| `chatti-workers` `/health` | ✅ 200 · `{"status":"ok","version":"2.2.0"}` |
+| `chatti-web` `/sw.js` | ✅ 200 · `SW_VERSION = 'sw-2'` · `text/javascript` · `skipWaiting` + `clients.claim` |
+| `origin/master:backend/src/index.js` | ✅ PBKDF2 (`pbkdf2$sha256$…`) + `bcrypt.compare` solo como fallback legacy |
+| `chatti-web-staging` `/sw.js` | ⚠️ 200 · 543 B · `text/html` → SW no servido (BUG-NEW-02 sigue abierto) |
+
+### 9.2 BUG-01 — PBKDF2 live (discriminador)
+
+Script `/tmp/opencode/postdeploy_qa.py` (cabeceras Chrome + `Origin`): **10/10 PASS**.
+El check decisivo es el **A2**: `register` con password de 94 B (`A×72 + "TAIL-ONE-DISCRIMINATOR"`) y `login` con `A×72 + "TAIL-TWO-DIFFERENT"` → **401**. Con bcrypt habría devuelto **200** por truncamiento a 72 B. También PASS: login correcto 200, control de 63 B con diferencia en el byte 51 → 401, `users/find` devuelve el `deviceId` nuevo, `by-device-id` d2 → 200 y d1 → 404. Las 4 cuentas creadas se borraron (200).
+
+### 9.3 Estabilidad (`pnpm qa:bug01`)
+
+| Ronda | Hora UTC | Attempts | 200 | 5xx / 1102 | avg / p95 / max |
+|---|---|---|---|---|---|
+| 1 | 2026-11-08T22:32:53Z | 36 | **36** | **0 / 0** | 204 / 525 / 553 ms |
+| 2 | 2026-11-08T22:36:12Z | 36 | **36** | **0 / 0** | 201 / 515 / 598 ms |
+
+Reportes: `/tmp/chatti-qa/bug01-2026-11-08T22-32-53-807Z.json` y `/tmp/chatti-qa/bug01-2026-11-08T22-36-12-689Z.json`.
+
+### 9.4 Tests web
+
+`pnpm test` en `web/` sobre `c5610c9`: **125/125 tests, 9 archivos** (antes 119; los 6 casos de hash/query de BUG-NEW-03 ya están cubiertos).
+
+### 9.5 Veredictos actualizados
+
+| Item | Veredicto |
+|---|---|
+| **sw-2 live** | ✅ **PASS** — producción sirve `sw-2` (BUG-NEW-01 cerrado) |
+| **BUG-01 post-deploy** | ✅ **PASS** — PBKDF2 live; 72/72 requests 200, 0 5xx |
+| **device-id (M2 finding 4)** | ✅ **PASS live** — d2 adoptado; d1 → 404 |
+| **BUG-NEW-03** | ✅ **RESUELTO** — 125/125 tests |
+| **BUG-NEW-02 (staging)** | ⚠️ **OPEN** — staging sigue sirviendo HTML en `/sw.js`; ya no bloquea la prueba manual (se hace en producción) |
+| **Task 22 entrega manual** | ⚠️ **NOT RUN** — pendiente en navegador real (Chrome/Firefox) contra producción con `sw-2` |
+
+### 9.6 Procedimiento manual pendiente (Task 22)
+
+Ya se puede ejecutar **en producción** (`https://chatti-web.wz0un.workers.dev`, `sw-2` live), sin esperar a staging:
+
+1. Abrir el sitio en Chrome o Firefox de escritorio y registrarse/loguearse como usuario A.
+2. Profile → Push Notifications → **Enable notifications** (aceptar el permiso). El badge debe pasar a "On".
+3. En otra pestaña/incógnito, usuario B envía un **DM** (o mensaje de sala) a A **sin** que A tenga esa conversación abierta.
+4. Esperar ~5 s: debe aparecer la notificación del SO con título `💬 <usuario>` (room) o `🔒 <usuario>` (DM, cuerpo opaco).
+5. Click en la notificación → debe navegar a `/room/:id` o `/dm/:id` (regla query/hash de `sw-2`).
+6. Caso negativo: con permiso denegado, el toggle debe mostrar el estado bloqueado.
+
+**Criterio de cierre:** evidencia de 2–6 (captura o descripción fechada) + sign-off CTO/Staff. Hasta entonces **Task 22 permanece `IN PROGRESS (no DONE)`**.
+
+### 9.7 Estado de los bugs de §8.3
+
+| ID | Estado post-deploy |
+|----|--------------------|
+| BUG-NEW-01 | ✅ **RESUELTO** — producción sirve `sw-2` (verificado por `curl`). |
+| BUG-NEW-02 | ⚠️ **ABIERTO** — `chatti-web-staging` sigue devolviendo HTML en `/sw.js`. Ya **no bloquea** Task 22: la prueba manual se hace contra producción, que ya sirve `sw-2`. |
+| BUG-NEW-03 | ✅ **RESUELTO** — 6 casos hash/query añadidos; web **125/125**. |
+
+### 9.8 Riesgos residuales post-deploy
+
+- La prueba manual de entrega (notificación del SO + click → deep link) sigue **NOT RUN**: requiere un navegador real y dos usuarios.
+- Cuentas legacy con hash bcrypt: se autentican por fallback (`bcrypt.compare`) hasta su siguiente login correcto, que re-hashea a PBKDF2.
+- Las 45 cuentas `bug01qa_*` de la QA del 2026-11-02 siguen en KV de producción; la purga es del Staff.
+- DM `history` sigue sin contrato decidido.
+- `new URL()` del SW sin `try/catch`/allowlist y comentario engañoso (P3) siguen abiertos.

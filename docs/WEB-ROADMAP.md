@@ -1,6 +1,6 @@
 # Chatti Web — Roadmap
 
-Status: **In Progress** · Owner: CTO · Updated: 2026-11-02 (Wave 2 close-out)
+Status: **In Progress** · Owner: CTO · Updated: 2026-11-08 (Wave 2 desplegada en producción)
 
 Guiding principles:
 1. **Mobile is the source of truth** — it keeps working; nothing in `App.js`/`src/` is rewritten for web delivery.
@@ -18,11 +18,11 @@ Goal: repo structure, shared core skeleton, dev tooling, CI checks.
 - [x] Auth core port (register/login/logout/session/deviceId).
 - [x] Encryption core port (WebCrypto SHA-256 + BigInt modPow) — byte-compat spec + unit tests with fixed vectors.
 - [x] Environment config: `VITE_API_URL` defaulting to production worker, local override.
-- [x] QA gate: 85/85 unit tests pass; encryption interop verified (byte-identical with mobile).
+- [x] QA gate: 125/125 web unit tests pass (9 files, `c5610c9`); encryption interop verified (byte-identical with mobile).
 
 **Exit criteria:** ✅ Web app boots, logs in/registers against the live backend, persists session, and a unit-tested encryption port.
 
-## Phase 1 — Core chat vertical slice (M1) ⚠️ BLOCKED on BUG-01
+## Phase 1 — Core chat vertical slice (M1) ✅ UNBLOCKED (BUG-01 resolved in production 2026-11-08)
 
 Goal: the daily-driver path — login → Chats → DM chat → Contacts.
 
@@ -39,14 +39,14 @@ Goal: the daily-driver path — login → Chats → DM chat → Contacts.
 
 | Bug | Severity | Status | Description | Impact |
 |-----|----------|--------|-------------|--------|
-| BUG-01 | 🔴 CRITICAL | ☐ BLOCKED (backend) | Backend auth 503 (`error code: 1102`) — código PBKDF2 en `dev` (PR #52/#56), pero producción ejecuta bcrypt de `master` (paridad QA FAIL); PR #58 abierto | All auth-dependent flows broken; mobile affected too |
+| BUG-01 | 🔴 CRITICAL | ✅ FIXED en producción (2026-11-08) | Backend auth 503 (`error code: 1102`) por bcrypt en Workers → PBKDF2 nativo; desplegado vía #58/#62 y verificado black-box (discriminador 72 B → 401; probe 36/36 × 2 sin 5xx). Ver `.mece/cells/QA-WAVE-2/POST-DEPLOY.md` | — |
 | BUG-02 | 🟠 HIGH | ☑ FIXED | WebSocket reconnect wipes `listeners` Map | DM reconnection breaks silently; messages stop rendering |
 | BUG-04 | 🟡 MEDIUM | ☑ FIXED | `lastSeen` not updated on incoming DM messages | Unread markers drift from actual read state |
 | BUG-06 | 🟢 LOW | ☑ FIXED | i18n key mismatch in empty-search subtext | Cosmetic, but leaks raw key |
 
-**M1 can pass QA when:** BUG-01 is resolved (backend-side). All FE fixes are done (BUG-02, BUG-03, BUG-04, BUG-06 + Tasks 11–12).
+**M1 can pass QA when:** BUG-01 is resolved (backend-side). ✅ Resuelto y desplegado (2026-11-08). All FE fixes are done (BUG-02, BUG-03, BUG-04, BUG-06 + Tasks 11–12); el gate formal de M1 queda pendiente de re-ejecución QA/CTO.
 
-## Phase 2 — Rooms (M2) ⚠️ IMPLEMENTED — QA NOT READY
+## Phase 2 — Rooms (M2) ✅ IMPLEMENTED — live interop PASS; contacto web→móvil verificado 2026-11-08
 
 Goal: room feature parity.
 
@@ -54,7 +54,7 @@ Goal: room feature parity.
 2. [x] Room chat: WS join/history/messages/typing/join-leave system messages, presence count — **Task 14 done.**
 3. [x] Unread/refresh behavior parity (30s polling + focus refresh).
 
-**Exit criteria:** rooms work web ⇄ web and web ⇄ mobile; QA sign-off. **Pending:** no authenticated live room/contact session and no mobile session were available; QA verdict is `M2 not ready`.
+**Exit criteria:** rooms work web ⇄ web and web ⇄ mobile; QA sign-off. **Estado:** interop live PASS 2026-09-15; el finding 4 (contacto web→móvil) quedó corregido y **verificado live el 2026-11-08** (`deviceId` nuevo adoptado; el viejo devuelve 404). Queda pendiente el gate formal de QA/CTO de M2.
 
 ## Phase 3 — Web UX upgrades (M3) 🔲 TODO
 
@@ -75,7 +75,7 @@ Goal: remove duplicated business logic while keeping mobile regression-free.
 
 1. Point mobile services at `shared/` (encryption, ApiService, WS protocol, i18n dictionary) — one copy of business logic.
 2. QA: full mobile regression suite against production backend.
-3. Push notifications: Web Push + Service Worker + Backend endpoint (`POST /api/auth/webpush`), VAPID keys — **FE shipped (sw-2 en `dev`, PR #57); producción sirve `sw-1` (BUG-NEW-01); QA técnica PASS, entrega manual NOT RUN; sign-off CTO/Staff pendiente.**
+3. Push notifications: Web Push + Service Worker + Backend endpoint (`POST /api/auth/webpush`), VAPID keys — **desplegado: producción sirve `sw-2` (verificado 2026-11-08); BUG-NEW-01/BUG-NEW-03 cerrados; QA técnica PASS (125/125); pendiente única la prueba manual de entrega en navegador real + sign-off CTO/Staff.**
 4. CI: lint + typecheck + tests for `web/` and `shared/` — **implementado (`web.yml`, PR #50/#53) y `backend.yml` (PR #38); pendiente QA/CTO.** E2E smoke tests (Playwright) siguen TODO.
 
 **Exit criteria:** mobile regression green; optional push notifications shipped; no duplicated business logic.
@@ -85,10 +85,10 @@ Goal: remove duplicated business logic while keeping mobile regression-free.
 | Milestone | Scope | Status | Owner | Depends on |
 |-----------|-------|--------|-------|------------|
 | M0 | Foundations + shared core | ✅ DONE | Frontend | — |
-| M1 | Auth, DMs, Contacts, Profile | ⚠️ BLOCKED (BUG-01, producción ejecuta bcrypt) | Frontend | M0 + deploy PBKDF2 (PR #58) |
-| M2 | Rooms | ⚠️ IMPLEMENTED — live interop PASS 2026-09-15; contacto web→móvil pendiente (finding 4 corregido en código) | Frontend + QA | live auth/session + room interop verification |
+| M1 | Auth, DMs, Contacts, Profile | ✅ UNBLOCKED (BUG-01 PASS post-deploy 2026-11-08; gate formal pendiente) | Frontend | M0 — done |
+| M2 | Rooms | ⚠️ IMPLEMENTED — live interop PASS 2026-09-15; contacto web→móvil **verificado live 2026-11-08**; gate formal pendiente | Frontend + QA | live auth/session + room interop verification |
 | M3 | Web UX upgrades | 🔲 TODO (deep links ◐ implementados en código) | Frontend | M2 |
-| M4 | Consolidation, push, CI | 🔲 TODO (push sw-2 en `dev`, CI implementado) | Frontend + Backend + QA | M3 |
+| M4 | Consolidation, push, CI | ◐ push desplegado (`sw-2` live); CI implementado; pendiente prueba manual + sign-off | Frontend + Backend + QA | M3 |
 
 ## Risk gates
 
