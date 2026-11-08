@@ -241,9 +241,11 @@ Reportes: `/tmp/chatti-qa/bug01-2026-11-08T22-32-53-807Z.json` y `/tmp/chatti-qa
 | **device-id (M2 finding 4)** | ✅ **PASS live** — d2 adoptado; d1 → 404 |
 | **BUG-NEW-03** | ✅ **RESUELTO** — 125/125 tests |
 | **BUG-NEW-02 (staging)** | ⚠️ **OPEN** — staging sigue sirviendo HTML en `/sw.js`; ya no bloquea la prueba manual (se hace en producción) |
-| **Task 22 entrega manual** | ✅ **PASS** — validado en navegador real contra producción con `sw-2` (ver §10) |
+| **Task 22 entrega manual** | ⚠️ **PARCIAL** — notificación real recibida en producción con `sw-2` (2026-11-09, ver §10); clic→deep link sin confirmar y caso negativo **NOT RUN**. **No DONE.** |
 
 ### 9.6 Procedimiento manual pendiente (Task 22)
+
+> **Estado 2026-11-09:** los pasos 1–4 ya se ejecutaron en producción (entrega real de la notificación, ver §10). Quedan pendientes el **paso 5** (confirmar que el clic navega al deep link) y el **paso 6** (caso negativo). El procedimiento se mantiene como referencia.
 
 Ya se puede ejecutar **en producción** (`https://chatti-web.wz0un.workers.dev`, `sw-2` live), sin esperar a staging:
 
@@ -266,8 +268,43 @@ Ya se puede ejecutar **en producción** (`https://chatti-web.wz0un.workers.dev`,
 
 ### 9.8 Riesgos residuales post-deploy
 
-- La prueba manual de entrega (notificación del SO + click → deep link) sigue **NOT RUN**: requiere un navegador real y dos usuarios.
+- La prueba manual de entrega está **parcialmente ejecutada** (ver §10): la notificación del SO llega en producción con `sw-2`; el clic → deep link no está confirmado y el caso negativo (permiso denegado) sigue **NOT RUN**.
 - Cuentas legacy con hash bcrypt: se autentican por fallback (`bcrypt.compare`) hasta su siguiente login correcto, que re-hashea a PBKDF2.
 - Las 45 cuentas `bug01qa_*` de la QA del 2026-11-02 siguen en KV de producción; la purga es del Staff.
 - DM `history` sigue sin contrato decidido.
 - `new URL()` del SW sin `try/catch`/allowlist y comentario engañoso (P3) siguen abiertos.
+
+---
+
+## 10. Prueba manual en navegador real — 2026-11-09 (parcial)
+
+**Ejecutor:** agente Antigravity (sesión de navegador real) con observación directa del Staff.
+**Entorno:** Chrome `157.0.8103.38` en Linux (Wayland), perfil limpio `/tmp/chrome-devtools-profile`, ventana `00:01–00:14 CET`.
+**Sitio:** `https://chatti-web.wz0un.workers.dev` (producción, `sw-2`).
+**Cuentas:** A = `push_user_a#0001` (`user_1794178945161_1p4puuvkb`, `device_1794178944956_267576622_yyaf2hoig`); B = `push_user_b#0001`.
+**Alcance:** mensaje de **sala** (`room-poklx599`). No se repitió con DM.
+
+### 10.1 Resultado por paso (§9.6)
+
+| Paso | Resultado | Evidencia |
+|---|---|---|
+| 1. Login de A | ✅ **PASS** | `localStorage.userData` = `push_user_a#0001` con `deviceId` persistido; historial `/login → /rooms`. |
+| 2. Enable notifications | ✅ **PASS** | `Service Worker/Database` contiene `push_registration_id` para el origen de producción → suscripción push creada y registrada. |
+| 3–4. B envía a una sala que A no tiene abierta → notificación del SO | ✅ **PASS** | Registro en `Platform Notifications/000003.log`: título `💬 push_user_b#0001`, cuerpo `Hola User A! Prueba Web Push en vivo!`, tag `room-poklx599`, icono `/icons/chatti-icon-192.png`, payload con `"url":"/room/poklx599"` y `{"kind":"room","roomId":"poklx599"}`. 3 registros (reintentos del mismo push). El Staff confirma visualmente que la notificación llegó. |
+| 5. Clic → deep link | ⚠️ **NO CONFIRMADO** | Historial: visita `LINK` a `/room/poklx599` a las `00:10:28`, inmediatamente después del registro de la notificación (`00:10`). Es consistente con el clic, pero no se puede atribuir con certeza: el resto de navegaciones de la sesión son `TYPED|FROM_API` (CDP). Falta confirmación explícita del ejecutor/Staff. |
+| 6. Permiso denegado → toggle bloqueado | ❌ **NOT RUN** | Sin evidencia en esta sesión. |
+
+### 10.2 Artefactos crudos (fuera del repo, volátiles)
+
+- `/tmp/chrome-devtools-profile/Default/Platform Notifications/000003.log` — registros de notificación mostrados.
+- `/tmp/chrome-devtools-profile/Default/History` — tabla `visits` del 2026-11-09 00:01–00:14.
+- `/tmp/chrome-devtools-profile/Default/Local Storage/leveldb/` — sesión de A.
+- `/tmp/chrome-devtools-profile/Default/Service Worker/Database/000003.log` — `push_registration_id`.
+- Extracto legible y estable: `.mece/cells/QA-WAVE-2/TASK22-MANUAL.md`.
+
+### 10.3 Veredicto
+
+- **Entrega push real: PASS.** La notificación del SO llegó a A desde B con el título/cuerpo/URL correctos en producción con `sw-2`. El bloqueo histórico "la notificación no llega" queda cerrado.
+- **Clic → deep link: no demostrado.** El bug histórico de septiembre ("la notificación llega pero el clic no navega", §7.2.1) no queda descartado por esta sesión: la navegación observada es compatible con un clic, pero no concluyente.
+- **Caso negativo: NOT RUN.**
+- **Task 22 sigue `IN PROGRESS (no DONE)`** hasta: (a) confirmar el paso 5 con una notificación nueva (idealmente también DM), (b) ejecutar el paso 6, (c) sign-off QA + CTO/Staff.
