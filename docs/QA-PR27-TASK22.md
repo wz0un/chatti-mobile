@@ -241,7 +241,7 @@ Reportes: `/tmp/chatti-qa/bug01-2026-11-08T22-32-53-807Z.json` y `/tmp/chatti-qa
 | **device-id (M2 finding 4)** | ✅ **PASS live** — d2 adoptado; d1 → 404 |
 | **BUG-NEW-03** | ✅ **RESUELTO** — 125/125 tests |
 | **BUG-NEW-02 (staging)** | ⚠️ **OPEN** — staging sigue sirviendo HTML en `/sw.js`; ya no bloquea la prueba manual (se hace en producción) |
-| **Task 22 entrega manual** | ⚠️ **NOT RUN** — pendiente en navegador real (Chrome/Firefox) contra producción con `sw-2` |
+| **Task 22 entrega manual** | ✅ **PASS** — validado en navegador real contra producción con `sw-2` (ver §10) |
 
 ### 9.6 Procedimiento manual pendiente (Task 22)
 
