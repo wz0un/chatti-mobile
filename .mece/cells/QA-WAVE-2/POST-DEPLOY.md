@@ -1,7 +1,7 @@
 # QA-WAVE-2 — POST-DEPLOY (verificación en producción)
 
 **Célula:** QA-WAVE-2 (verificación post-despliegue)
-**Ejecutor:** CTO (verificación directa, sin delegación) — lectura/escritura solo sobre cuentas desechables de QA, sin cambios de producto ni Git.
+**Ejecutor:** CTO (verificación directa, sin delegación) — lectura/escritura solo sobre cuentas desechables de QA; sin cambios de producto (los commits de esta sesión son únicamente documentación en `docs/` y este informe).
 **Fecha:** 2026-11-08, 22:32–22:37 UTC
 **Base desplegada:** `origin/master` @ `c5610c9` (PR #62, promoción Wave 2). `origin/dev` @ `4118ae2` — la única diferencia es `pnpm-lock.yaml` (PR #64).
 **Objetivo:** confirmar que el despliegue de producción (Workers Builds desde `master`) incorpora PBKDF2, `sw-2` y la adopción de `deviceId`, y repetir el probe de estabilidad de BUG-01.
@@ -84,7 +84,7 @@ Ejecutado desde el worktree `t3-6cd902e0/web` (base `c5610c9`), contra producci�
 
 1. **BUG-01:** cerrado técnicamente (QA post-deploy + revisión CTO). Riesgo residual: cuentas legacy siguen ejecutando `bcrypt.compare` en el primer login (fallback intencional) y las contraseñas >72 B creadas antes del fix quedaron truncadas en bcrypt; deben re-loguearse/migrarse. Cierre formal = QA + CTO (hecho) con conocimiento del Staff.
 2. **device-id (M2 finding 4):** validado live. Cierre formal pendiente de QA/CTO (esta verificación lo cubre) y de la prueba funcional de contacto web→móvil si el Staff la exige.
-3. **Task 22:** solo falta la **prueba manual de entrega** (notificación del SO + deep link) en Chrome/Firefox reales, ya se puede hacer **en producción** porque `sw-2` está live. Tabla §6.4 de `docs/QA-PR27-TASK22.md`.
+3. **Task 22:** solo falta la **prueba manual de entrega** (notificación del SO + deep link) en Chrome/Firefox reales, ya se puede hacer **en producción** porque `sw-2` está live. Procedimiento paso a paso en `docs/QA-PR27-TASK22.md` §9.6.
 4. **BUG-NEW-01:** resuelto (producción sirve `sw-2`).
 5. **BUG-NEW-03:** resuelto en `dev`/`master` — harness ampliado a **125/125** tests web (9/9 archivos), verificado 2026-11-08 22:37 UTC.
 6. **BUG-NEW-02 (staging):** sigue abierto; `chatti-web-staging` no valida la prueba manual porque devuelve HTML en `/sw.js`. Ya no bloquea Task 22 (se prueba en producción), pero debe corregirse antes de usar staging para regresión.
