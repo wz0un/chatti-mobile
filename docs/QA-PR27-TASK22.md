@@ -20,6 +20,8 @@
 
 Conclusión QA: **código aprobado para promoción**, mergeado a `master` (`a6381f9`). Bloqueo 1 (pipeline) resuelto por DevOps; bloqueo 2 (backend + VAPID) **resuelto y verificado live en prod** (2026-09-21, §7). La task 22 **NO puede marcarse 100% DONE** hasta el sign-off de entrega manual en navegador real (este entorno de QA no puede recibir push) + CTO/Staff.
 
+> **Estado a 2026-11-08:** §8 es el registro histórico de la sesión del 2026-11-02 (veredictos de entonces: `sw-1` en producción, BUG-01 FAIL de paridad). **La verificación post-despliegue vigente es §9**: `sw-2` live, BUG-01 PASS, device-id PASS. Los FAIL de §8 quedan como histórico, no como estado actual.
+
 ---
 
 ## 1. Gates técnicos (head `f8a876a`, clone limpio)
