@@ -143,7 +143,7 @@ El `subscribe()` del navegador de prueba lanzó **`AbortError: Registration fail
 
 | Item | Resultado | Evidencia |
 |------|-----------|-----------|
-| Task 22 — deep link on click (QA sobre `dev` mergeado) | ✅ **PASS** técnico | Gates web PASS (typecheck, lint, **119/119**, build); `dist/sw.js` con `sw-2` + fallback; harness 9/9; push headless 5/5 con `data.url` correcto y 0 excepciones; contrato 7/7; invariantes #44 OK. Fuente: `.mece/cells/QA-WAVE-2/WEBPUSH-PRE-MERGE.md`. |
+| Task 22 — deep link on click (QA sobre `dev` mergeado) | ✅ **PASS** técnico | Gates web PASS (typecheck, lint, **119/119**, build); `dist/sw.js` con `sw-2` + fallback; harness 9/9; push headless 5/5 con `data.url` correcto y 0 excepciones; contrato 7/7; invariantes #44 OK. Fuente: `.mece/cells/QA-WAVE-2/WEBPUSH-DEV-D6608D9.md`. |
 | Task 22 — prueba manual real Chrome/Firefox | ⚠️ **NOT RUN** | El headless no puede enfocar ventanas; tabla §6.4 del informe fuente preparada y vacía. Requiere Staff + despliegue de `d6608d9` en staging. |
 | Task 22 — cobertura del harness (query/hash) | ❌ **FAIL (solo test)** | 9 casos, sin target con hash ni query exacta; comportamiento correcto por sonda, pero sin CI (BUG-NEW-03). |
 | BUG-01 — source parity (PR #52/#56) | ❌ **FAIL de paridad** | Probe live **126/126** HTTP 200, 0 5xx/1102 (12:20–12:22 UTC), **pero producción ejecuta bcrypt de `master`**: truncación a 72 B → 200; control <72 B → 401; `deviceId` nuevo no adoptado. `master` L377 `bcrypt.hash` / L480 `bcrypt.compare`; `dev` `verifyPassword` L72 + PBKDF2. Fuente: `.mece/cells/QA-WAVE-2/BUG01-LIVE.md`. |

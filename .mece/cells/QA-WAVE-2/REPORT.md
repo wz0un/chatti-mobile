@@ -8,6 +8,8 @@
 **Session id:** `qa-wave-2-phase-b-d6608d9`
 **Naturaleza:** consolidación de la QA ya producida. **No se repitió el probe live** contra producción; se muestrearon los números y el estado de despliegues. No se editó producto, tests ni estado Git. Los únicos ficheros escritos son este `REPORT.md` y la sección 8 de `docs/QA-PR27-TASK22.md`.
 
+> **Actualización 2026-11-09:** este informe es histórico (2026-11-02). La entrega push manual ya se ejecutó en producción con `sw-2`: la notificación del SO llegó correctamente; clic→deep link y caso negativo siguen pendientes. Estado vigente en `docs/QA-PR27-TASK22.md` §9–§10 y `docs/STATUS.md`.
+
 ---
 
 ## 0. Base verificada
@@ -27,7 +29,7 @@
 
 | # | Item | Resultado | Evidencia |
 |---|------|-----------|-----------|
-| 1 | **Task 22** — deep link on click (GitHub #45), QA sobre `dev` mergeado | ✅ **PASS** técnico (con salvedades) — entrega manual **NOT RUN** | Informe fuente: `.mece/cells/QA-WAVE-2/WEBPUSH-PRE-MERGE.md` (worktree `t3-989546bb`), ejecutado 13:19–13:34 CET sobre `d6608d9`. Gates web PASS (typecheck, lint, 119/119 tests, build), `dist/sw.js` con `sw-2`, harness 9/9, entrega push headless 5/5 con `data.url` correcto, 0 excepciones, contrato 7/7. |
+| 1 | **Task 22** — deep link on click (GitHub #45), QA sobre `dev` mergeado | ✅ **PASS** técnico (con salvedades) — entrega manual **NOT RUN** | Informe fuente: `.mece/cells/QA-WAVE-2/WEBPUSH-DEV-D6608D9.md` (worktree `t3-989546bb`), ejecutado 13:19–13:34 CET sobre `d6608d9`. Gates web PASS (typecheck, lint, 119/119 tests, build), `dist/sw.js` con `sw-2`, harness 9/9, entrega push headless 5/5 con `data.url` correcto, 0 excepciones, contrato 7/7. |
 | 1b | **Task 22** — prueba manual real Chrome/Firefox | ⚠️ **NOT RUN** | El headless no puede enfocar ventanas; la tabla §6.4 del informe fuente está preparada y vacía. Requiere Staff + despliegue previo de `d6608d9` en staging. |
 | 1c | **Task 22** — cobertura del harness (target con query/hash) | ❌ **FAIL (solo test)** | El harness cubre 9 casos, pero no target con hash ni query exacta; comportamiento verificado por sonda independiente, no por CI. Bug nuevo `BUG-NEW-03` (P2). |
 | 1d | **Task 22** — invariantes PR #44 (fan-out paginado + badge “Blocked” en/en es/ar/fr) | ✅ **PASS** | `listKeysPaginated` 2/2; call sites verificados; claves `statusBlocked` en 4 idiomas + test i18n. Backend 29/29 re-ejecutado aquí. |
@@ -63,7 +65,7 @@ Los dos números centrales de los informes fuente se sostienen: **backend 29/29*
 
 **PASS técnico sobre `dev` `d6608d9`; entrega manual NOT RUN.**
 
-Evidencia del informe fuente `WEBPUSH-PRE-MERGE.md`:
+Evidencia del informe fuente `WEBPUSH-DEV-D6608D9.md`:
 
 - Gates web sobre el árbol mergeado: `typecheck` 0, `lint` 0, **119/119 tests**, `build` OK (77 módulos, 1.40 s).
 - `dist/sw.js` idéntico a `public/sw.js` (SHA-256 `2bc71fdc19bd49068e5911f7048a1bea9d485a72c29ebbb6a37fc3d644848c60`), con `sw-2`, `skipWaiting`, `clients.claim`, fallback `/rooms` y `openWindow`.
@@ -72,7 +74,7 @@ Evidencia del informe fuente `WEBPUSH-PRE-MERGE.md`:
 - Contrato `shared/notifications/webPush.ts` ⇄ SW: **7/7** payloads idénticos.
 - Invariantes #44: backend 29/29, `listKeysPaginated` 2/2, badge “Blocked” en en/es/ar/fr.
 
-**Lo que no está probado:** el click real de una notificación del sistema en Chrome/Firefox de escritorio. El sandbox headless no puede enfocar ventanas (`Not allowed to focus a window`) y un `NotificationEvent` sintético no permite `waitUntil` (`InvalidStateError`). La tabla §6.4 de `WEBPUSH-PRE-MERGE.md` (20 filas C1–C10, F1–F10) está preparada y **vacía**. Sin esa tabla no hay QA funcional de Task 22.
+**Lo que no está probado:** el click real de una notificación del sistema en Chrome/Firefox de escritorio. El sandbox headless no puede enfocar ventanas (`Not allowed to focus a window`) y un `NotificationEvent` sintético no permite `waitUntil` (`InvalidStateError`). La tabla §6.4 de `WEBPUSH-DEV-D6608D9.md` (20 filas C1–C10, F1–F10) está preparada y **vacía**. Sin esa tabla no hay QA funcional de Task 22.
 
 ### 3.2 BUG-01 — paridad de código
 

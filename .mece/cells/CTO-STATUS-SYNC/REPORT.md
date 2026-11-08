@@ -17,7 +17,7 @@ Documentación (docs/):
 
 Informes Wave 2 copiados (sin modificar):
 - `.mece/cells/QA-WAVE-2/REPORT.md`
-- `.mece/cells/QA-WAVE-2/WEBPUSH-DEV-D6608D9.md` (fuente: `WEBPUSH-PRE-MERGE.md`)
+- `.mece/cells/QA-WAVE-2/WEBPUSH-DEV-D6608D9.md` (informe fuente; publicado con ese nombre)
 - `.mece/cells/QA-WAVE-2/BUG01-LIVE.md`
 - `.mece/cells/DEVOPS-DEPLOY-VERIFY/REPORT.md`
 - `.mece/cells/MOBILE-P0-PLAN/REPORT.md`
