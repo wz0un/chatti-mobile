@@ -224,7 +224,7 @@ El check decisivo es el **A2**: `register` con password de 94 B (`A×72 + "TAIL-
 | 1 | 2026-11-08T22:32:53Z | 36 | **36** | **0 / 0** | 204 / 525 / 553 ms |
 | 2 | 2026-11-08T22:36:12Z | 36 | **36** | **0 / 0** | 201 / 515 / 598 ms |
 
-Reportes: `/tmp/chatti-qa/bug01-2026-11-08T22-32-53-807Z.json` y `…22-36-12-689Z.json`.
+Reportes: `/tmp/chatti-qa/bug01-2026-11-08T22-32-53-807Z.json` y `/tmp/chatti-qa/bug01-2026-11-08T22-36-12-689Z.json`.
 
 ### 9.4 Tests web
 
@@ -253,28 +253,8 @@ Ya se puede ejecutar **en producción** (`https://chatti-web.wz0un.workers.dev`,
 6. Caso negativo: con permiso denegado, el toggle debe mostrar el estado bloqueado.
 
 **Criterio de cierre:** evidencia de 2–6 (captura o descripción fechada) + sign-off CTO/Staff. Hasta entonces **Task 22 permanece `IN PROGRESS (no DONE)`**.
----
 
-## 9. QA-WAVE-2 — POST-DEPLOY (2026-11-08)
-
-**Base desplegada:** `origin/master` @ `c5610c9` (PR #62, promoción Wave 2). `origin/dev` @ `4118ae2` (#64) — única diferencia con `master`: `pnpm-lock.yaml`.
-**Ejecutor:** CTO (verificación black-box contra producción) sobre la QA previa de §8.
-**Informe completo:** `.mece/cells/QA-WAVE-2/POST-DEPLOY.md`.
-
-### 9.1 Hechos verificados contra producción
-
-| Comprobación | Resultado |
-|---|---|
-| `chatti-web` `/sw.js` | ✅ 200 · `SW_VERSION = 'sw-2'` · `text/javascript` · `skipWaiting` + `clients.claim` + regla query/hash |
-| `chatti-workers` `/health` | ✅ 200 · `{"status":"ok","version":"2.2.0"}` |
-| BUG-01 (PBKDF2) | ✅ **PASS** — password de 94 B: login con cola distinta tras el byte 72 devuelve **401** (con bcrypt habría sido 200) |
-| BUG-01 (estabilidad) | ✅ **PASS** — `pnpm qa:bug01` 2 rondas × 36 attempts, **72/72 HTTP 200**, 0 5xx, 0 `1102`; avg 201–204 ms, max 598 ms |
-| device-id (M2 finding 4) | ✅ **PASS** — login con `deviceId` nuevo lo adopta; `users/find` lo devuelve; `by-device-id` nuevo 200 / viejo 404 |
-| Harness web | ✅ **125/125** tests (9 archivos) en `c5610c9` |
-
-Script de la verificación black-box: `/tmp/opencode/postdeploy_qa.py` (10/10 checks PASS, con cabeceras Chrome + `Origin` para evitar el 403 de Cloudflare). Reportes del probe: `/tmp/chatti-qa/bug01-2026-11-08T22-32-53-807Z.json` y `/tmp/chatti-qa/bug01-2026-11-08T22-36-12-689Z.json`.
-
-### 9.2 Estado de los bugs de §8.3
+### 9.7 Estado de los bugs de §8.3
 
 | ID | Estado post-deploy |
 |----|--------------------|
@@ -282,16 +262,10 @@ Script de la verificación black-box: `/tmp/opencode/postdeploy_qa.py` (10/10 ch
 | BUG-NEW-02 | ⚠️ **ABIERTO** — `chatti-web-staging` sigue devolviendo HTML en `/sw.js`. Ya **no bloquea** Task 22: la prueba manual se hace contra producción, que ya sirve `sw-2`. |
 | BUG-NEW-03 | ✅ **RESUELTO** — 6 casos hash/query añadidos; web **125/125**. |
 
-### 9.3 Riesgos residuales post-deploy
+### 9.8 Riesgos residuales post-deploy
 
-- La prueba manual de entrega (notificación del SO + click → deep link) sigue **NOT RUN**: requiere un navegador real y dos usuarios. Procedimiento en §7.2.
+- La prueba manual de entrega (notificación del SO + click → deep link) sigue **NOT RUN**: requiere un navegador real y dos usuarios.
 - Cuentas legacy con hash bcrypt: se autentican por fallback (`bcrypt.compare`) hasta su siguiente login correcto, que re-hashea a PBKDF2.
 - Las 45 cuentas `bug01qa_*` de la QA del 2026-11-02 siguen en KV de producción; la purga es del Staff.
 - DM `history` sigue sin contrato decidido.
 - `new URL()` del SW sin `try/catch`/allowlist y comentario engañoso (P3) siguen abiertos.
-
-### 9.4 Veredicto
-
-- **Task 22:** QA técnica PASS · `sw-2` live · **manual delivery NOT RUN** → **NO DONE**. Único pendiente real: la prueba manual de entrega + sign-off CTO/Staff.
-- **BUG-01:** QA post-deploy PASS + CTO → **cerrado técnicamente**; pendiente ack del Staff en tablero.
-- **device-id:** PASS live 2026-11-08.
