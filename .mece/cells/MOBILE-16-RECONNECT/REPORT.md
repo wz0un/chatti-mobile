@@ -661,3 +661,10 @@ Cobertura de los nuevos checks (19): F1 `f1a/f1b/f1b2/f1c/f1d` (cierre del anter
 - **QA sign-off:** otorgado para criterios a–d en `.mece/cells/QA-MOBILE-16-RECONNECT/REPORT.md` §15, T3 thread `mcp:81055c85-c0d9-4e23-a9f4-6aad77d9d16f`. Criterios a–d PASS; limitación de c documentada.
 - **CTO technical sign-off:** **APPROVED** para los SHA exactos anteriores, revisión read-only T3 thread `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189`, run `run:thread:mcp%3Aec582871-66d1-4ee5-acbc-d00f796d8189:ordinal:1`. Findings no bloqueantes A2–A7 y observación de trazabilidad A1 están en el hilo T3.
 - **Estado al cerrar esta revisión (antes de entrega):** QA y CTO sign-offs cumplidos para el artefacto actual; no había commit/push/PR todavía. Staff autorizó después la entrega de esta rama; ver el addendum §8.5. #16 permanece OPEN / IN PROGRESS y no se declara DONE ni promovido.
+
+### 8.5 Entrega Staff — 2026-11-18
+
+- Commit `ea2f5a8ec6e1c432e1e230bb42a9d7b858c70588` (`fix(mobile): stabilize room reconnect lifecycle (#16)`) en `bugfix/mobile-16-session-reconnect-android-qa`, basado directamente en `dev` `dd3d72ce83d106a6aca806f7727595553baaef6b`; rama publicada en `origin`.
+- [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) abierto hacia `dev`, no mergeado. GitHub muestra un commit ahead, sin workflow runs/status checks ni review submissions al momento de esta comprobación.
+- QA y CTO sign-offs siguen aplicando al fuente SHA `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`, diff SHA `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986` y APK QA SHA `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`.
+- No se cerró #16, no se modificó Trello, no se desplegó y no se cambió `master`.

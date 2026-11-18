@@ -27,6 +27,8 @@ Fix mobile room WebSocket reconnection so the same `userId` and session state su
 
 Staff explicitly authorized committing and pushing this issue branch and opening a PR to `dev`, superseding the no-commit/push/PR restriction above for issue #16 only. Do not merge the PR, close #16, change Trello status, or deploy; keep the issue open for the repository's review flow.
 
+Delivery record: commit `ea2f5a8ec6e1c432e1e230bb42a9d7b858c70588` is pushed on this branch; [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) is open against `dev` and awaiting review/checks.
+
 ## Required report
 
 Write `REPORT.md` with changed paths, root cause, behavior changed, verification commands and exact results, manual QA steps, residual risks, STATUS delta, and the T3 thread/run IDs. The implementation agent itself must run as a T3 Code-managed thread. Do not launch `opencode run` or any agent directly through the OpenCode CLI. Do not call the issue DONE; QA and Staff sign-offs are separate.
