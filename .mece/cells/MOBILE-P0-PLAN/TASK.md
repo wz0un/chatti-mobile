@@ -21,7 +21,7 @@ For each issue, report: the root cause with file and line evidence; the proposed
 
 Implementation may start only after Staff writes a line `STAFF-APPROVAL: <date> <issues> <scope>` under this paragraph. Until then, do nothing beyond phase 1. Once approved: one branch per issue (`bugfix/mobile-<issue>-<name>`) from `dev`, one pull request each into `dev`, documented bugs only, and mobile regression QA plus CTO/Staff sign-off before anything is called DONE.
 
-STAFF-APPROVAL: (none)
+STAFF-APPROVAL: 2026-11-18 #14,#15,#16 — implement AES-GCM for DM history at rest with SecureStore-backed key storage and a non-destructive migration of readable XOR history; fix room-history initialization, persistence and deduplication; preserve userId and cancel reconnect after manual disconnect. Keep the DM wire protocol unchanged. Use one bugfix branch and PR per issue; require mobile QA and CTO/Staff review before marking any issue DONE.
 
 ## Delivery
 

@@ -12,12 +12,17 @@ class ChatService {
         this.roomId = null;
         this.userId = null;
         this.username = null;
+        this.workerUrl = null;
         this.listeners = new Map();
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.notificationService = new NotificationService();
         this.messageCache = []; // Track messages for saving
         this.messageIds = new Set();
+        this.reconnectTimer = null;
+        this.intentionalDisconnect = false;
+        this._socketGeneration = 0;
+        this._autoReconnect = false;
     }
 
     /**
@@ -31,28 +36,43 @@ class ChatService {
      * Connect to a chat room
      */
     connect(roomId, username, workerUrl = 'ws://localhost:8788', userId = null) {
+        const autoReconnect = this._autoReconnect === true;
+        this._autoReconnect = false;
+        this.intentionalDisconnect = false;
+
         this.roomId = roomId;
         this.username = username;
-        this.userId = userId || this.generateUserId();
+        this.workerUrl = workerUrl;
+        // An explicit userId always wins. Automatic retries pass the original one
+        // explicitly; a new manual connection without userId must not inherit a
+        // previous identity.
+        this.userId = userId || (autoReconnect ? this.userId : null) || this.generateUserId();
 
-        // Initialize chat history for rooms
-        if (userId) {
+        // Initialize chat history for rooms (preserve initial-connect behavior).
+        if (userId && !autoReconnect) {
             ChatHistoryService.setUserId(userId);
             this._loadSavedRoomHistory(roomId);
         }
 
         // Determine WebSocket URL
-        const wsUrl = workerUrl.replace('http://', 'ws://').replace('https://', 'wss://');
-        const url = `${wsUrl}/api/room/${roomId}`;
+        const wsUrl = this.workerUrl.replace('http://', 'ws://').replace('https://', 'wss://');
+        const url = `${wsUrl}/api/room/${this.roomId}`;
 
         console.log('Connecting to:', url);
 
-        // Create WebSocket connection (React Native has WebSocket globally)
-        this.ws = new WebSocket(url);
+        // Replace any existing socket. The generation bump invalidates its
+        // callbacks before the best-effort close, so a late open/close can never
+        // act for this instance; the resource itself is also closed here.
+        const generation = this._invalidateSocket();
+        // If the constructor throws, this.ws stays null: the previous socket is
+        // gone and send() can no longer write through it.
+        const ws = new WebSocket(url);
+        this.ws = ws;
 
         // Event handlers
-        this.ws.onopen = () => {
-            console.log('✅ Connected to chat room:', roomId);
+        ws.onopen = () => {
+            if (generation !== this._socketGeneration || this.intentionalDisconnect) return;
+            console.log('✅ Connected to chat room:', this.roomId);
             this.reconnectAttempts = 0;
 
             // Send join message
@@ -61,10 +81,11 @@ class ChatService {
                 userId: this.userId
             });
 
-            this.emit('connected', { roomId, username });
+            this.emit('connected', { roomId: this.roomId, username: this.username });
         };
 
-        this.ws.onmessage = (event) => {
+        ws.onmessage = (event) => {
+            if (generation !== this._socketGeneration) return;
             try {
                 const data = JSON.parse(event.data);
                 console.log('📨 Received:', data.type, data);
@@ -86,22 +107,39 @@ class ChatService {
             }
         };
 
-        this.ws.onerror = (error) => {
+        ws.onerror = (error) => {
+            if (generation !== this._socketGeneration) return;
             console.error('❌ WebSocket error:', error);
             console.error('Connection URL was:', url);
             this.emit('error', error);
         };
 
-        this.ws.onclose = (event) => {
+        ws.onclose = (event) => {
+            if (generation !== this._socketGeneration) return;
+            if (this.ws === ws) {
+                this.ws = null;
+            }
             console.log('🔌 Disconnected from chat room. Code:', event.code, 'Reason:', event.reason);
             console.log('Was clean close:', event.wasClean);
             this.emit('disconnected', { code: event.code, reason: event.reason });
+
+            if (this.intentionalDisconnect) return;
 
             // Attempt to reconnect only for unexpected disconnections
             if (this.reconnectAttempts < this.maxReconnectAttempts && event.code !== 1000) {
                 this.reconnectAttempts++;
                 console.log(`Reconnecting... (attempt ${this.reconnectAttempts})`);
-                setTimeout(() => this.connect(roomId, username, workerUrl), 2000 * this.reconnectAttempts);
+                const delay = 2000 * this.reconnectAttempts;
+                // Tie the retry to this socket generation so a newer connection,
+                // or a manual disconnect, can never be overridden by this timer.
+                const retryGeneration = generation;
+                this.reconnectTimer = setTimeout(() => {
+                    this.reconnectTimer = null;
+                    if (this.intentionalDisconnect) return;
+                    if (retryGeneration !== this._socketGeneration) return;
+                    this._autoReconnect = true;
+                    this.connect(this.roomId, this.username, this.workerUrl, this.userId);
+                }, delay);
             } else if (event.code !== 1000) {
                 console.error('Max reconnection attempts reached');
                 this.emit('error', { message: 'Could not connect to chat server' });
@@ -187,17 +225,48 @@ class ChatService {
     }
 
     /**
+     * Invalidate the current socket callbacks and close its resource.
+     * Returns the new socket generation. Used before replacing a socket and on
+     * disconnect, so late open/close events and a throwing close() are harmless.
+     */
+    _invalidateSocket() {
+        if (this.reconnectTimer) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = null;
+        }
+
+        // Bump first: any callback fired synchronously by close() is already stale.
+        this._socketGeneration += 1;
+
+        const previous = this.ws;
+        this.ws = null;
+        if (previous) {
+            try {
+                previous.close();
+            } catch (error) {
+                // React Native can throw when closing a CONNECTING socket; the
+                // generation bump above already made its callbacks inert.
+                console.error('Error closing WebSocket:', error);
+            }
+        }
+
+        return this._socketGeneration;
+    }
+
+    /**
      * Disconnect from chat
      */
     disconnect() {
+        this.intentionalDisconnect = true;
+        // Cancel any pending retry and invalidate late open/close callbacks,
+        // even when close() throws.
+        this._invalidateSocket();
+
         // Save room messages before disconnecting
         if (this.roomId && this.messageCache.length > 0) {
             ChatHistoryService.saveRoomMessages(this.roomId, this.messageCache);
         }
-        if (this.ws) {
-            this.ws.close();
-            this.ws = null;
-        }
+
         this.messageCache = [];
         this.messageIds = new Set();
         this.listeners.clear();
