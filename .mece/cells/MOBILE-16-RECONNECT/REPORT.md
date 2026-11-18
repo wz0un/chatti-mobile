@@ -1,11 +1,11 @@
 # MOBILE-16-RECONNECT — Implementation report (P0 #16)
 
 - **Issue:** GitHub #16 — `[P0] Preservar userId y estado de sesión durante la reconexión WebSocket`
-- **Branch:** `bugfix/mobile-16-session-reconnect-android-qa` (base `origin/dev`; current worktree HEAD is `dd3d72ce83d106a6aca806f7727595553baaef6b`)
+- **Branch:** `bugfix/mobile-16-session-reconnect-android-qa` (base `origin/dev`; delivered in commits `ea2f5a8`, `fd65b1f`, `0936f33`, opened as PR #66 and merged into `dev` by Staff as `5a0e1ae`)
 - **Cell:** MOBILE-16-RECONNECT (`.mece/cells/MOBILE-16-RECONNECT/TASK.md`)
 - **Date:** 2026-11-18
-- **Status:** implementation, device QA, and independent CTO technical review are complete for the exact source/APK hashes recorded in §8.4. **NOT committed / not pushed / no PR**; no external issue status was changed. #16 remains OPEN / IN PROGRESS in this worktree and is not represented as closed or promoted.
-- **State of tree:** inherited an uncommitted WIP diff in `src/services/ChatService.js` from an interrupted CLI run (CLI runs are now forbidden by `.mece/WAVE-3.md`). The diff was reviewed against the acceptance criteria, kept (not discarded), and completed with one hardening change. A pre-existing uncommitted edit in `.mece/cells/MOBILE-P0-PLAN/TASK.md` (the STAFF-APPROVAL line) and the untracked `.mece/WAVE-3.md` / `.mece/cells/MOBILE-16-RECONNECT/` were already in the tree and were **not** touched.
+- **Status:** implementation, device QA, and independent CTO technical review are complete for the exact source/APK hashes recorded in §8.4. Delivered and merged: PR #66 → `dev` (merge commit `5a0e1ae57377a7fde1945f3252efc3b4391c4184`, merged by `wz0un` at 2026-11-18 16:51:47 CET). #16 remains OPEN / IN PROGRESS: this report does not declare the issue closed or done, and no production deployment was performed by this cell.
+- **State of tree (historical):** inherited an uncommitted WIP diff in `src/services/ChatService.js` from an interrupted CLI run (CLI runs are now forbidden by `.mece/WAVE-3.md`). The diff was reviewed against the acceptance criteria, kept (not discarded), and completed with one hardening change. A pre-existing uncommitted edit in `.mece/cells/MOBILE-P0-PLAN/TASK.md` (the STAFF-APPROVAL line) and the untracked `.mece/WAVE-3.md` / `.mece/cells/MOBILE-16-RECONNECT/` were already in the tree and were **not** touched.
 
 ---
 
@@ -41,7 +41,7 @@
 
 ## 2. Changed paths and behavior
 
-> **Current-source note:** §§2.1–2.4 were written for the initial candidate. The follow-up in §8 corrected F1–F4; use §8.1 and §8.4 as the current source behavior, QA evidence, and sign-off record. In particular, the initial identity expression below is superseded by the stricter manual-connect behavior in §8.1.
+> **Current-source note:** §§2.1–2.4 were written for the initial candidate. The follow-up in §8 corrected F1–F4; use §8.1 and §8.4 as the current source behavior, QA evidence, and sign-off record. §2.1 now quotes the post-F2 identity expression, so it no longer contradicts §8.1.
 
 **Product code changed:** [`src/services/ChatService.js`](/home/mohsine/Proyectos/chatti-mobile/src/services/ChatService.js) only
 (`git diff --name-only -- src/` → `src/services/ChatService.js`).
@@ -52,14 +52,14 @@ No other path was modified by this cell. `git diff --stat` for the tree reports 
 ### 2.1 `userId` stability (criterion 1)
 
 - Constructor stores `workerUrl`, `reconnectTimer`, `intentionalDisconnect`, `_socketGeneration`, `_autoReconnect` (`ChatService.js:15,22-25`).
-- `connect()` now resolves identity as (`ChatService.js:52`):
+- `connect()` resolves identity as (`ChatService.js:46-49`, post-F2 — current):
 
   ```js
-  // Initial candidate; superseded by the F2 correction in §8.1.
-  this.userId = userId || this.userId || this.generateUserId();
+  // Current implementation after the F2 correction; see §8.1.
+  this.userId = userId || (autoReconnect ? this.userId : null) || this.generateUserId();
   ```
 
-  An explicit `userId` always wins; an omitted one reuses the current identity; only a brand-new instance with no identity generates one. `ChatHistoryService.setUserId()` / `_loadSavedRoomHistory()` still run only for an explicit `userId` on a *non*-automatic connect (`:55`), which reproduces the pre-fix initial-connect behavior and avoids reloading/duplicating saved history on each retry.
+  An explicit `userId` always wins; only the automatic retry may reuse the previous identity; a manual `connect()` without `userId` generates a new one. `ChatHistoryService.setUserId()` / `_loadSavedRoomHistory()` still run only for an explicit `userId` on a *non*-automatic connect (`:52-55`), which reproduces the pre-fix initial-connect behavior and avoids reloading/duplicating saved history on each retry.
 - The retry now re-invokes the connect path with the preserved identity (`:139`):
 
   ```js
@@ -651,6 +651,7 @@ Cobertura de los nuevos checks (19): F1 `f1a/f1b/f1b2/f1c/f1d` (cierre del anter
 - **En ese snapshot, el QA sign-off de §14 no cubría este diff.** §15 ahora otorga QA sign-off sobre el APK exacto `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74` y fuente/diff exactos.
 - **En ese snapshot, CTO estaba pendiente.** La revisión CTO posterior de T3 `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189` emitió `APPROVED`; detalles en §8.4.
 - **F5 fuera de alcance:** la carga asíncrona de historial sin guarda de generación/sala sigue igual; pertenece a #15. La identidad sigue siendo por montaje de pantalla, no por instalación. `reconnectAttempts` solo se resetea en `open`, como antes.
+- **Residuales CTO aceptados (no bloqueantes, sin cambio de código):** **A2** — si un listener `disconnected` llamara a `connect()`, `onclose` seguiría asignando `this.reconnectTimer` a un timer de generación vieja; es inerte por la guarda de `:139` y `ChatScreen` no reconecta desde ese listener, así que no es alcanzable hoy (mejora futura: `if (this.ws || generation !== this._socketGeneration) return;`). **A3** — `reconnectAttempts` solo se resetea en `open`, comportamiento pre-existente; candidato a follow-up/#15. **A5** — la liberación real del socket por el SO cuando `close()` lanza en `CONNECTING` no es verificable en Node; los callbacks quedan inertes por generación. **A7** — identidad por montaje de pantalla: es el contrato de diseño y el marco en el que QA interpreta el criterio 1.
 - **Estado del snapshot §8.3:** IN PROGRESS antes de §15 y del review CTO. El estado vigente, con ambos sign-offs, se registra a continuación.
 
 ### 8.4 Sign-offs vigentes para el artefacto exacto
@@ -665,6 +666,8 @@ Cobertura de los nuevos checks (19): F1 `f1a/f1b/f1b2/f1c/f1d` (cierre del anter
 ### 8.5 Entrega Staff — 2026-11-18
 
 - Commit `ea2f5a8ec6e1c432e1e230bb42a9d7b858c70588` (`fix(mobile): stabilize room reconnect lifecycle (#16)`) en `bugfix/mobile-16-session-reconnect-android-qa`, basado directamente en `dev` `dd3d72ce83d106a6aca806f7727595553baaef6b`; rama publicada en `origin`.
-- [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) abierto hacia `dev`, no mergeado. GitHub muestra un commit ahead, sin workflow runs/status checks ni review submissions al momento de esta comprobación.
-- QA y CTO sign-offs siguen aplicando al fuente SHA `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`, diff SHA `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986` y APK QA SHA `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`.
+- [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) abierto hacia `dev` y **fusionado por el Staff (`wz0un`)** el 2026-11-18 a las 16:51:47 CET; merge commit `5a0e1ae57377a7fde1945f3252efc3b4391c4184`. `origin/dev` pasa a contener el fix con el fuente en `ddbc8af9…` (verificado con `git show origin/dev:src/services/ChatService.js | sha256sum`).
+- QA y CTO sign-offs siguen aplicando al fuente SHA `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`, diff SHA `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986` y APK QA SHA `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`. Cualquier cambio de bytes en el fuente invalida esas firmas.
+- **Evidencia desechable:** los harness y sus logs (§8.2) viven en `/tmp/opencode/mobile16-harness` y `/tmp/opencode/qa-mobile16`, fuera del repositorio. Ese árbol temporal se limpió el 2026-11-18 a las 17:24 CET; la re-verificación posterior debe apoyarse en la inmutabilidad del artefacto (el hash del fuente en `dev` sigue siendo `ddbc8af9…`) y en los resultados registrados en §8.2.
+- **Reconciliación documental posterior (esta edición):** el hallazgo CTO **A6** (la expresión de identidad de §2.1 seguía siendo la del candidato inicial) queda resuelto citando la expresión post-F2; además se corrige el estado del encabezado y de §8.5, que aún decían «sin commit / sin PR / no mergeado». Sin cambios en `src/services/ChatService.js` (hash sin cambios) y sin cambios de estado en GitHub/Trello más allá de esta entrega.
 - No se cerró #16, no se modificó Trello, no se desplegó y no se cambió `master`.
