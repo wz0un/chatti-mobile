@@ -1,11 +1,11 @@
 # MOBILE-16-RECONNECT — Implementation report (P0 #16)
 
 - **Issue:** GitHub #16 — `[P0] Preservar userId y estado de sesión durante la reconexión WebSocket`
-- **Branch:** `bugfix/mobile-16-session-reconnect-android-qa` (base `origin/dev`; current worktree HEAD is `dd3d72ce83d106a6aca806f7727595553baaef6b`)
+- **Branch:** `bugfix/mobile-16-session-reconnect-android-qa` (base `origin/dev`; código entregado en `ea2f5a8` y docs en `fd65b1f`/`0936f33`, abierto como PR #66 y fusionado en `dev` por Staff como `5a0e1ae`; el commit de documentación `d393477` quedó **fuera** de #66/`dev`, y la reconciliación de §9 está **sin commitear** en el worktree)
 - **Cell:** MOBILE-16-RECONNECT (`.mece/cells/MOBILE-16-RECONNECT/TASK.md`)
-- **Date:** 2026-11-18
-- **Status:** implementation, device QA, and independent CTO technical review are complete for the exact source/APK hashes recorded in §8.4. **NOT committed / not pushed / no PR**; no external issue status was changed. #16 remains OPEN / IN PROGRESS in this worktree and is not represented as closed or promoted.
-- **State of tree:** inherited an uncommitted WIP diff in `src/services/ChatService.js` from an interrupted CLI run (CLI runs are now forbidden by `.mece/WAVE-3.md`). The diff was reviewed against the acceptance criteria, kept (not discarded), and completed with one hardening change. A pre-existing uncommitted edit in `.mece/cells/MOBILE-P0-PLAN/TASK.md` (the STAFF-APPROVAL line) and the untracked `.mece/WAVE-3.md` / `.mece/cells/MOBILE-16-RECONNECT/` were already in the tree and were **not** touched.
+- **Date:** 2026-11-18 (implementación, QA y entrega); 2026-11-19 (reconciliación documental de este informe, §9)
+- **Status (vigente):** código y QA funcional **validados** para el artefacto `ddbc8af9…` / `4d1df4f3…` / APK `2868e8cb…`, pero **DoD no completo**: el CTO de T3 (run `ordinal:1`) aprobó **solo fuente/diff**, **no** la evidencia QA ni el APK; la auditoría CTO posterior en PR #66 (review `PRR_kwDOQljQxc8AAAABY0tjdg`, veredicto técnico `REQUEST_CHANGES`) exige corregir la trazabilidad y **todavía debe revisar los informes corregidos y la evidencia QA con hilo/run propios**. PR #66 → `dev`: merge commit `5a0e1ae57377a7fde1945f3252efc3b4391c4184`, por `wz0un` el 2026-11-18 16:51:47 CET. #16 y Trello permanecen **OPEN / IN PROGRESS**; sin DONE, sin promoción y sin despliegue a producción.
+- **State of tree (historical):** inherited an uncommitted WIP diff in `src/services/ChatService.js` from an interrupted CLI run (CLI runs are now forbidden by `.mece/WAVE-3.md`). The diff was reviewed against the acceptance criteria, kept (not discarded), and completed with one hardening change. A pre-existing uncommitted edit in `.mece/cells/MOBILE-P0-PLAN/TASK.md` (the STAFF-APPROVAL line) and the untracked `.mece/WAVE-3.md` / `.mece/cells/MOBILE-16-RECONNECT/` were already in the tree and were **not** touched.
 
 ---
 
@@ -41,7 +41,7 @@
 
 ## 2. Changed paths and behavior
 
-> **Current-source note:** §§2.1–2.4 were written for the initial candidate. The follow-up in §8 corrected F1–F4; use §8.1 and §8.4 as the current source behavior, QA evidence, and sign-off record. In particular, the initial identity expression below is superseded by the stricter manual-connect behavior in §8.1.
+> **Current-source note:** §§2.1–2.4 were written for the initial candidate. The follow-up in §8 corrected F1–F4; use §8.1 and §8.4 as the current source behavior, QA evidence, and sign-off record. §2.1 now quotes the post-F2 identity expression, so it no longer contradicts §8.1.
 
 **Product code changed:** [`src/services/ChatService.js`](/home/mohsine/Proyectos/chatti-mobile/src/services/ChatService.js) only
 (`git diff --name-only -- src/` → `src/services/ChatService.js`).
@@ -52,14 +52,14 @@ No other path was modified by this cell. `git diff --stat` for the tree reports 
 ### 2.1 `userId` stability (criterion 1)
 
 - Constructor stores `workerUrl`, `reconnectTimer`, `intentionalDisconnect`, `_socketGeneration`, `_autoReconnect` (`ChatService.js:15,22-25`).
-- `connect()` now resolves identity as (`ChatService.js:52`):
+- `connect()` resolves identity as (`ChatService.js:46-49`, post-F2 — current):
 
   ```js
-  // Initial candidate; superseded by the F2 correction in §8.1.
-  this.userId = userId || this.userId || this.generateUserId();
+  // Current implementation after the F2 correction; see §8.1.
+  this.userId = userId || (autoReconnect ? this.userId : null) || this.generateUserId();
   ```
 
-  An explicit `userId` always wins; an omitted one reuses the current identity; only a brand-new instance with no identity generates one. `ChatHistoryService.setUserId()` / `_loadSavedRoomHistory()` still run only for an explicit `userId` on a *non*-automatic connect (`:55`), which reproduces the pre-fix initial-connect behavior and avoids reloading/duplicating saved history on each retry.
+  An explicit `userId` always wins; only the automatic retry may reuse the previous identity; a manual `connect()` without `userId` generates a new one. `ChatHistoryService.setUserId()` / `_loadSavedRoomHistory()` still run only for an explicit `userId` on a *non*-automatic connect (`:52-55`), which reproduces the pre-fix initial-connect behavior and avoids reloading/duplicating saved history on each retry.
 - The retry now re-invokes the connect path with the preserved identity (`:139`):
 
   ```js
@@ -464,7 +464,7 @@ Mapping of harness scenarios to the acceptance criteria:
          this.listeners.clear();
 ```
 
-The authoritative full diff is obtained with `git diff src/services/ChatService.js` (untracked/committed state: nothing committed for this cell).
+The authoritative full diff is obtained with `git diff src/services/ChatService.js`. **Snapshot histórico pre-entrega:** en ese momento no había commit para esta célula; la entrega posterior se registró en `ea2f5a8`, PR #66 y merge `5a0e1ae` (§8.5).
 
 ---
 
@@ -540,16 +540,26 @@ The repository has **no mobile test harness**: `package.json` exposes only Expo 
 
 ## 6. STATUS delta
 
+> **Snapshot histórico (pre-entrega, 2026-11-18):** este bloque refleja el estado de la sesión de implementación, no el estado actual. Las frases «sin commit, push ni PR» y «no hay commit/push/PR» dejaron de ser ciertas con la entrega de §8.5. Estado vigente: §6.1 y §9.
+
 ```text
-STATUS delta — MOBILE-16-RECONNECT (#16)
-- Código candidato en `bugfix/mobile-16-session-reconnect-android-qa` desde `origin/dev`; fuente SHA-256 `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`; sin commit, push ni PR.
+STATUS delta — MOBILE-16-RECONNECT (#16) [HISTÓRICO, pre-entrega]
+- Código candidato en `bugfix/mobile-16-session-reconnect-android-qa` desde `origin/dev`; fuente SHA-256 `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`; sin commit, push ni PR (en ese momento).
 - Causa raíz corregida: identidad efímera por retry, timer no cancelable, callbacks stale y socket anterior no cerrado; F1–F4 descritos en §8.
 - Harness local: 27/27 original y 19/19 F1–F4 PASS; controles negativos 12 FAIL y 14 FAIL. `node --check` y `git diff --check` OK.
-- QA funcional §15: a–d PASS para el APK QA SHA-256 `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`, que contiene exactamente el fuente anterior; QA sign-off otorgado.
-- CTO technical sign-off: APPROVED para el mismo SHA de fuente/diff, hilo T3 `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189` (run `run:thread:mcp%3Aec582871-66d1-4ee5-acbc-d00f796d8189:ordinal:1`).
-- El issue y la tarjeta siguen OPEN / IN PROGRESS en trackers externos (sin cambios en esta sesión). No se marca DONE ni se promueve; no hay commit/push/PR por el límite de esta sesión.
+- QA funcional §15: a–d PASS para el APK QA SHA-256 `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`, que contiene exactamente el fuente anterior; QA sign-off otorgado (run final del informe: `…:ordinal:7`).
+- CTO technical sign-off: APPROVED **solo para el SHA de fuente/diff** `ddbc8af9…` / `4d1df4f3…`, hilo T3 `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189` (run `run:thread:mcp%3Aec582871-66d1-4ee5-acbc-d00f796d8189:ordinal:1`); **no** cubre la evidencia QA ni el APK.
+- El issue y la tarjeta siguen OPEN / IN PROGRESS en trackers externos (sin cambios en esta sesión). No se marca DONE ni se promueve; no hay commit/push/PR por el límite de esa sesión.
 - Sin cambios en `web/`, `shared/`, protocolo, config ni dependencias. Riesgo residual: `userId` es estable durante el retry, pero no entre montajes de pantalla.
 ```
+
+### 6.1 STATUS delta vigente (2026-11-19)
+
+- Entrega: PR #66 **fusionado** en `dev` (`5a0e1ae57377a7fde1945f3252efc3b4391c4184`); el commit de docs `d393477` no está en #66/`dev`; la reconciliación de §9 está sin commitear.
+- Artefacto inmutable: fuente `ddbc8af9…`, diff `4d1df4f3…`, APK QA `2868e8cb…`. Ningún cambio de código en esta reconciliación.
+- Sign-offs con alcance real: **QA** a–d PASS sobre fuente/diff/APK (run final `run:thread:mcp%3A81055c85-c0d9-4e23-a9f4-6aad77d9d16f:ordinal:7`); **CTO** APPROVED solo sobre fuente/diff (`mcp:ec582871-…`, run `ordinal:1`). No existe aprobación CTO de la evidencia QA ni del APK en ese run.
+- Auditoría CTO posterior en PR #66: review `PRR_kwDOQljQxc8AAAABY0tjdg`, veredicto técnico `REQUEST_CHANGES` (registrada en GitHub como `COMMENT` porque el autor no puede emitir `REQUEST_CHANGES` sobre su propio PR). Pendiente la revisión CTO de los informes corregidos y de la evidencia QA con hilo/run propios.
+- **DoD no completo**; #16/Trello OPEN / IN PROGRESS; sin DONE, sin producción.
 
 ---
 
@@ -564,7 +574,7 @@ T3 child implementation thread/run: `thread:delegated-task:command%3Amcp%3Aeda45
 - Provider/model: `opencode` / `opencode/big-pickle`
 - Origin of the inherited WIP diff: OpenCode CLI session `ses_e11bdbcd0ffekzVv3vTToHfraI`, run before the T3-only rule of 2026-11-18. It is recorded for traceability only; no further CLI run was used or resumed after the rule.
 
-This implementation ran as a T3 Code-managed child thread (no `opencode run` or other agent CLI was used). No commit, push, PR, GitHub/Trello update or deploy was performed by this cell.
+This implementation ran as a T3 Code-managed child thread (no `opencode run` or other agent CLI was used). **Histórico de aquel run:** no se hicieron commit, push, PR, actualización de GitHub/Trello ni deploy en esa sesión; la entrega posterior se documenta en §8.5 y la reconciliación actual en §9.
 
 ---
 
@@ -572,7 +582,7 @@ This implementation ran as a T3 Code-managed child thread (no `opencode run` or 
 
 **Contexto:** la revisión CTO independiente ([thread `mcp:aecb5ad1-f6ca-4769-870d-142e8b9ae7be`](https://app.t3.codes/threads/39965b4d-5f2a-4a0f-96a4-e78e93c02ef4/mcp:aecb5ad1-f6ca-4769-870d-142e8b9ae7be), runs `ordinal:1` y la actualización posterior a QA §14) emitió **CTO NOT APPROVED** con **F1 obligatorio** y **F2–F4** recomendados. F5 (`_loadSavedRoomHistory` asíncrono sin guarda) es pre-existente y queda explícitamente **fuera de alcance** (seguimiento #15). Esta sección documenta únicamente la corrección de F1–F4; no cambia la QA funcional ni el sign-off.
 
-**Ejecución T3 (este seguimiento):** thread `mcp:65578db3-49db-4e7d-9dc9-94c8f84fc7f4` ([T3 thread](https://app.t3.codes/threads/39965b4d-5f2a-4a0f-96a4-e78e93c02ef4/mcp:65578db3-49db-4e7d-9dc9-94c8f84fc7f4)), run `run:thread:mcp%3A65578db3-49db-4e7d-9dc9-94c8f84fc7f4:ordinal:1`, provider `opencode`, modelo `opencode/big-pickle`. Sin CLI de OpenCode, sin commit/push/PR, sin deploy, sin dispositivo/APK.
+**Ejecución T3 (este seguimiento, histórico):** thread `mcp:65578db3-49db-4e7d-9dc9-94c8f84fc7f4` ([T3 thread](https://app.t3.codes/threads/39965b4d-5f2a-4a0f-96a4-e78e93c02ef4/mcp:65578db3-49db-4e7d-9dc9-94c8f84fc7f4)), run `run:thread:mcp%3A65578db3-49db-4e7d-9dc9-94c8f84fc7f4:ordinal:1`, provider `opencode`, modelo `opencode/big-pickle`. En aquel run: sin CLI de OpenCode, sin commit/push/PR, sin deploy, sin dispositivo/APK. Entrega posterior: §8.5; reconciliación actual (mismo thread, run `ordinal:3`): §9.
 
 ### 8.1 Cambios y decisiones
 
@@ -641,30 +651,74 @@ Cobertura de los nuevos checks (19): F1 `f1a/f1b/f1b2/f1c/f1d` (cierre del anter
 - Ficheros cambiados por el seguimiento: `src/services/ChatService.js` y este informe. `git diff --stat` del árbol: `.mece/cells/MOBILE-P0-PLAN/TASK.md` (edición Staff pre-existente, no tocada) y `src/services/ChatService.js`; 88 inserciones / 19 borrados en total.
 - `SHA-256(src/services/ChatService.js)` = `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`.
 - `SHA-256(git diff -- src/services/ChatService.js)` = `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986`.
-- Sin commit, push, PR, GitHub/Trello, deploy, ajustes de Android, instalación de APK ni cambios de worker.
+- **Snapshot histórico de aquel run:** sin commit, push, PR, GitHub/Trello, deploy, ajustes de Android, instalación de APK ni cambios de worker. La entrega posterior está en §8.5.
 
 ### 8.3 Limitaciones y riesgos restantes
 
 > **Snapshot histórico al terminar la implementación, antes de la nueva QA y revisión CTO.** Las dos entradas de sign-off de abajo fueron resueltas posteriormente; véase §8.4.
 
 - **El harness no es QA funcional.** Node 26 + `WebSocket` simulado; no mide timing real de React Native, códigos de `close()` durante `CONNECTING` ni lifecycle Android. Que la generación invalide callbacks está probado; que el sistema operativo libere el recurso cuando `close()` lanza en `CONNECTING` **no** puede probarse aquí (queda como limitación conocida y el callback ya es inerte).
-- **En ese snapshot, el QA sign-off de §14 no cubría este diff.** §15 ahora otorga QA sign-off sobre el APK exacto `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74` y fuente/diff exactos.
-- **En ese snapshot, CTO estaba pendiente.** La revisión CTO posterior de T3 `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189` emitió `APPROVED`; detalles en §8.4.
+- **En ese snapshot, el QA sign-off de §14 no cubría este diff.** §15 ahora otorga QA sign-off sobre el APK exacto `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74` y fuente/diff exactos; el run final del informe QA es `run:thread:mcp%3A81055c85-c0d9-4e23-a9f4-6aad77d9d16f:ordinal:7` (no `ordinal:1`).
+- **En ese snapshot, CTO estaba pendiente.** La revisión CTO posterior de T3 `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189`, run `ordinal:1`, emitió `APPROVED` **solo para fuente/diff**; no revisó ni aprobó la evidencia QA ni el APK. Detalles en §8.4.
 - **F5 fuera de alcance:** la carga asíncrona de historial sin guarda de generación/sala sigue igual; pertenece a #15. La identidad sigue siendo por montaje de pantalla, no por instalación. `reconnectAttempts` solo se resetea en `open`, como antes.
-- **Estado del snapshot §8.3:** IN PROGRESS antes de §15 y del review CTO. El estado vigente, con ambos sign-offs, se registra a continuación.
+- **Residuales CTO aceptados (no bloqueantes, sin cambio de código):** **A2** — si un listener `disconnected` llamara a `connect()`, `onclose` seguiría asignando `this.reconnectTimer` a un timer de generación vieja; es inerte por la guarda de `:139` y `ChatScreen` no reconecta desde ese listener, así que no es alcanzable hoy (mejora futura: `if (this.ws || generation !== this._socketGeneration) return;`). **A3** — `reconnectAttempts` solo se resetea en `open`, comportamiento pre-existente; candidato a follow-up/#15. **A5** — la liberación real del socket por el SO cuando `close()` lanza en `CONNECTING` no es verificable en Node; los callbacks quedan inertes por generación. **A7** — identidad por montaje de pantalla: es el contrato de diseño y el marco en el que QA interpreta el criterio 1.
+- **Estado del snapshot §8.3:** IN PROGRESS antes de §15 y del review CTO. El estado vigente, con el **alcance real** de los sign-offs y la auditoría posterior, se registra en §8.4–§8.6 y §9.
 
-### 8.4 Sign-offs vigentes para el artefacto exacto
+### 8.4 Alcance real de los sign-offs (corregido 2026-11-19)
+
+> Los hashes son los del artefacto inmutable; **aquí se corrige la pertenencia de cada aprobación**. El texto anterior decía «APPROVED para los SHA exactos anteriores», lo que arrastraba al APK y permitía creer que el CTO había revisado la evidencia QA; corrección en §9.
 
 - **Fuente:** `src/services/ChatService.js`, SHA-256 `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`.
 - **Diff de código:** SHA-256 `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986`.
-- **APK QA instalado en user 999:** SHA-256 `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`; coincide con el paquete instalado y contiene el fuente indicado.
-- **QA sign-off:** otorgado para criterios a–d en `.mece/cells/QA-MOBILE-16-RECONNECT/REPORT.md` §15, T3 thread `mcp:81055c85-c0d9-4e23-a9f4-6aad77d9d16f`. Criterios a–d PASS; limitación de c documentada.
-- **CTO technical sign-off:** **APPROVED** para los SHA exactos anteriores, revisión read-only T3 thread `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189`, run `run:thread:mcp%3Aec582871-66d1-4ee5-acbc-d00f796d8189:ordinal:1`. Findings no bloqueantes A2–A7 y observación de trazabilidad A1 están en el hilo T3.
-- **Estado al cerrar esta revisión (antes de entrega):** QA y CTO sign-offs cumplidos para el artefacto actual; no había commit/push/PR todavía. Staff autorizó después la entrega de esta rama; ver el addendum §8.5. #16 permanece OPEN / IN PROGRESS y no se declara DONE ni promovido.
+- **APK QA instalado en user 999:** SHA-256 `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`; coincide con el paquete instalado y contiene el fuente indicado. **Cubierto por QA; no cubierto por el CTO de `ordinal:1`.**
+- **QA sign-off (alcance: fuente/diff/APK):** otorgado para criterios a–d en `.mece/cells/QA-MOBILE-16-RECONNECT/REPORT.md` §15, T3 thread `mcp:81055c85-c0d9-4e23-a9f4-6aad77d9d16f`; **run final del informe: `run:thread:mcp%3A81055c85-c0d9-4e23-a9f4-6aad77d9d16f:ordinal:7`** (no `ordinal:1`). Criterios a–d PASS; limitación de (c) documentada.
+- **CTO technical sign-off (alcance limitado a fuente/diff):** **APPROVED** **únicamente** para `ddbc8af9…` y `4d1df4f3…`, revisión read-only T3 thread `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189`, run `run:thread:mcp%3Aec582871-66d1-4ee5-acbc-d00f796d8189:ordinal:1`. Su informe dice literalmente «QA: NO vigente para este artefacto… §15 pending» y «No reclamo QA sign-off». **No aprobó la evidencia QA de §15 ni el APK `2868e8cb…`.** Findings no bloqueantes A2–A7 y observación de trazabilidad A1 están en ese hilo.
+- **Histórico (cierre anterior a la entrega):** entonces QA y CTO tenían sign-offs cumplidos **según sus alcances respectivos** y no había commit/push/PR; Staff autorizó después la entrega de la rama (§8.5). #16 permanece OPEN / IN PROGRESS; no se declara DONE ni promovido. **El DoD sigue sin completarse** mientras falte la revisión CTO de los informes corregidos y de la evidencia QA (§8.6).
 
 ### 8.5 Entrega Staff — 2026-11-18
 
 - Commit `ea2f5a8ec6e1c432e1e230bb42a9d7b858c70588` (`fix(mobile): stabilize room reconnect lifecycle (#16)`) en `bugfix/mobile-16-session-reconnect-android-qa`, basado directamente en `dev` `dd3d72ce83d106a6aca806f7727595553baaef6b`; rama publicada en `origin`.
-- [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) abierto hacia `dev`, no mergeado. GitHub muestra un commit ahead, sin workflow runs/status checks ni review submissions al momento de esta comprobación.
-- QA y CTO sign-offs siguen aplicando al fuente SHA `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`, diff SHA `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986` y APK QA SHA `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`.
+- [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) abierto hacia `dev` y **fusionado por el Staff (`wz0un`)** el 2026-11-18 a las 16:51:47 CET; merge commit `5a0e1ae57377a7fde1945f3252efc3b4391c4184`. `origin/dev` pasa a contener el fix con el fuente en `ddbc8af9…` (verificado con `git show origin/dev:src/services/ChatService.js | sha256sum`).
+- Artefacto inmutable: fuente SHA `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`, diff SHA `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986`, APK QA SHA `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`. **No afirmar que ambos sign-offs cubren los tres hashes**: QA cubre fuente/diff/APK (run `ordinal:7`); el CTO de `ordinal:1` cubre solo fuente/diff. Cualquier cambio de bytes en el fuente invalida esas firmas.
+- **Evidencia desechable:** los harness y sus logs (§8.2) viven en `/tmp/opencode/mobile16-harness` y `/tmp/opencode/qa-mobile16`, fuera del repositorio. Ese árbol temporal se limpió el 2026-11-18 a las 17:24 CET; la re-verificación posterior debe apoyarse en la inmutabilidad del artefacto (el hash del fuente en `dev` sigue siendo `ddbc8af9…`) y en los resultados registrados en §8.2.
+- **Reconciliación documental posterior 2026-11-18 (commit `d393477`):** el hallazgo CTO **A6** (la expresión de identidad de §2.1 seguía siendo la del candidato inicial) quedó resuelto citando la expresión post-F2; además se corrigió el estado del encabezado y de §8.5, que aún decían «sin commit / sin PR / no mergeado». Sin cambios en `src/services/ChatService.js` (hash sin cambios). **Ese commit quedó fuera de PR #66 y de `dev`**, según la auditoría CTO posterior (§8.6).
+- **Reconciliación documental 2026-11-19 (§9):** corrige el alcance del sign-off CTO, el run final de QA y el estado post-merge; se ejecuta en el worktree **sin commit/push/PR**.
 - No se cerró #16, no se modificó Trello, no se desplegó y no se cambió `master`.
+
+### 8.6 Auditoría CTO posterior en PR #66 — `REQUEST_CHANGES` (2026-11-18 16:32:26Z)
+
+- Review `PRR_kwDOQljQxc8AAAABY0tjdg` sobre el head `0936f33f9d2c41097cae81137e1b99b8cf007b23`. Veredicto técnico **`REQUEST_CHANGES`**; GitHub lo registró como `COMMENT` porque la cuenta autenticada (`wz0un`) es autora del PR y la plataforma rechaza `REQUEST_CHANGES` sobre el propio PR. **No es un APPROVE.**
+- Código y QA funcional quedaron técnicamente validados para el artefacto exacto, pero el APPROVE se retiró por tres bloqueos de trazabilidad: (1) atribución al CTO de una revisión de QA/APK que no ocurrió en `mcp:ec582871-…:ordinal:1`; (2) atribución del run final de §15 a `ordinal:1` en lugar de `ordinal:7`; (3) estado de entrega obsoleto/contradictorio («PR abierto / sin merge», «sin commit/PR») cuando ya estaba fusionado como `5a0e1ae`. El PR además se mergeó sin reviews en GitHub.
+- La auditoría solicita un PR/commit de seguimiento a `dev` que corrija este informe, `QA-MOBILE-16/REPORT.md`, `WAVE-3.md`, `STATUS.md` y `TASK.md`, y mantener #16 OPEN / IN PROGRESS hasta que se registre la revisión CTO de la evidencia QA con hilo/run propios.
+- **Estado:** en este informe se corrigen las contradicciones que le corresponden (§9); los otros ficheros citados y la revisión CTO pendiente quedan fuera del alcance de esta célula. **No se declara DoD completo.**
+
+---
+
+## 9. Reconciliación documental — 2026-11-19 (esta ejecución)
+
+**Trazabilidad T3 de esta ejecución:** thread `mcp:65578db3-49db-4e7d-9dc9-94c8f84fc7f4`, run `run:thread:mcp%3A65578db3-49db-4e7d-9dc9-94c8f84fc7f4:ordinal:3`, provider `opencode`, modelo `opencode/big-pickle`. Continuación documental del run `ordinal:1` de este mismo hilo (§8).
+
+**Alcance estricto:** solo este `REPORT.md`. Sin cambios en código fuente, tests, `QA-MOBILE-16-RECONNECT/REPORT.md`, `TASK.md`, `WAVE-3.md`, `STATUS.md`, dispositivo, GitHub/Trello, ni commit/push/PR/deploy. No se ejecutaron pruebas: reconciliación con evidencia ya registrada. Esta edición queda **sin commitear** en el worktree.
+
+**Correcciones aplicadas:**
+
+1. **Alcance del sign-off CTO:** encabezado, §6, §6.1, §8.3, §8.4 y §8.5 dejan de atribuir a `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189` / run `ordinal:1` la aprobación de la evidencia QA o del APK `2868e8cb…`; ese run aprobó **solo** fuente `ddbc8af9…` y diff `4d1df4f3…`.
+2. **Run final de QA:** se registra `run:thread:mcp%3A81055c85-c0d9-4e23-a9f4-6aad77d9d16f:ordinal:7` como run del informe final §15 (no `ordinal:1`), con PASS a–d sobre fuente/diff/APK.
+3. **Auditoría posterior:** §8.6 registra la review `PRR_kwDOQljQxc8AAAABY0tjdg` (`REQUEST_CHANGES` técnico / `COMMENT` en GitHub) y deja explícito que el CTO **todavía debe revisar** los informes corregidos y la evidencia QA con hilo/run propios.
+4. **Estado post-merge:** encabezado, §3, §6.1, §7, §8 y §8.5 aclaran que PR #66 fue fusionado en `dev` (`5a0e1ae57377a7fde1945f3252efc3b4391c4184`), que `d393477` no entró en #66/`dev`, y que las frases «sin commit / sin PR / no mergeado» son snapshots históricos debidamente marcados.
+5. **Historial preservado:** los bloques pre-entrega se conservan etiquetados como históricos; no se borró evidencia ni se reescribió el pasado.
+
+**Estado vigente:** #16 y Trello permanecen **OPEN / IN PROGRESS**; **DoD no completo**; sin DONE, sin promoción y sin despliegue a producción. Fuera de esta célula: la corrección de los demás documentos señalados por la auditoría y la revisión CTO de la evidencia QA.
+
+---
+
+## 10. Addendum cronológico (2026-11-19) — cierre documental del estado actual
+
+- **Revisión CTO de seguimiento:** hilo T3 `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189`, run `ordinal:3` (**APPROVED**). Aprobó la revisión documental de §9 y la **evidencia QA histórica**, exclusivamente para los hashes exactos del artefacto: fuente `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`, diff `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986`, APK `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`.
+- **Delimitación de aprobaciones:** el `ordinal:1` del mismo hilo sigue limitado a **fuente/diff** y no cubre QA/APK; el `ordinal:3` cubre la evidencia QA histórica de esos hashes y los snapshots documentales revisados. El pendiente anotado en §9 queda así resuelto; se conserva como histórico.
+- **Alcance de la aprobación:** **no hubo reejecución de pruebas ni rehash fresco del APK**, y los logs raw ya no existen (§8.5). La aprobación es documental y sobre evidencia histórica registrada, no una nueva validación funcional.
+- **Snapshots aprobados:** informe QA `.mece/cells/QA-MOBILE-16-RECONNECT/REPORT.md` SHA-256 `7400fdd0c1ad968daaa8111d11e7ef1a13b661d023d532a58c6f749dd58676aa`; este informe (estado previo a este addendum) SHA-256 `49069d92a3f933558de43bc087c4ff1dc304c9cb5bcdd108990574da04b90bff`. El SHA final de este fichero tras añadir el addendum se comunica en el hilo T3.
+- **Estado actual:** #16 y Trello permanecen **OPEN / IN PROGRESS**; **DoD no completo**; sin DONE, sin promoción y sin despliegue a producción.
+- **Naturaleza de este addendum:** documental; no cambia artefactos ni evidencia, no modifica código, QA, dispositivo, trackers ni otros archivos, y no implica commit, push ni PR.
+
+**Trazabilidad de este addendum:** mismo hilo T3 `mcp:65578db3-49db-4e7d-9dc9-94c8f84fc7f4`, run `run:thread:mcp%3A65578db3-49db-4e7d-9dc9-94c8f84fc7f4:ordinal:4`.

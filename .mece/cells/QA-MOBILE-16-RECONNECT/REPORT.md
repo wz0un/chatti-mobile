@@ -13,7 +13,7 @@
 - **Dispositivo:** Xiaomi `M2102J20SG` (producto `vayu_global`, ABI principal `arm64-v8a`), Android **12** (API 31, security patch 2022-02-01). Número de serie **omitido a propósito**.
 - **Ámbito:** consultas ADB de solo lectura + inspección **local** del APK instalado. Sin commit/push/PR, sin tocar GitHub/Trello, sin desplegar, sin leer ni copiar secretos. No se ejecutó `generate_tests`, `validate_test`, `pm clear` ni ningún borrado de datos.
 - **Restricciones adicionales (TASK actualizado, Staff):** prohibido conmutar modo avión, Wi-Fi o datos móviles (la conectividad es compartida entre los perfiles 0 y 999); ninguna interrupción global de conectividad; trabajo **exclusivo** con el perfil **999**. Ver §12.
-- **ESTADO VIGENTE (§15, T3 2026-11-18): 🟢 QA PASS en (a–d) sobre el APK `2868e8cb…`, construido desde el fuente F1–F4 `ddbc8af9…` (diff `4d1df4f3…`).** QA sign-off otorgado y **CTO technical sign-off APPROVED** en el hilo T3 `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189` (ver §15.7). #16 sigue OPEN / IN PROGRESS; no se marca DONE ni se promueve.
+- **ESTADO VIGENTE (§15, T3 2026-11-18/19): 🟢 QA PASS en (a–d) sobre el APK `2868e8cb…`, construido desde el fuente F1–F4 `ddbc8af9…` (diff `4d1df4f3…`).** QA sign-off otorgado para ese artefacto exacto. El CTO (`mcp:ec582871-…`, run ordinal 1) aprobó **solo fuente/diff**, no la evidencia QA ni el APK; la revisión de PR `PRR_kwDOQljQxc8AAAABY0tjdg` quedó `REQUEST_CHANGES` y la revisión CTO de la evidencia QA corregida sigue **pendiente** (§§15.7 y 15.10). #16 y Trello siguen OPEN / IN PROGRESS; no se marca DONE ni se promueve a producción.
 - **Histórico:** la sesión 13:44–13:53 CET (§14) fue PASS sobre el APK anterior `54a43251…` (diff `317cd09…`) y **no es sign-off del código actual**; se conserva sin reescribir y queda superada por §15. El estado anterior (`BLOCKED`) queda documentado en §13 y el bloqueo histórico (APK pre-fix) en §§1–12.
 
 ---
@@ -798,11 +798,11 @@ adb shell pm list packages -u | grep -iE 'dual|clone|parallel|space'            
 
 ## 15. Seguimiento QA 2026-11-18 14:06–14:29 CET — nuevo candidato F1–F4 (APK reconstruido)
 
-**Veredicto QA al cierre de esta ejecución (14:29 CET):** **PASS en los cuatro criterios (a–d)** sobre un APK reconstruido desde el fuente con F1–F4. QA otorgó sign-off para este artefacto, con la limitación de (c) registrada. El CTO estaba pendiente en ese momento; la revisión posterior otorgó **APPROVED** (véase §15.7). #16 permanece OPEN / IN PROGRESS; no se marca DONE.
+**Veredicto QA al cierre de esta ejecución (14:29 CET):** **PASS en los cuatro criterios (a–d)** sobre un APK reconstruido desde el fuente con F1–F4. QA otorgó sign-off para este artefacto, con la limitación de (c) registrada. El CTO estaba pendiente en ese momento; la revisión CTO posterior aprobó **solo fuente/diff**, no la evidencia QA ni el APK (§§15.7 y 15.10). #16 permanece OPEN / IN PROGRESS; no se marca DONE.
 
-**Vigencia:** §14 es **histórico** y su sign-off aplica solo al APK `54a4325167107f51bf96973eb3e1bba0e5d4182ce0e0ddea0e8f794ec5004180` (diff `317cd093…`). Esta §15 contiene la evidencia QA vigente para el fuente `ddbc8af9…`; el estado posterior de CTO/Staff está en §15.7.
+**Vigencia:** §14 es **histórico** y su sign-off aplica solo al APK `54a4325167107f51bf96973eb3e1bba0e5d4182ce0e0ddea0e8f794ec5004180` (diff `317cd093…`). Esta §15 contiene la evidencia QA vigente para el fuente `ddbc8af9…` / diff `4d1df4f3…` / APK `2868e8cb…`; el alcance real de la revisión CTO y lo que sigue pendiente está en §§15.7 y 15.10.
 
-**Ejecución T3 (esta célula):** thread T3 no expuesto como variable en el entorno del agente; run identificado por la sesión OpenCode `ses_e113c2c9cffesVLIwo1xEFk62L` (título “QA Android #16 final candidate: APK + XSpace 999”, 2026-11-18 14:06:13), provider `opencode`, modelo `opencode/big-pickle`. Sin CLI de OpenCode, sin commit/push/PR, sin GitHub/Trello, sin deploy.
+**Ejecución T3 (esta célula):** thread T3 **`mcp:81055c85-c0d9-4e23-a9f4-6aad77d9d16f`** (título “QA Android #16 final candidate: APK + XSpace 999”), run **`run:thread:mcp%3A81055c85-c0d9-4e23-a9f4-6aad77d9d16f:ordinal:7`**, provider `opencode`, modelo `opencode/big-pickle`; sesión OpenCode subyacente `ses_e113c2c9cffesVLIwo1xEFk62L`. Sin CLI de OpenCode, sin commit/push/PR, sin GitHub/Trello, sin deploy.
 
 ### 15.1 Fuente, rama y entorno (verificado antes de compilar)
 
@@ -902,28 +902,107 @@ Nota de método en (a) — **corregida**: la primera parada de esta sesión (14:
 - `com.chatti.mobile` intacto: user `0` presente, `base.apk` SHA-256 **`26749e5a…`** idéntico antes/después.
 - Repo: `src/` sin cambios (`ddbc8af9…`, diff `4d1df4f3…`); sin commit/push/PR/deploy ni cambios en GitHub/Trello/`STATUS.md`/`WAVE-3.md`/informe de implementación. Único fichero editado por esta célula: este `REPORT.md`.
 - Evidencia local (no versionada): `/tmp/opencode/qa-mobile16/s15/` (`gradle-s15.log`, `install-s15*.out`, `install-tap.log`, `logcat-s15.txt`, `logcat-s15-a2.txt`, **`logcat-a3.txt`**, `wrangler-s15-*.log`, **`s15-a3.log`/`s15-a3b.log`**, `hbc-new.txt`, `api-msgs-s15.json`, APK/instalado, **`qa-final-a3.apk`**, **`prod-base-final-a3.apk`**). Sin capturas de pantalla ni árboles enviados a servicios externos; volcados UI temporales del teléfono eliminados.
+- **Cierre de sesión (2026-11-18 15:07:32 CET) — re-verificación final, solo lectura:** sin procesos `wrangler`/`workerd` del backend QA; `:8788` libre (`ss` sin LISTEN, `/proc/net/tcp` sin estado `0A`, `curl` → `000`); `adb reverse --list` vacío; logcat parado; sin temporales en `/sdcard`; sin sesiones de instalación pendientes. `install_non_market_apps=1` y `verifier_verify_adb_installs=0` (solo lectura, sin escritura). QA **solo** user `999` (`0` coincidencias en user `0`) con `2868e8cb…` y `lastUpdateTime=14:14:56`; producción user `0` presente con `base.apk` **`26749e5a…`** idéntico. Coincide con la comprobación independiente del host. No se ejecutó ningún cambio de estado, instalación ni desinstalación en este cierre.
 
 ### 15.6 Decisión QA vigente
 
-- **Criterios:** (a) **PASS** (re-ejecutado 14:51 con `SIGTERM` al árbol completo y verificación triple de `:8788`; evidencia 14:27 retirada), (b) **PASS**, (c) **PASS** con la limitación registrada, (d) **PASS**.
+- **Veredicto por criterio:**
+  - **(a) PASS** — re-ejecutado 14:51 con `SIGTERM` al árbol completo y verificación triple de `:8788`; retry reúne con el **mismo** `userId` (`user_1795009874287_k8p2w6n9f`). Evidencia 14:27 retirada.
+  - **(b) PASS** — ventana exacta `14:21:20.088 → 14:21:54.095` (30.007 s) sin `Connecting`/`user_joined`/`Reconnecting`; la actividad de 14:22:28 es reentrada **manual** (tap 124 ms antes), no retry.
+  - **(c) PASS, con limitación** — ruta real de UI: 2 `Connecting` / 2 `Connected` / 2 `user_joined` y 0 eventos espurios. El sub-caso `connect()` directo sobre un socket aún OPEN no es alcanzable desde la UI; su cobertura es el harness de implementación **19/19**, no esta prueba.
+  - **(d) PASS** — `qa16-s15-ping-142439` (id `1795008290521-i20s7cg15`): 1 recepción en logcat, 1 persistencia en Worker, 1 fila API, 1 aparición en UI; sin duplicados.
+  - **NOT COVERED: ninguno** de los cuatro criterios.
 - **QA sign-off: ✅ OTORGADO** para los criterios a–d, **exclusivamente** sobre:
   - fuente `src/services/ChatService.js` SHA-256 `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`, diff `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986`;
   - APK `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74` (instalado y verificado por hash en user 999).
-- **CTO/Staff sign-off al cerrar la sesión QA: ⏳ PENDIENTE en ese momento.** El CTO revisó después el mismo hash y otorgó `APPROVED` (addendum §15.7).
-- **Estado #16: OPEN / IN PROGRESS** (QA y CTO sign-offs obtenidos para el artefacto exacto; sin commit/push/PR ni cambio de estado externo). No se promueve a `dev`/`master`/producción.
+- **CTO/Staff sign-off al cerrar la sesión QA: ⏳ PENDIENTE en ese momento y todavía pendiente para QA/APK.** La revisión CTO posterior (run ordinal 1) aprobó **únicamente fuente/diff**; no cubrió la evidencia funcional ni el APK. La revisión de PR `PRR_kwDOQljQxc8AAAABY0tjdg` fue `REQUEST_CHANGES` (§§15.7 y 15.10).
+- **Estado #16: OPEN / IN PROGRESS** (QA sign-off obtenido para el artefacto exacto; sign-off CTO de QA/APK pendiente; sin commit/push/PR ni cambio de estado externo por esta célula). No se promueve a `master`/producción; el merge a `dev` fue ejecutado por Staff (§15.9).
 
-### 15.7 Addendum Staff — revisión CTO posterior
+### 15.7 Addendum Staff — revisión CTO posterior (alcance corregido)
 
-Después de la decisión QA de §15.6, una revisión CTO independiente, read-only y gestionada por T3 Code, verificó el mismo artefacto y emitió **CTO technical sign-off: APPROVED**:
+Después de la decisión QA de §15.6, una revisión CTO independiente, read-only y gestionada por T3 Code se registró en el hilo `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189`, run `run:thread:mcp%3Aec582871-66d1-4ee5-acbc-d00f796d8189:ordinal:1` (**no** es el run QA final; véase §15.10).
 
-- T3 thread `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189`, run `run:thread:mcp%3Aec582871-66d1-4ee5-acbc-d00f796d8189:ordinal:1`.
-- Fuente SHA-256 `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`; diff SHA-256 `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986`; APK QA SHA-256 `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`.
-- Los hallazgos A2–A7 del CTO son no bloqueantes o corresponden a seguimiento/preexistencia; el detalle y las pruebas están en el hilo T3. El hallazgo de discrepancia del nombre de rama (A1) se corrigió en `MOBILE-16-RECONNECT/TASK.md`; al cerrar la revisión aún no había commit ni PR. La autorización de entrega posterior está registrada en `.mece/cells/MOBILE-16-RECONNECT/TASK.md`.
-- Los dos sign-offs (QA §15.6 y CTO aquí) corresponden a los mismos hashes. #16 queda OPEN / IN PROGRESS; no se tocó GitHub/Trello ni se declaró DONE.
+- **Alcance real de esa aprobación:** technical sign-off **solo sobre fuente y diff**: fuente SHA-256 `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457` y diff SHA-256 `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986`. **No aprobó la evidencia QA (§15.4) ni el APK `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`.** Las versiones anteriores de este addendum que afirmaban lo contrario quedan corregidas.
+- Los hallazgos A2–A7 se registraron como no bloqueantes o de seguimiento/preexistencia; el detalle está en ese hilo T3. El hallazgo A1 (nombre de rama) se corrigió en `MOBILE-16-RECONNECT/TASK.md`; la autorización de entrega está en `.mece/cells/MOBILE-16-RECONNECT/TASK.md`.
+- La revisión posterior de PR #66 `PRR_kwDOQljQxc8AAAABY0tjdg` terminó en **`REQUEST_CHANGES`**; por tanto **no** constituye aprobación CTO de QA/APK.
+- **Pendiente:** revisión CTO/Staff de la evidencia QA corregida y del cotejo del APK. #16 queda OPEN / IN PROGRESS; no se declaró DONE ni se promovió a producción.
 
 ### 15.8 Addendum Staff — publicación de la rama y PR
 
 - Commit `ea2f5a8ec6e1c432e1e230bb42a9d7b858c70588` publicado en `bugfix/mobile-16-session-reconnect-android-qa` desde la base `dev` `dd3d72ce83d106a6aca806f7727595553baaef6b`.
-- [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) abierto hacia `dev`. En la comprobación inicial no había workflow runs, checks ni reviews; queda pendiente la revisión del PR.
+- [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) abierto hacia `dev`. En la comprobación inicial no había workflow runs, checks ni reviews; queda pendiente la revisión del PR. **(Snapshot histórico, superado: la revisión `PRR_kwDOQljQxc8AAAABY0tjdg` quedó `REQUEST_CHANGES` y Staff mergeó el PR como `5a0e1ae57377a7fde1945f3252efc3b4391c4184`; véase §§15.9–15.10.)**
 - El APK QA continúa instalado únicamente en XSpace user `999`; el Worker local está detenido, `adb reverse` está vacío, el APK de producción no cambió y el ajuste MIUI permanece como estaba.
-- #16 sigue OPEN / IN PROGRESS. No se mergeó el PR, no se cerró el issue y no se cambió Trello.
+- #16 sigue OPEN / IN PROGRESS. No se cerró el issue y no se cambió Trello. **(Snapshot histórico: en ese momento el PR aún no se había mergeado; el merge posterior a `dev` no cambia este estado.)**
+
+### 15.9 Addendum QA — revisión del PR #66 y cotejo del artefacto (solo lectura)
+
+Revisión posterior a la publicación, ejecutada el **2026-11-18 entre 17:20 y 17:30 CET** en T3 Code (hilo `mcp:81055c85-c0d9-4e23-a9f4-6aad77d9d16f`). Todo el trabajo fue **lectura**: `git` local, `gh`/API de GitHub y ADB en modo consulta. Sin commit, push, PR, deploy, instalación, desinstalación, `pm clear` ni cambios de ajustes.
+
+**Estado del PR al revisarlo:** [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) — `fix(mobile): stabilize room WebSocket reconnect (#16)` — está **MERGED** desde `2026-11-18T15:51:47Z` por `wz0un` (Staff), con merge commit **`5a0e1ae57377a7fde1945f3252efc3b4391c4184`** en `origin/dev`. Base `dev` `dd3d72ce83d106a6aca806f7727595553baaef6b`; head `bugfix/mobile-16-session-reconnect-android-qa` `0936f33f9d2c41097cae81137e1b99b8cf007b23` (`refs/pull/66/head`). 8 ficheros (`+1827/−23`): 6 de documentación/`.mece`, `docs/STATUS.md` y **solo** `src/services/ChatService.js` como código de app. Reviews en ese momento: **0** (snapshot de las 17:20 CET; la revisión posterior `PRR_kwDOQljQxc8AAAABY0tjdg` quedó `REQUEST_CHANGES`, §15.10). Checks: **2** `Workers Builds` (`chatti-workers` `SUCCESS` 14:02:53Z; `chatti-web` `SUCCESS` 14:03:57Z, ambos sobre `0936f33f`), disparados por el push de la rama; no son despliegues de la app móvil y esta célula no ejecutó ningún `deploy` (solo `wrangler dev` local en `127.0.0.1:8788` en la sesión anterior). Issue **#16: OPEN** (`updatedAt 2026-09-20T14:28:56Z`).
+
+**Cotejo artefacto ↔ PR (17:24–17:27 CET):**
+
+| Artefacto | Valor del QA sign-off (§15.6) | Comprobación de esta revisión | Resultado |
+|---|---|---|---|
+| Commit head / merge | `0936f33f…` / — | `0936f33f…`; merge `5a0e1ae…` en `origin/dev` | ✅ coincide |
+| Fichero fuente | SHA-256 `ddbc8af9…` | `git cat-file -p 0936f33:src/services/ChatService.js \| sha256sum` = **`ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`** | ✅ coincide |
+| Fuente leída desde GitHub | — | `gh api …/contents/src/services/ChatService.js?ref=0936f33…` → 10.425 bytes, blob `65251fe8…`, SHA-256 **`ddbc8af9…`** | ✅ coincide con el worktree |
+| Blob git del fuente | — | `65251fe8672ebcc9a26865cd8642097fef52356a` en `0936f33`, en el worktree y en el merge `5a0e1ae` | ✅ idéntico |
+| Diff del fuente | SHA-256 `4d1df4f3…` | reproducido con la invocación de abajo | ✅ coincide |
+| APK QA instalado (user 999) | SHA-256 `2868e8cb…` | `adb pull` del `base.apk` de user `999` = **`2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`** | ✅ coincide |
+| Bundle del APK | `5b96326e…` | `assets/index.android.bundle` = **`5b96326ece96eb2e3caba46cfbb87a0d8f17684d5bfe58632e37059ccf726b08`**; `_invalidateSocket`=1, `_socketGeneration`=1, `reconnectTimer`=1, `_autoReconnect`=1, `intentionalDisconnect`=1 | ✅ coincide |
+| Producción (user 0) | `26749e5a…` | `base.apk` = **`26749e5a16780ca2a6f150c132cf983515119935da15ddf66d82fe8eac69f783`**; `master`/`origin/master` `c5610c9` con blob `b4677ac` (pre-fix) | ✅ sin cambios |
+
+**Reproducción exacta del hash de diff `4d1df4f3…`** (el repo tiene `diff.mnemonicPrefix=true`, de ahí los prefijos `i/` y `w/`):
+
+```console
+$ git rev-parse 0936f33:src/services/ChatService.js
+65251fe8672ebcc9a26865cd8642097fef52356a
+$ git diff --no-color --src-prefix=i/ --dst-prefix=w/ \
+    dd3d72ce83d106a6aca806f7727595553baaef6b \
+    0936f33f9d2c41097cae81137e1b99b8cf007b23 \
+    -- src/services/ChatService.js | sha256sum
+4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986  -
+$ git diff --numstat dd3d72c 0936f33 -- src/services/ChatService.js
+87	18	src/services/ChatService.js
+```
+
+- El mismo cambio con `a/`/`b/` da `2f0d02fc…` y con `--no-prefix` da `4cbc39ee…`: **el hash identifica artefacto + forma de invocación**, no un contenido distinto. El `4d1df4f3…` del sign-off se reproduce con la línea de arriba.
+- La API de GitHub muestra el fichero como **`+88/−19`** frente a **`+87/−18`** de `git`: GitHub alinea como borrado+alta una línea en blanco que `git diff` mantiene como contexto. No es una discrepancia de contenido: el blob resultante es `65251fe8…` / `ddbc8af9…` en todos los lados.
+- `retryGeneration` aparece **0** veces como cadena en el bundle porque es un `const` local de `connect()` (líneas 135–139 del fuente) que el minificador renombra; las guardas sí están presentes (`_socketGeneration`, `reconnectTimer`, `_invalidateSocket`, `_autoReconnect`) y su efecto se validó en (a) y (b). No hay divergencia de código.
+
+**Estado del dispositivo y del entorno tras la revisión (17:27:48 CET, solo lectura):** sin procesos `wrangler`/`workerd`; `:8788` sin LISTEN; `adb reverse --list` vacío; QA **solo** en user `999` (`0` coincidencias en user `0`), `versionName=1.0.0-qa16`, `lastUpdateTime=14:14:56`; producción user `0` intacta con `26749e5a…`; `install_non_market_apps=1` y `verifier_verify_adb_installs=0` (leídos, nunca escritos). No se instaló, desinstaló ni limpió nada.
+
+**Discrepancias y limitaciones:**
+
+1. **`docs/STATUS.md` en `dev` quedó obsoleto tras el merge** (no afecta al artefacto ni al veredicto): sigue diciendo que el PR #66 está “abierto hacia `dev`, sin merge” (líneas 3, 110 y 164 de `docs/STATUS.md` en `5a0e1ae`), mientras que el merge ocurrió a las 15:51:47Z. Reproducción: `git show origin/dev:docs/STATUS.md | grep -n "PR #66"`. No hay ninguna afirmación de DONE ni de issue cerrado (correcto según el DoD). **Acción recomendada:** que Staff actualice `STATUS.md` en una rama `docs/*`/`chore/*` desde `dev`; esta célula QA no lo edita.
+2. **La evidencia local ya no existe:** `/tmp/opencode/qa-mobile16/s15/` (logcat, logs del Worker, APKs de build, `hbc-new.txt`, `api-msgs-s15.json`) fue eliminada junto con el resto de `/tmp/opencode` (directorio vacío, `mtime 15:39 CET`). La traza primaria de §15.4 es la versión **commiteada en `0936f33`**; esta revisión re-verificó el estado del dispositivo y los hashes, no los logs crudos. Una recompilación permitiría repetir la validación funcional, pero **no** reproducir byte a byte el APK. No se re-ejecutaron las pruebas a–d. **En la ejecución documental del 2026-11-19 (§15.10) tampoco se accedió al dispositivo ni se reejecutó QA.**
+3. **El merge no cambia el veredicto QA:** los criterios a–d se validaron sobre el mismo fuente/diff/APK que ahora está en `dev`; no hay re-testeo nuevo ni cambio de hash. La promoción a `master`/producción sigue pendiente y es decisión de Staff (PR aparte).
+
+**Decisión de esta revisión:** el artefacto mergeado en `dev` es **idéntico** al que recibió QA sign-off (§15.6): fuente `ddbc8af9…`, diff `4d1df4f3…`, APK `2868e8cb…`. La revisión CTO de §15.7 cubrió **solo fuente/diff**, no QA/APK. El veredicto **(a) PASS, (b) PASS, (c) PASS con limitación, (d) PASS** se mantiene. **#16 sigue OPEN / IN PROGRESS**: no se declara DONE ni se cierra; el cierre y la promoción corresponden a Staff. Único fichero modificado por esta célula: este `REPORT.md` (sin commit).
+
+### 15.10 Addendum QA — trazabilidad documental 2026-11-19 (solo documento)
+
+**Ejecución T3 actual:** thread `mcp:81055c85-c0d9-4e23-a9f4-6aad77d9d16f`, run **`run:thread:mcp%3A81055c85-c0d9-4e23-a9f4-6aad77d9d16f:ordinal:9`**, provider `opencode`, modelo `opencode/big-pickle`, 2026-11-19 22:57 CET. El run QA final histórico sigue siendo `run:thread:mcp%3A81055c85-c0d9-4e23-a9f4-6aad77d9d16f:ordinal:7` (§15); el `ordinal:1` del hilo `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189` pertenece a la revisión CTO, **no** al QA.
+
+**Alcance:** solo ediciones puntuales y aditivas en este `REPORT.md` del worktree `/home/mohsine/.codex/worktrees/89b3/chatti-mobile`. Sin ADB/dispositivo, sin repetir pruebas, sin recompilar, reinstalar ni cambiar ajustes; sin tocar código, otros informes, GitHub/Trello, commits, pushes ni PRs. El worktree `/home/mohsine/.codex/worktrees/a7b8/chatti-mobile` **no se modificó**: antes de esta edición su diff sin commitear de este informe tenía SHA-256 `c7d3c69d4859557866b7ebd6cde588d2572cba2ad8d685e105af15006d779795` y el fichero `04e92729eba36090e696cc0747f87dbed60d85ebf98541226cdb7f411a9fe565`; permanece byte-idéntico.
+
+**Qué se corrigió (sin cambiar veredictos ni hashes):**
+
+1. **Atribución CTO:** la aprobación del run `mcp:ec582871-…:ordinal:1` era **solo fuente/diff** (`ddbc8af9…` / `4d1df4f3…`). Se eliminó toda afirmación de que aprobó la evidencia QA o el APK `2868e8cb…` (§§cabecera, 15, 15.6 y 15.7).
+2. **Revisión de PR:** la revisión posterior `PRR_kwDOQljQxc8AAAABY0tjdg` de PR #66 terminó en **`REQUEST_CHANGES`**; no equivale a aprobación CTO de QA/APK. El “Reviews: 0” de §15.9 era un snapshot de las 17:20 CET y queda acotado como histórico.
+3. **Run QA final:** se mantiene `...:ordinal:7` en el hilo `mcp:81055c85-…`; el `ordinal:1` citado en el pasado era del CTO. Esta ejecución se registra arriba con `ordinal:9`.
+4. **Snapshots del PR:** los textos que decían “PR #66 abierto / sin merge” (§15.8 y `docs/STATUS.md` en `5a0e1ae`) quedan marcados como históricos; Staff lo fusionó a `dev` como **`5a0e1ae57377a7fde1945f3252efc3b4391c4184`**. #16 y Trello siguen **OPEN / IN PROGRESS**; no hay promoción a `master`/producción ni DONE.
+5. **Disponibilidad de evidencia:** los logs crudos de `/tmp/opencode/qa-mobile16/s15/` ya no existen; no se reejecutó QA en esta ejecución ni en la revisión de §15.9. La evidencia funcional es la registrada en §15.4 y conservada en el commit `0936f33f…`.
+
+**Evidencia histórica conservada:** bloqueos y diagnosis de §§1–13; PASS histórico de §14 sobre APK `54a43251…` (expresamente no vigente); preparación, hashes, ventanas y decisiones de §15.1–15.5; veredicto a–d de §15.6; cotejo PR/artefacto de §15.9. Nada se eliminó ni se reescribió en su totalidad.
+
+**Revisión pendiente:** CTO/Staff debe revisar y aprobar explícitamente la **evidencia QA corregida y el APK `2868e8cb…`** (además de la fuente/diff ya aprobada). Hasta que ese sign-off exista, no se declara DONE, no se cierra #16/Trello y no se promueve a producción.
+
+### 15.11 Addendum cronológico — cierre documental del estado QA (2026-11-19)
+
+- **Ejecución de este addendum (solo documento):** T3 thread `mcp:81055c85-c0d9-4e23-a9f4-6aad77d9d16f`, run **`run:thread:mcp%3A81055c85-c0d9-4e23-a9f4-6aad77d9d16f:ordinal:10`**. Sin dispositivo, pruebas, rehash de APK, cambios de código ni trackers; sin commits, pushes ni PRs.
+- **CTO follow-up que cierra la revisión pendiente de §15.10:** thread `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189`, run ordinal **3** (`run:thread:mcp%3Aec582871-66d1-4ee5-acbc-d00f796d8189:ordinal:3`). Aprobó la **revisión documental y la evidencia QA histórica** para el artefacto exacto: fuente SHA-256 `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`, diff SHA-256 `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986` y APK SHA-256 `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`.
+- **Informes aprobados en ese review (SHA-256):** QA-MOBILE-16-RECONNECT/REPORT.md `7400fdd0c1ad968daaa8111d11e7ef1a13b661d023d532a58c6f749dd58676aa`; MOBILE-16-RECONNECT/REPORT.md `49069d92a3f933558de43bc087c4ff1dc304c9cb5bcdd108990574da04b90bff`.
+- **Alcance de la aprobación:** es **histórica y aplicable al snapshot QA/implementación previo** identificado por esos hashes. Los logs crudos de `/tmp/opencode/qa-mobile16/s15/` ya no existen; **no hubo reejecución de QA ni rehash fresco del APK** en este follow-up. La aprobación se apoya en la evidencia registrada, no en una nueva medición.
+- **Estado vigente:** #16 y Trello permanecen **OPEN / IN PROGRESS**; **no DONE**, sin promoción a producción. Este addendum es una **actualización documental posterior**, no altera la evidencia, el QA funcional, el dispositivo ni otros archivos; deja satisfecho, por cronología, el sign-off pendiente registrado en §15.10 para ese snapshot histórico.
