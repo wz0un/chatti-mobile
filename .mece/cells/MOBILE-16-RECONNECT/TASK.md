@@ -25,9 +25,9 @@ Fix mobile room WebSocket reconnection so the same `userId` and session state su
 
 ### Staff delivery override (2026-11-18)
 
-Staff explicitly authorized committing and pushing this issue branch and opening a PR to `dev`, superseding the no-commit/push/PR restriction above for issue #16 only. Do not merge the PR, close #16, change Trello status, or deploy; keep the issue open for the repository's review flow.
+At the time of this override (2026-11-18), Staff authorized committing and pushing this issue branch and opening a PR to `dev`, superseding the no-commit/push/PR restriction above for issue #16 only, and instructed the cell not to merge, close #16, change Trello status, or deploy. Staff later merged PR #66 into `dev`; that delivery does not close #16 or authorize a production promotion.
 
-Delivery record: commit `ea2f5a8ec6e1c432e1e230bb42a9d7b858c70588` is pushed on this branch; [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) is open against `dev` and awaiting review/checks.
+Delivery record (updated 2026-11-19): commits `ea2f5a8`, `fd65b1f`, and `0936f33` were pushed on this branch. [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) was merged into `dev` as `5a0e1ae57377a7fde1945f3252efc3b4391c4184` on 2026-11-18 15:51:47Z. The code and functional QA result were validated by the later CTO audit, but its GitHub review `PRR_kwDOQljQxc8AAAABY0tjdg` returned `REQUEST_CHANGES` for traceability: the earlier CTO approval applies to source/diff only, and a CTO review of QA evidence is still pending. Keep #16 open / IN PROGRESS; do not mark DONE or promote until the reports are corrected and CTO re-reviews the QA evidence. No production deployment or Trello state change was made.
 
 ## Required report
 

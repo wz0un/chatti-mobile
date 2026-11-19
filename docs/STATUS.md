@@ -1,6 +1,6 @@
 # Chatti Mobile — Current Status
 
-Updated: 2026-11-18 (Wave 2 **desplegada y verificada en producción**: PR #62 → `master` `c5610c9`; BUG-01 post-deploy **PASS** (PBKDF2 live); `sw-2` live; device-id live **PASS**; Task 22 pendiente solo de prueba manual. Mobile P0 #16 tiene QA funcional PASS y CTO APPROVED; [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) abierto hacia `dev`, sin merge. #15 y #14 siguen pendientes).
+Updated: 2026-11-19 (Wave 2 **desplegada y verificada en producción**: PR #62 → `master` `c5610c9`; BUG-01 post-deploy **PASS** (PBKDF2 live); `sw-2` live; device-id live **PASS**; Task 22 pendiente solo de prueba manual. Mobile P0 #16: QA funcional PASS; el CTO aprobó el código para los hashes de fuente/diff, pero la revisión de trazabilidad del PR pidió cambios; [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) se fusionó en `dev` como `5a0e1ae`. #16 sigue OPEN; #15 y #14 siguen pendientes).
 
 ## Repository
 
@@ -107,7 +107,7 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 
 1. **Task 22 Web Push — prueba manual de entrega (único pendiente de la task):** el entorno de QA no puede recibir push. Requiere un navegador real (Chrome/Firefox) contra producción (`sw-2` live): usuario B envía DM a usuario A sin conexión activa; debe llegar la notificación del SO y el click debe abrir el chat correcto. Procedimiento en `docs/QA-PR27-TASK22.md` §9.6; veredicto actual `Task 22 QA técnica PASS, manual delivery NOT RUN`.
 2. **DM history contract:** sin decisión Staff; recomendación (a) de BE-AUTH-CLOSE (emitir `history` en `join`) no implementada. No duplicar `history` sin decidir el contrato (el móvil no deduplica).
-3. **Mobile P0 (#16 → #15 → #14):** Staff approval registrada en `.mece/cells/MOBILE-P0-PLAN/TASK.md`. #16 implementado en `bugfix/mobile-16-session-reconnect-android-qa`, QA funcional PASS y CTO technical sign-off APPROVED; [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) abierto a `dev`, esperando revisión/checks. #15 y #14 no han comenzado y requieren ramas y PR separados.
+3. **Mobile P0 (#16 → #15 → #14):** Staff approval registrada en `.mece/cells/MOBILE-P0-PLAN/TASK.md`. #16 está implementado y fusionado en `dev` por [PR #66](https://github.com/wz0un/chatti-mobile/pull/66), merge `5a0e1ae`. QA dio PASS para a–d en el APK y el CTO aprobó el código fuente/diff; la revisión posterior detectó atribuciones y estado de entrega incorrectos en la trazabilidad (`REQUEST_CHANGES`, 2026-11-18 16:32:26Z). Pendiente corregir los informes desde sus células T3 y obtener la revisión CTO de la evidencia QA. #16 sigue OPEN / IN PROGRESS y no está promovido a producción. #15 y #14 no han comenzado.
 4. **Purga KV (Staff):** quedan las **45 cuentas `bug01qa_*`** del probe pre-despliegue. Las cuentas nuevas del post-deploy (4 manuales + 24 del probe) se borraron best-effort.
 5. **Staging:** `chatti-web-staging` sigue sirviendo HTML en `/sw.js` (BUG-NEW-02). Redesplegar `master`/`dev` si se quiere usar staging para la prueba manual.
 6. **Cuentas legacy:** siguen autenticándose con `bcrypt.compare` (fallback) hasta su siguiente login; no se probó una cuenta real legacy.
@@ -127,7 +127,7 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 1. ⏳ Staff ejecuta la prueba manual de Task 22 contra producción (`sw-2`) y firma → Task 22 DONE.
 2. ⏳ Staff purga las 45 cuentas `bug01qa_*` en KV de producción.
 3. ⏳ Staff decide el contrato DM history (recomendación (a)).
-4. ⏳ Completar revisión/merge a `dev` del PR #66 de #16; después abrir una rama propia para #15 y continuar #14 según la secuencia aprobada.
+4. ⏳ Completar la corrección documental de #16 y la revisión CTO de la evidencia QA; el PR #66 ya está fusionado en `dev`. Mantener #16 abierto hasta el sign-off y después continuar #15/#14 en ramas separadas según la secuencia aprobada.
 5. ⏳ DevOps redespliega staging (BUG-NEW-02) si se quiere un entorno de pruebas Web Push alternativo.
 6. ⏳ Siguiente promoción `dev → master` solo si se quiere incluir la sincronización de lockfile (#64).
 
@@ -161,4 +161,4 @@ Nothing is DONE without **QA sign-off + CTO/Staff sign-off**. Estado a 2026-11-0
 | DM history contract | ⏳ Decisión Staff + QA live + CTO/Staff |
 | Task 16 / BUG-05 (deep links) | ⏳ QA + CTO/Staff (implementado en código, no validado) |
 | Task 24 (CI) | ⏳ QA + CTO/Staff (implementado, no validado) |
-| Mobile P0 #14/#15/#16 | #16: ✅ QA device + CTO/Staff APPROVED; PR #66 a `dev` abierto, sin merge. #15/#14: pendientes, no iniciados. |
+| Mobile P0 #14/#15/#16 | #16: QA device a–d PASS; código en `dev` por PR #66 (`5a0e1ae`); CTO aprobó fuente/diff, pero su revisión posterior pidió cambios de trazabilidad y falta aprobar la evidencia QA. Sigue OPEN / IN PROGRESS, sin promoción. #15/#14: pendientes, no iniciados. |
