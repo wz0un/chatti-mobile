@@ -66,7 +66,7 @@ Write `REPORT.md` with changed paths, root cause, behavior changed, verification
 ### CTO re-review of head 6bd7113 — 2026-11-22
 
 - Independent CTO review [T3 thread](t3-thread://v2/39965b4d-5f2a-4a0f-96a4-e78e93c02ef4/thread:delegated-task:command%3Amcp%3Ada205b4e-d153-4d2b-9a7d-c1fefca6f7bd%3Adelegate-task%3A49551e1a-489c-443d-9a9a-187e26785c4f), run ordinal 1, reviewed PR #68 head `6bd711374068b275a76a399a3facbdcfd77a54c5` and returned **REQUEST_CHANGES**. The prior findings (historical provenance, QA ordinal 15 trace) were verified as fixed; the remaining finding was that the documents still named the `4ccc7cd` Cloudflare builds while the bot had already reported the `6bd7113` builds.
-- This snapshot records one bot-reported production build per documentation head and states that the bot edits its PR comment in place. `6bd7113`: workers `e71a1018-1d3b-48f9-9e91-be580ddec154`, web `bf67b333-26f5-4051-a032-363f4de5df05`, both 22:06 UTC.
+- This snapshot records the bot-reported production builds known at authoring time, one per documentation head, and states that the bot edits its PR comment in place. `6bd7113`: workers `e71a1018-1d3b-48f9-9e91-be580ddec154`, web `bf67b333-26f5-4051-a032-363f4de5df05`, both 22:06 UTC.
 - No functional QA, APK rehash, source change, manual deploy or independent runtime check. QA ordinal 7 remains historical PASS for its exact hashes; retest ordinal 11 remains BLOCKED.
 - Corrected snapshot hashes after this reconciliation: QA `975960832d28fd512ab8050bdbe724a527cea25d44cd86bac3189e670ca13711`, implementation `c1accb61940985200f14ad8fedd0886745bbb82785b4e34de77ac609a7a9761c`.
 - #16/Trello remain OPEN / IN PROGRESS; #67 superseded/closed; #68 open. No DONE or `master` promotion; new documentary review pending.
