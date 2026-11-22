@@ -29,7 +29,7 @@ At the time of this override (2026-11-18), Staff authorized committing and pushi
 
 Delivery record (updated 2026-11-19): commits `ea2f5a8`, `fd65b1f`, and `0936f33` were pushed on this branch. [PR #66](https://github.com/wz0un/chatti-mobile/pull/66) was merged into `dev` as `5a0e1ae57377a7fde1945f3252efc3b4391c4184` on 2026-11-18 15:51:47Z. GitHub review `PRR_kwDOQljQxc8AAAABY0tjdg` returned `REQUEST_CHANGES` for traceability. The original CTO T3 run ordinal 1 approved source/diff only. The follow-up CTO T3 thread `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189`, run ordinal 3, approved the corrected historical QA evidence and report snapshots `7400fdd0c1ad968daaa8111d11e7ef1a13b661d023d532a58c6f749dd58676aa` (QA) and `49069d92a3f933558de43bc087c4ff1dc304c9cb5bcdd108990574da04b90bff` (implementation), for the exact source/diff/APK hashes recorded in those reports. QA thread `mcp:81055c85-c0d9-4e23-a9f4-6aad77d9d16f` run 10 and implementation thread `mcp:65578db3-49db-4e7d-9dc9-94c8f84fc7f4` run 4 added chronological notes; CTO run ordinal 4 **APPROVED** those addenda after verifying the final report hashes `ab27c7050a8e612218bdc040f6bb7ee53a4042e1da0bfa6306e7a8b58bed68a1` and `4f71d6b9cd42b52235c66336affe9371644aa0bb71d9ed597cf18df8f6a63396`. Raw QA logs are unavailable; the historical review did not re-execute QA or freshly rehash the APK. The corrected reports and Staff traceability are in [PR #68](https://github.com/wz0un/chatti-mobile/pull/68), which remains open pending review. Keep #16 open / IN PROGRESS; do not mark DONE or promote. No deployment command was run in this work, but the Cloudflare bot subsequently reported production deployments from the documentation head `55476ef7be965ebadfd2ae6aea90e98a7bfd95c8`; see `.mece/WAVE-3.md`, with Staff confirmation pending. No Trello state change was made.
 
-### Staff reconciliation update — 2026-11-22
+### Staff reconciliation update — 2026-11-22 (historical snapshot; superseded by the CTO re-review update below)
 
 - Staff confirmed that the Cloudflare bot’s `production` builds from `d393477` (#67) and `55476ef` (#68) were expected, and authorized publishing the corrected documentation to PR #68. This authorization is for publishing the branch; it does not authorize a merge, a manual deploy, issue/card closure, or promotion to `master`.
 - PR #67 was closed as superseded by #68. PR #68 remains open as the canonical five-document traceability PR and awaits review.
@@ -37,7 +37,7 @@ Delivery record (updated 2026-11-19): commits `ea2f5a8`, `fd65b1f`, and `0936f33
 - The latest CTO-reviewed local report snapshots are QA SHA-256 `1d817209347b1a0c5fa1fc91b88e51b1578410ef61943717b9c8160291cb3230` and implementation SHA-256 `3675cd00e677e0a5770790856644b6984877781c16283f7ea69f7f0e8dfaf3cf`.
 - GitHub #16 and its Trello card remain OPEN / IN PROGRESS. No DONE decision or `master` promotion is authorized; the live Cloudflare service state was not independently rechecked.
 
-### Post-audit update — 2026-11-22
+### Post-audit update — 2026-11-22 (historical snapshot; superseded by the CTO re-review update below)
 
 - Independent T3 review of PR #68 head 376b210 returned REQUEST_CHANGES for stale report headers and the missing QA ordinal 11 blocked retest ([review](t3-thread://v2/39965b4d-5f2a-4a0f-96a4-e78e93c02ef4/thread:delegated-task:command%3Amcp%3A2a912ee0-4d39-44c1-b6fc-1ec390bfded0%3Adelegate-task%3A071ea9d3-3786-4ea1-9c28-edd68dc134c1)); it was not CTO thread ordinal 4. The previous CTO ordinals 3/4 remain historical approvals on their earlier snapshots and scopes.
 - QA report corrections: T3 thread mcp:81055c85-c0d9-4e23-a9f4-6aad77d9d16f, final edit run ordinal 15; implementation corrections: thread mcp:65578db3-49db-4e7d-9dc9-94c8f84fc7f4, run ordinal 6. Current local report SHA-256 values: QA 4d7dcc5743acec9f8ff5d26c5d3782a9cd8ef005f12f835bbac6d4e9e0ca4316; implementation d5bca89ebd98e45e04e57d382d1fd9a8e0dc23e85da50320020eb1dde5e40f37. They await independent CTO re-review.
@@ -47,3 +47,11 @@ Delivery record (updated 2026-11-19): commits `ea2f5a8`, `fd65b1f`, and `0936f33
 ## Required report
 
 Write `REPORT.md` with changed paths, root cause, behavior changed, verification commands and exact results, manual QA steps, residual risks, STATUS delta, and the T3 thread/run IDs. The implementation agent itself must run as a T3 Code-managed thread. Do not launch `opencode run` or any agent directly through the OpenCode CLI. Do not call the issue DONE; QA and Staff sign-offs are separate.
+
+### CTO re-review update — 2026-11-22
+
+- Independent CTO review [T3 thread](t3-thread://v2/39965b4d-5f2a-4a0f-96a4-e78e93c02ef4/thread:delegated-task:command%3Amcp%3A759110f6-0150-4522-ba7d-7f489adcb568%3Adelegate-task%3A828aa578-538a-4ab3-9fef-b0af599f2b50), run ordinal 1, reviewed PR #68 head `4ccc7cd69c56f774500f8d68a8758daa30c7f442` and returned **REQUEST_CHANGES**. It found unmarked historical worktree provenance and no trace to QA edit run ordinal 15.
+- The current PR copy marks the provenance historical and records QA run ordinal 15, which added a trace line for ordinal 14 cleanup. No functional QA or source changes were made.
+- Corrected report hashes: QA `e4c63c664ef44f8cff20583d6be2844b13d21976053f0781f180042ea8d79335`; implementation `a8246ec93c4f6e86aa15637d970aa0f858982c29da6253529b8a4a496604d035`. New independent review is pending.
+- The Cloudflare bot reports production success after the 4ccc7cd documentation push: workers build `d869b1ff-8ad5-4ce3-bbc8-63820e472af5` (19:09 UTC), web build `a116785f-301f-48ce-8f9d-7bf8b1043493` (19:10 UTC). This is bot status, not a manual deploy or independent runtime check.
+- #16/Trello remain OPEN / IN PROGRESS; #67 superseded/closed; #68 remains open. QA ordinal 7 is historical PASS for exact artifact hashes; retest ordinal 11 remains BLOCKED. No DONE or `master` promotion.
