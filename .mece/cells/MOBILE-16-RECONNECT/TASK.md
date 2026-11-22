@@ -37,6 +37,13 @@ Delivery record (updated 2026-11-19): commits `ea2f5a8`, `fd65b1f`, and `0936f33
 - The latest CTO-reviewed local report snapshots are QA SHA-256 `1d817209347b1a0c5fa1fc91b88e51b1578410ef61943717b9c8160291cb3230` and implementation SHA-256 `3675cd00e677e0a5770790856644b6984877781c16283f7ea69f7f0e8dfaf3cf`.
 - GitHub #16 and its Trello card remain OPEN / IN PROGRESS. No DONE decision or `master` promotion is authorized; the live Cloudflare service state was not independently rechecked.
 
+### Post-audit update — 2026-11-22
+
+- Independent T3 review of PR #68 head 376b210 returned REQUEST_CHANGES for stale report headers and the missing QA ordinal 11 blocked retest ([review](t3-thread://v2/39965b4d-5f2a-4a0f-96a4-e78e93c02ef4/thread:delegated-task:command%3Amcp%3A2a912ee0-4d39-44c1-b6fc-1ec390bfded0%3Adelegate-task%3A071ea9d3-3786-4ea1-9c28-edd68dc134c1)); it was not CTO thread ordinal 4. The previous CTO ordinals 3/4 remain historical approvals on their earlier snapshots and scopes.
+- QA report corrections: T3 thread mcp:81055c85-c0d9-4e23-a9f4-6aad77d9d16f, final edit run ordinal 15; implementation corrections: thread mcp:65578db3-49db-4e7d-9dc9-94c8f84fc7f4, run ordinal 6. Current local report SHA-256 values: QA 4d7dcc5743acec9f8ff5d26c5d3782a9cd8ef005f12f835bbac6d4e9e0ca4316; implementation d5bca89ebd98e45e04e57d382d1fd9a8e0dc23e85da50320020eb1dde5e40f37. They await independent CTO re-review.
+- Cloudflare bot reports production deployments from published docs commit 376b210: workers build 751d3736-3152-4ada-8482-4725f2ff0896 and web build 401e499c-1b2b-4e4b-843b-1d3f7c4d2ef4 (2026-11-22, 18:29/18:30 UTC). No manual deploy command or independent runtime verification was performed.
+- #16/Trello remain OPEN / IN PROGRESS; #68 stays open; no DONE or master promotion.
+
 ## Required report
 
 Write `REPORT.md` with changed paths, root cause, behavior changed, verification commands and exact results, manual QA steps, residual risks, STATUS delta, and the T3 thread/run IDs. The implementation agent itself must run as a T3 Code-managed thread. Do not launch `opencode run` or any agent directly through the OpenCode CLI. Do not call the issue DONE; QA and Staff sign-offs are separate.

@@ -4,8 +4,9 @@
 - **Branch:** `bugfix/mobile-16-session-reconnect-android-qa` (base `origin/dev`; código entregado en `ea2f5a8` y docs en `fd65b1f`/`0936f33`, abierto como PR #66 y fusionado en `dev` por Staff como `5a0e1ae`; el commit de documentación `d393477` quedó **fuera** de #66/`dev`, y la reconciliación de §9 está **sin commitear** en el worktree)
 - **Cell:** MOBILE-16-RECONNECT (`.mece/cells/MOBILE-16-RECONNECT/TASK.md`)
 - **Date:** 2026-11-18 (implementación, QA y entrega); 2026-11-19 (reconciliación documental de este informe, §9)
-- **Status (vigente; actualizado 2026-11-19):** código y QA funcional **validados** para fuente SHA-256 `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`, diff `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986` y APK QA `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`. QA a–d: PASS, hilo `mcp:81055c85-c0d9-4e23-a9f4-6aad77d9d16f`, run funcional ordinal 7. CTO run ordinal 1 aprobó solo fuente/diff; ordinal 3 aprobó la evidencia QA histórica y snapshots previos; ordinal 4 aprobó los addenda documentales en los SHA actuales. Los logs crudos no existen; no hubo reejecución ni rehash fresco del APK. PR #66 está fusionado en `dev` (`5a0e1ae`); PR #68 sigue abierto para revisión. #16/Trello permanecen **OPEN / IN PROGRESS**; DoD no completo.
-- **Evento de despliegue observado:** el bot de Cloudflare informó despliegues exitosos de `chatti-workers` a `production` ([build `64088b03`](https://dash.cloudflare.com/?to=/513628580fa6f627f416bca847d189bb/workers/services/view/chatti-workers/production/builds/64088b03-8c32-408f-890d-8b72dfde6544)) y `chatti-web` a `production` ([build `289ae743`](https://dash.cloudflare.com/?to=/513628580fa6f627f416bca847d189bb/workers/services/view/chatti-web/production/builds/289ae743-9e81-48c6-bd5a-8f47dd452779) desde el head documental `55476ef7be965ebadfd2ae6aea90e98a7bfd95c8` (2026-11-19 22:26–22:27 UTC). Este trabajo no ejecutó un comando de despliegue; el evento automático aún requiere confirmación de Staff. No afirmar que producción permaneció sin despliegues.
+- **Status histórico (snapshot 2026-11-19; estado actual en §11):** código y QA funcional **validados** para fuente SHA-256 `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`, diff `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986` y APK QA `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`. QA a–d: PASS, hilo `mcp:81055c85-c0d9-4e23-a9f4-6aad77d9d16f`, run funcional ordinal 7. CTO run ordinal 1 aprobó solo fuente/diff; ordinal 3 aprobó la evidencia QA histórica y snapshots previos; ordinal 4 aprobó los addenda documentales en los SHA actuales. Los logs crudos no existen; no hubo reejecución ni rehash fresco del APK. PR #66 está fusionado en `dev` (`5a0e1ae`); PR #68 sigue abierto para revisión. #16/Trello permanecen **OPEN / IN PROGRESS**; DoD no completo.
+- **Estado vigente (2026-11-22; véase §11):** QA ordinal 7 mantiene su PASS histórico solo para los hashes del artefacto registrados en §8.4; el retest móvil ordinal 11 quedó BLOCKED, sin PASS nuevo. El auditor independiente T3 devolvió REQUEST_CHANGES sobre los informes del head 376b210 (snapshots QA 1d817209… e implementación 3675cd00…); la corrección de atribución consta en §11.4; la actualización de ambos informes queda pendiente de re-revisión. Cloudflare reportó deployments production successful desde 376b210 para chatti-workers y chatti-web; no hubo deploy manual, QA de producción ni verificación de runtime independiente. #16/Trello siguen OPEN / IN PROGRESS; #68 está abierto; no DONE ni promoción a master.
+- **Evento de despliegue histórico (2026-11-19):** el bot de Cloudflare informó deployments successful en production de chatti-workers ([build 64088b03](https://dash.cloudflare.com/?to=/513628580fa6f627f416bca847d189bb/workers/services/view/chatti-workers/production/builds/64088b03-8c32-408f-890d-8b72dfde6544)) y chatti-web ([build 289ae743](https://dash.cloudflare.com/?to=/513628580fa6f627f416bca847d189bb/workers/services/view/chatti-web/production/builds/289ae743-9e81-48c6-bd5a-8f47dd452779)) desde el head documental 55476ef7be965ebadfd2ae6aea90e98a7bfd95c8. En ese snapshot la confirmación de Staff seguía pendiente; Staff la confirmó después y los despliegues reportados desde 376b210 están en §11.2. Esta célula no ejecutó un comando de deploy ni verificó el runtime de forma independiente.
 - **State of tree (historical):** inherited an uncommitted WIP diff in `src/services/ChatService.js` from an interrupted CLI run (CLI runs are now forbidden by `.mece/WAVE-3.md`). The diff was reviewed against the acceptance criteria, kept (not discarded), and completed with one hardening change. A pre-existing uncommitted edit in `.mece/cells/MOBILE-P0-PLAN/TASK.md` (the STAFF-APPROVAL line) and the untracked `.mece/WAVE-3.md` / `.mece/cells/MOBILE-16-RECONNECT/` were already in the tree and were **not** touched.
 
 ---
@@ -723,3 +724,41 @@ Cobertura de los nuevos checks (19): F1 `f1a/f1b/f1b2/f1c/f1d` (cierre del anter
 - **Naturaleza de este addendum:** documental; no cambia artefactos ni evidencia, no modifica código, QA, dispositivo, trackers ni otros archivos, y no implica commit, push ni PR.
 
 **Trazabilidad de este addendum:** mismo hilo T3 `mcp:65578db3-49db-4e7d-9dc9-94c8f84fc7f4`, run `run:thread:mcp%3A65578db3-49db-4e7d-9dc9-94c8f84fc7f4:ordinal:4`.
+
+## 11. Addendum cronológico (2026-11-22) — estado vigente tras el REQUEST_CHANGES más reciente
+
+**Naturaleza aditiva:** esta sección se añade sin modificar el diff local ya existente; no cambia evidencia ni hashes aprobados. La etiqueta «Status (vigente)» del encabezado y los «Estado vigente» de §9 y §10 son **históricos** (estado del 19-11); el estado vigente a 22-11 es el de esta sección. Lo mismo aplica a las afirmaciones «sin despliegue a producción» de secciones anteriores: eran ciertas en su fecha, y el registro del bot descrito en §11.2 es posterior al push.
+
+### 11.1 Atribución precisa de aprobaciones y retest
+
+- **QA `ordinal:7` — PASS histórico** para criterios a–d (con la limitación de (c) ya documentada), limitado estrictamente a fuente SHA-256 `ddbc8af979ce94491d80297e5d0024dbda98c9307f1406bc93d0b22d58b4c457`, diff `4d1df4f339f60f11ed8dc3d43dd578c0fc01814840127a711ff2a23c7a716986` y APK `2868e8cbaeb4b89288d1dc2577509f6044d5a69a0e32f89087c577cd29907c74`.
+- **Retest QA `ordinal:11` — BLOCKED** por falta de Android SDK, Device Hub/`agent-device` y dispositivo/emulador. **No es un nuevo PASS**, no sustituye ni amplía el PASS histórico de `ordinal:7` y no añade cobertura funcional.
+- **CTO `ordinal:1` — APPROVED solo para fuente/diff** (`ddbc8af9…` / `4d1df4f3…`); no cubre evidencia QA ni APK.
+- **CTO `ordinal:3` y `ordinal:4` — APPROVED** para los alcances documentales y de evidencia histórica descritos en §9 y §10 de este informe; no constituyen una nueva validación funcional ni un rehash del APK.
+
+### 11.2 Evidencia del bot de automatización tras el push
+
+- Staff confirmó que los eventos previos de Cloudflare eran **esperados** y autorizó publicar el PR #68.
+- El bot de Cloudflare informó **deployment successful en producción** para el commit `376b210cc6c7c3342084d5b6f8ea3b6450f0e91d`:
+  - `chatti-workers`, build `751d3736-3152-4ada-8482-4725f2ff0896`, 2026-11-22 18:29 UTC — https://github.com/wz0un/chatti-mobile/pull/68#issuecomment-7022204233
+  - `chatti-web`, build `401e499c-1b2b-4e4b-843b-1d3f7c4d2ef4`, 2026-11-22 18:30 UTC — https://github.com/wz0un/chatti-mobile/pull/68#issuecomment-7023985372
+- Esto es **evidencia del bot de automatización tras el push**: no atribuye deploy manual, aprobación de runtime ni QA de producción; commit y builds se registran tal como los reportó el bot.
+
+### 11.3 Estado vigente de PR y trackers (22-11)
+
+- PR #66: **merged** a `dev` en `5a0e1ae57377a7fde1945f3252efc3b4391c4184`.
+- PR #67: **supersedido/cerrado**.
+- PR #68: **abierto, pendiente de review**.
+- #16 y Trello: **OPEN / IN PROGRESS**; sin DONE, sin promoción a `master`. **DoD no completo.**
+
+**Trazabilidad de este addendum:** hilo T3 `mcp:65578db3-49db-4e7d-9dc9-94c8f84fc7f4`, run `run:thread:mcp%3A65578db3-49db-4e7d-9dc9-94c8f84fc7f4:ordinal:5`.
+
+### 11.4 Corrección de atribución del `REQUEST_CHANGES` (2026-11-22)
+
+- La referencia del título de §11 al «`REQUEST_CHANGES` más reciente» corresponde al review del **auditor independiente T3**, no al hilo CTO `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189` ni a su `ordinal:4`.
+- **Review que emitió `REQUEST_CHANGES`:** hilo `thread:delegated-task:command%3Amcp%3A2a912ee0-4d39-44c1-b6fc-1ec390bfded0%3Adelegate-task%3A071ea9d3-3786-4ea1-9c28-edd68dc134c1`, run `run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A2a912ee0-4d39-44c1-b6fc-1ec390bfded0%253Adelegate-task%253A071ea9d3-3786-4ea1-9c28-edd68dc134c1:ordinal:1` — [review thread](t3-thread://v2/39965b4d-5f2a-4a0f-96a4-e78e93c02ef4/thread:delegated-task:command%3Amcp%3A2a912ee0-4d39-44c1-b6fc-1ec390bfded0%3Adelegate-task%3A071ea9d3-3786-4ea1-9c28-edd68dc134c1).
+- **Snapshots revisados por ese review** (publicados en el head `376b210`, es decir `376b210cc6c7c3342084d5b6f8ea3b6450f0e91d`): informe QA SHA-256 `1d817209347b1a0c5fa1fc91b88e51b1578410ef61943717b9c8160291cb3230` e informe de implementación SHA-256 `3675cd00e677e0a5770790856644b6984877781c16283f7ea69f7f0e8dfaf3cf`.
+- **Aprobaciones CTO previas, no revocadas:** en el hilo `mcp:ec582871-66d1-4ee5-acbc-d00f796d8189`, el `ordinal:1` sigue cubriendo solo fuente/diff; el `ordinal:3` aprobó la revisión documental de §9 sobre los snapshots anteriores registrados en §10; el `ordinal:4` fue un **PASS documental anterior sobre esos otros snapshots**, no un `REQUEST_CHANGES`. El review del auditor independiente no revoca esas aprobaciones ni modifica sus alcances.
+- Esta corrección es documental y aditiva: no cambia evidencia, hashes aprobados, artefactos, trackers ni otros archivos.
+
+**Trazabilidad de esta corrección:** hilo T3 `mcp:65578db3-49db-4e7d-9dc9-94c8f84fc7f4`, run `run:thread:mcp%3A65578db3-49db-4e7d-9dc9-94c8f84fc7f4:ordinal:6`.
