@@ -112,6 +112,7 @@ Full report: `docs/QA-REPORT.md` · Regression: `docs/QA-REGRESSION.md` · PR #2
 5. **Staging:** `chatti-web-staging` sigue sirviendo HTML en `/sw.js` (BUG-NEW-02). Redesplegar `master`/`dev` si se quiere usar staging para la prueba manual.
 6. **Cuentas legacy:** siguen autenticándose con `bcrypt.compare` (fallback) hasta su siguiente login; no se probó una cuenta real legacy.
 7. **Ramas:** `dev` está 2 commits por delante de `master` (solo `pnpm-lock.yaml`, PR #64). PR abiertos: #65 (docs, este cierre) y #63 (dependabot).
+8. **Security review (2026-11-23):** dependencia actualizada en `bugfix/security-patches`; hallazgos pendientes de cuatro vulnerabilidades de autorización HIGH documentados en `SECURITY-REVIEW.md`: eliminación de cuenta, acceso a salas privadas, autorización de DMs y modificación de push tokens. Requieren QA y CTO sign-off antes de marcar como corregidos.
 
 ## Fixed (committed)
 
